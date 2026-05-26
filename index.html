@@ -1,0 +1,3443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="alfa-financeiro-version" content="2026-05-25-firebase-auth" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alfa Financeiro | Controle Interno</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080d;
+      --surface: rgba(18, 20, 29, 0.86);
+      --surface-strong: rgba(25, 28, 39, 0.94);
+      --line: rgba(255, 255, 255, 0.11);
+      --line-strong: rgba(255, 255, 255, 0.22);
+      --text: #f8fafc;
+      --muted: #a8b0bf;
+      --muted-2: #747d8d;
+      --red: #e50914;
+      --red-2: #ff3b45;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --blue: #38bdf8;
+      --shadow: 0 22px 70px rgba(0, 0, 0, 0.36);
+      --radius-lg: 8px;
+      --radius-md: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(229, 9, 20, 0.72) rgba(255, 255, 255, 0.08);
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      border: 2px solid rgba(10, 12, 18, 0.96);
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--red), var(--red-2));
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--red-2);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(120deg, rgba(229, 9, 20, 0.16), transparent 34%),
+        linear-gradient(180deg, #07080d 0%, #0f1119 52%, #120b0e 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(180deg, black, transparent 82%);
+    }
+
+    button,
+    input,
+    select,
+    textarea { font-family: inherit; }
+
+    .login-screen {
+      width: 100%;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .login-panel {
+      width: min(460px, calc(100vw - 32px));
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .login-panel * { min-width: 0; }
+
+    .login-panel p,
+    .hint {
+      overflow-wrap: anywhere;
+    }
+
+    .mark {
+      width: 58px;
+      height: 58px;
+      border-radius: var(--radius-md);
+      display: grid;
+      place-items: center;
+      margin-bottom: 18px;
+      background: #ffffff;
+      box-shadow: 0 14px 34px rgba(229, 9, 20, 0.2);
+      overflow: hidden;
+    }
+
+    .mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .login-logo {
+      width: min(420px, 100%);
+      height: 110px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+    }
+
+    .login-panel h1 {
+      margin: 0;
+      font-size: clamp(30px, 8vw, 42px);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    .login-panel p {
+      margin: 12px 0 22px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .field { min-width: 0; }
+
+    label {
+      display: block;
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      outline: none;
+      padding: 13px 14px;
+      background: rgba(255,255,255,0.07);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    select option { color: #111827; }
+
+    .stack { display: grid; gap: 14px; }
+
+    .hint {
+      padding: 12px;
+      border: 1px solid rgba(229, 9, 20, 0.27);
+      border-radius: var(--radius-md);
+      background: rgba(229, 9, 20, 0.08);
+      color: #fecaca;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .login-actions {
+      display: grid;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .login-error {
+      min-height: 18px;
+      color: #fecaca;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .app {
+      width: min(1500px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 38px;
+      display: none;
+      grid-template-columns: 286px minmax(0, 1fr);
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .app.visible { display: grid; }
+
+    .sidebar,
+    .topbar,
+    .panel,
+    .modal-card {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      height: calc(100vh - 36px);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand .mark {
+      width: 92px;
+      height: 54px;
+      margin-bottom: 0;
+      padding: 5px;
+      flex: 0 0 auto;
+    }
+
+    .brand h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav-title {
+      margin: 20px 0 10px;
+      color: var(--muted-2);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 900;
+    }
+
+    .nav {
+      display: grid;
+      gap: 9px;
+    }
+
+    .nav button {
+      min-height: 46px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.045);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      font-weight: 800;
+      text-align: left;
+      transition: 160ms ease;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      border-color: var(--line-strong);
+      background: rgba(255,255,255,0.09);
+      transform: translateY(-1px);
+    }
+
+    .nav-icon {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: rgba(229, 9, 20, 0.17);
+      color: #fecaca;
+      flex: 0 0 auto;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 7px;
+      background: var(--green);
+      box-shadow: 0 0 18px var(--green);
+    }
+
+    .main { min-width: 0; }
+
+    .topbar {
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(0, auto);
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .headline h1 {
+      margin: 0;
+      font-size: clamp(28px, 3.2vw, 42px);
+      line-height: 1;
+      letter-spacing: 0;
+      max-width: 680px;
+    }
+
+    .headline p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      max-width: 620px;
+    }
+
+    .actions.hidden {
+      display: none;
+    }
+
+    .btn {
+      min-height: 42px;
+      border: 0;
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: 160ms ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--red), var(--red-2));
+      box-shadow: 0 16px 34px rgba(229, 9, 20, 0.24);
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.075);
+    }
+
+    .btn-ghost {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+    .table-btn {
+      min-height: 32px;
+      padding: 7px 10px;
+      font-size: 11px;
+    }
+
+    .balances-hidden .grid-kpis .sensitive-money,
+    .balances-hidden .grid-kpis .kpi strong:not(#kpiLate) {
+      color: transparent !important;
+      text-shadow: 0 0 12px rgba(248, 250, 252, 0.8);
+      user-select: none;
+    }
+
+    .grid-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .grid-kpis.hidden {
+      display: none;
+    }
+
+    .kpi-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .balance-toggle {
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 900;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .balance-toggle:hover {
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      background: var(--surface-strong);
+      min-width: 0;
+      overflow: hidden;
+      text-align: left;
+      color: inherit;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .kpi:hover,
+    .kpi:focus-visible,
+    .kpi.active {
+      border-color: rgba(229, 9, 20, 0.55);
+      background: rgba(37, 27, 35, 0.96);
+      transform: translateY(-1px);
+    }
+
+    .kpi:focus-visible {
+      outline: 2px solid var(--red-2);
+      outline-offset: 2px;
+    }
+
+    .kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .kpi strong {
+      display: block;
+      margin-top: 8px;
+      font-size: clamp(22px, 1.75vw, 28px);
+      letter-spacing: 0;
+      overflow: hidden;
+      text-overflow: clip;
+      white-space: nowrap;
+    }
+
+    .kpi small {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted-2);
+      font-weight: 700;
+    }
+
+    .kpi .kpi-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .balance-kpi {
+      cursor: default;
+    }
+
+    .balance-kpi:hover {
+      border-color: var(--line);
+      background: var(--surface-strong);
+      transform: none;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 170px 170px 170px;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .panel {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 15px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      background: rgba(255,255,255,0.035);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: -0.03em;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: min(58vh, 560px);
+      scrollbar-gutter: stable;
+    }
+
+    .table-x-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      height: 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.025);
+      scrollbar-gutter: stable;
+    }
+
+    .table-x-scroll-inner {
+      height: 1px;
+    }
+
+    .sticky-client-table table {
+      min-width: 1480px;
+    }
+
+    .sticky-client-table th:first-child,
+    .sticky-client-table td:first-child {
+      position: sticky;
+      left: 0;
+      min-width: 230px;
+      max-width: 270px;
+      background: rgba(18, 20, 29, 0.98);
+      box-shadow: 12px 0 18px rgba(0, 0, 0, 0.22);
+      z-index: 2;
+    }
+
+    .sticky-client-table th:first-child {
+      z-index: 4;
+      background: rgba(22, 24, 34, 1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color: var(--muted);
+      background: rgba(22, 24, 34, 0.98);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    td { color: #e8edf5; }
+
+    .money-in { color: #86efac; font-weight: 900; }
+    .money-out { color: #fca5a5; font-weight: 900; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: rgba(255,255,255,0.045);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .paid { color: #bbf7d0; border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.12); }
+    .open { color: #fde68a; border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.12); }
+    .late { color: #fecaca; border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.13); }
+    .canceled { color: #cbd5e1; border-color: rgba(148,163,184,0.34); background: rgba(148,163,184,0.12); }
+    .bonus { color: #bfdbfe; border-color: rgba(56,189,248,0.34); background: rgba(56,189,248,0.12); }
+
+    .row-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .payment-select {
+      width: 170px;
+      min-height: 34px;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .competence-select {
+      width: 145px;
+      min-height: 34px;
+      padding: 7px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .whatsapp-btn {
+      display: inline-grid;
+      place-items: center;
+      text-decoration: none;
+      color: #bbf7d0;
+      border-color: rgba(34, 197, 94, 0.35);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .whatsapp-btn:hover {
+      background: rgba(34, 197, 94, 0.2);
+    }
+
+    .icon-btn {
+      min-width: 34px;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: rgba(255,255,255,0.065);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .icon-btn:hover { background: rgba(255,255,255,0.12); }
+    .danger:hover { background: rgba(229,9,20,0.22); border-color: rgba(229,9,20,0.42); }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+    }
+
+    .detail-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      padding: 15px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.025);
+    }
+
+    .detail-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.045);
+    }
+
+    .detail-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .detail-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 13px;
+      padding: 16px;
+    }
+
+    .insight-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 14px;
+      border-top: 1px solid var(--line);
+      background: rgba(255,255,255,0.025);
+    }
+
+    .insight {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.045);
+    }
+
+    .insight span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .insight strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 21px;
+      letter-spacing: -0.04em;
+      overflow-wrap: anywhere;
+    }
+
+    .bar-item strong {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: var(--w);
+      background: linear-gradient(90deg, var(--red), var(--red-2));
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,0.6);
+      z-index: 30;
+      overflow: auto;
+    }
+
+    .modal.show { display: flex; }
+
+    .modal-card {
+      width: min(840px, 100%);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.04em;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .settings-grid textarea {
+      min-height: 180px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      display: none;
+      width: min(420px, calc(100% - 40px));
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(18, 20, 29, 0.96);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      z-index: 40;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .toast.show { display: block; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .empty {
+      padding: 28px 14px;
+      text-align: center;
+      color: var(--muted-2);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1080px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .grid-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .summary-grid { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .insight-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 680px) {
+      .app { width: min(100% - 18px, 1500px); padding-top: 9px; }
+      .login-screen { padding: 16px; place-items: center start; }
+      .login-panel { width: min(320px, calc(100vw - 48px)); padding: 20px; }
+      .topbar { grid-template-columns: 1fr; }
+      .actions { justify-content: stretch; }
+      .actions .btn { flex: 1 1 auto; }
+      .grid-kpis,
+      .toolbar,
+      .login-actions,
+      .insight-strip,
+      .form-grid { grid-template-columns: 1fr; }
+      .full { grid-column: auto; }
+      .sticky-client-table th:first-child,
+      .sticky-client-table td:first-child {
+        min-width: 185px;
+        max-width: 205px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="login-screen" id="loginScreen">
+    <form class="login-panel stack" id="loginForm">
+      <div class="mark login-logo"><img src="alfa-logo.jpg" alt="Alfa Contabilidade" /></div>
+      <div>
+        <h1>Alfa Financeiro</h1>
+        <p>Acesso interno para acompanhar contas a pagar, contas a receber, fluxo de caixa e status dos lançamentos.</p>
+      </div>
+      <div class="field">
+        <label for="emailInput">E-mail</label>
+        <input id="emailInput" type="email" autocomplete="email" placeholder="Digite seu e-mail" required />
+      </div>
+      <div class="field">
+        <label for="passwordInput">Senha</label>
+        <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Digite a senha de acesso" required />
+      </div>
+      <div class="login-actions">
+        <button class="btn btn-primary" id="emailLoginBtn" type="submit">Entrar</button>
+        <button class="btn btn-ghost" id="googleLoginBtn" type="button">Entrar com Google</button>
+      </div>
+      <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
+      <div class="hint">Acesso restrito por Firebase Authentication. Os dados reais não devem ser publicados em arquivos do GitHub.</div>
+    </form>
+  </section>
+
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"><img src="alfa-logo.jpg" alt="" /></div>
+        <div>
+          <h2>Alfa Financeiro</h2>
+          <span>Controle interno</span>
+        </div>
+      </div>
+
+      <div class="nav-title">Módulos</div>
+      <nav class="nav" aria-label="Navegação principal">
+        <button class="active" data-view="dashboard"><span class="nav-icon">$</span>Visão geral</button>
+        <button data-view="lancamentos"><span class="nav-icon">#</span>Lançamentos</button>
+        <button data-view="clientes"><span class="nav-icon">C</span>Clientes</button>
+        <button data-view="receber"><span class="nav-icon">+</span>A receber</button>
+        <button data-view="pagar"><span class="nav-icon">-</span>A pagar</button>
+        <button data-view="relatorios"><span class="nav-icon">%</span>Relatórios</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p><span class="status-dot"></span>Dados salvos neste computador.</p>
+        <p id="userLabel">financeiro@alfa.local</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="headline">
+          <h1 id="pageTitle">Visão geral financeira</h1>
+          <p id="pageSubtitle">Resumo do mês, vencimentos e fluxo dos lançamentos.</p>
+        </div>
+        <div class="actions" id="topActions">
+          <input id="csvImportInput" type="file" accept=".csv,text/csv" hidden />
+          <button class="btn btn-secondary" id="importBtn" type="button">Importar CSV</button>
+          <button class="btn btn-secondary" id="exportBtn" type="button">Exportar CSV</button>
+          <button class="btn btn-secondary" id="manualBackupBtn" type="button">Backup</button>
+          <button class="btn btn-primary" id="newEntryBtn" type="button">Novo lançamento</button>
+          <button class="btn btn-ghost" id="logoutBtn" type="button">Sair</button>
+        </div>
+      </header>
+
+      <section class="grid-kpis" id="kpiSection" aria-label="Indicadores financeiros">
+        <article class="kpi balance-kpi">
+          <span class="kpi-head">
+            <span>Saldo previsto</span>
+            <button class="balance-toggle" id="toggleBalancesBtn" type="button" title="Ocultar ou mostrar saldos">--</button>
+          </span>
+          <strong id="kpiBalance">R$ 0,00</strong>
+          <small>Receitas menos despesas</small>
+        </article>
+        <button class="kpi" type="button" data-kpi-filter="pendentes">
+          <span>A receber</span>
+          <strong id="kpiIncome">R$ 0,00</strong>
+          <small>Clique para abrir detalhes</small>
+        </button>
+        <button class="kpi" type="button" data-kpi-filter="recebidos">
+          <span>Recebido no mês</span>
+          <strong id="kpiReceived">R$ 0,00</strong>
+          <small>Clique para abrir detalhes</small>
+        </button>
+        <button class="kpi" type="button" data-kpi-filter="pagar">
+          <span>A pagar</span>
+          <strong id="kpiExpense">R$ 0,00</strong>
+          <small>Clique para abrir detalhes</small>
+        </button>
+        <button class="kpi" type="button" data-kpi-filter="vencidos">
+          <span>Vencidos</span>
+          <strong id="kpiLate">0</strong>
+          <small>Clique para abrir detalhes</small>
+        </button>
+      </section>
+
+      <section class="view active" id="dashboard">
+        <div class="summary-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Próximos vencimentos</h2>
+              <span class="pill" id="nextCount">0 itens</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Cliente/Fornecedor</th>
+                    <th>Categoria</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="nextRows"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Resumo por categoria</h2>
+              <span class="pill" id="categoryCount">0 categorias</span>
+            </div>
+            <div class="bar-list" id="categoryBars"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="lancamentos">
+        <div class="toolbar">
+          <input id="searchInput" type="search" placeholder="Buscar por descrição, cliente, fornecedor ou categoria" />
+          <select id="typeFilter">
+            <option value="todos">Todos os tipos</option>
+            <option value="receita">Receitas</option>
+            <option value="despesa">Despesas</option>
+          </select>
+          <select id="statusFilter">
+            <option value="todos">Todos os status</option>
+            <option value="aberto">Em aberto</option>
+            <option value="pago">Pago</option>
+            <option value="vencido">Vencido</option>
+            <option value="bonificado">Bonificado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          <input id="monthFilter" type="month" />
+        </div>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Lançamentos financeiros</h2>
+            <span class="pill" id="entryCount">0 registros</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vencimento</th>
+                  <th>Descrição</th>
+                  <th>Nome</th>
+                  <th>Categoria</th>
+                  <th>Tipo</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="entryRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="clientes">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Clientes cadastrados</h2>
+              <span class="pill" id="clientCount">0 clientes</span>
+            </div>
+            <div class="row-actions">
+              <span class="pill">Cadastro automático pelo CSV</span>
+              <button class="btn btn-primary" id="newClientBtn" type="button">Novo cliente</button>
+            </div>
+          </div>
+          <div class="table-wrap sticky-client-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Tipo</th>
+                  <th>CNPJ/Documento</th>
+                  <th>Contato</th>
+                  <th>Primeira cobrança</th>
+                  <th>Honorário do mês</th>
+                  <th>Recebido no mês</th>
+                  <th>Pendente no mês</th>
+                  <th>Vencimento</th>
+                  <th>Atrasos</th>
+                  <th>Situação</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="clientRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="receber">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Contas a receber</h2>
+              <span class="pill" id="receberCount">0 registros</span>
+            </div>
+            <div class="row-actions">
+              <select id="receberWhatsappFilter" title="Filtro de cobrança">
+                <option value="open">Todas em aberto</option>
+                <option value="late">Vencidas</option>
+                <option value="today">Vencendo hoje</option>
+                <option value="three">Vencendo em até 3 dias</option>
+              </select>
+              <button class="btn btn-secondary" id="batchWhatsappBtn" type="button">Gerar cobranças em lote</button>
+            </div>
+          </div>
+          <div class="hint" id="batchWhatsappPanel" hidden></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vencimento</th>
+                  <th>Cliente</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="receberRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="pagar">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Contas a pagar</h2>
+            <span class="pill" id="pagarCount">0 registros</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vencimento</th>
+                  <th>Fornecedor</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="pagarRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="detalhes">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="detailTitle">Detalhes financeiros</h2>
+              <span class="pill" id="detailCount">0 registros</span>
+            </div>
+            <button class="btn btn-ghost" id="detailBackBtn" type="button">Voltar para visão geral</button>
+          </div>
+          <div class="detail-summary">
+            <div class="detail-card">
+              <span>Total</span>
+              <strong id="detailTotal">R$ 0,00</strong>
+            </div>
+            <div class="detail-card">
+              <span>Clientes/fornecedores</span>
+              <strong id="detailPeople">0</strong>
+            </div>
+            <div class="detail-card">
+              <span>Competência</span>
+              <strong id="detailMonth">-</strong>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vencimento</th>
+                  <th>Nome</th>
+                  <th>Documento</th>
+                  <th>Competência</th>
+                  <th>Categoria</th>
+                  <th>Forma</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="detailRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="relatorios">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Relatório do mês</h2>
+            <span class="pill" id="reportMonthLabel">Mês atual</span>
+          </div>
+          <div class="insight-strip" aria-label="Resumo de importação">
+            <div class="insight">
+              <span>Importados</span>
+              <strong id="reportImported">0</strong>
+            </div>
+            <div class="insight">
+              <span>Pagos no CSV</span>
+              <strong id="reportPaid">0</strong>
+            </div>
+            <div class="insight">
+              <span>Inadimplentes</span>
+              <strong id="reportLate">0</strong>
+            </div>
+            <div class="insight">
+              <span>Cancelados</span>
+              <strong id="reportCanceled">0</strong>
+            </div>
+          </div>
+          <div class="bar-list" id="reportList"></div>
+          <div class="settings-grid">
+            <div class="field">
+              <label for="whatsappPix">PIX / orientação de pagamento</label>
+              <input id="whatsappPix" type="text" placeholder="Informe a chave PIX ou orientação" />
+            </div>
+            <div class="field">
+              <label for="whatsappCompany">Empresa</label>
+              <input id="whatsappCompany" type="text" value="Alfa Contabilidade" />
+            </div>
+            <div class="field full">
+              <label>Variáveis disponíveis</label>
+              <div class="hint">{{cliente}} {{valor}} {{vencimento}} {{descricao}} {{competencia}} {{pix}} {{empresa}}</div>
+            </div>
+            <div class="field">
+              <label for="whatsappTemplateOpen">Modelo a vencer / lembrete</label>
+              <textarea id="whatsappTemplateOpen"></textarea>
+            </div>
+            <div class="field">
+              <label for="whatsappTemplateLate">Modelo cobrança vencida</label>
+              <textarea id="whatsappTemplateLate"></textarea>
+            </div>
+            <div class="field full">
+              <button class="btn btn-primary" id="saveWhatsappSettingsBtn" type="button">Salvar modelos de WhatsApp</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="entryModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form class="modal-card" id="entryForm">
+      <div class="modal-head">
+        <h2 id="modalTitle">Novo lançamento</h2>
+        <button class="icon-btn" id="closeModalBtn" type="button" aria-label="Fechar">X</button>
+      </div>
+      <input id="entryId" type="hidden" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="entryType">Tipo</label>
+          <select id="entryType" required>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="entryStatus">Status</label>
+          <select id="entryStatus" required>
+          <option value="aberto">Em aberto</option>
+          <option value="pago">Pago</option>
+          <option value="bonificado">Bonificado</option>
+          <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="entryDate">Vencimento</label>
+          <input id="entryDate" type="date" required />
+        </div>
+        <div class="field">
+          <label for="entryAmount">Valor</label>
+          <input id="entryAmount" type="number" min="0" step="0.01" placeholder="0,00" required />
+        </div>
+        <div class="field full">
+          <label for="entryName">Cliente ou fornecedor</label>
+          <input id="entryName" type="text" placeholder="Ex.: Cliente Alfa Ltda" required />
+        </div>
+        <div class="field">
+          <label for="entryDocument">CNPJ/Documento</label>
+          <input id="entryDocument" type="text" placeholder="Documento do cliente" />
+        </div>
+        <div class="field">
+          <label for="entryCategory">Categoria</label>
+          <input id="entryCategory" type="text" list="categoryOptions" placeholder="Ex.: Honorários" required />
+          <datalist id="categoryOptions">
+            <option value="Honorários contábeis"></option>
+            <option value="Impostos"></option>
+            <option value="Folha de pagamento"></option>
+            <option value="Sistemas"></option>
+            <option value="Administrativo"></option>
+          </datalist>
+        </div>
+        <div class="field">
+          <label for="entryMethod">Forma</label>
+          <select id="entryMethod">
+            <option value="Pix">Pix</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Boleto">Boleto</option>
+            <option value="Cartão de crédito">Cartão de crédito</option>
+            <option value="Cartão de débito">Cartão de débito</option>
+            <option value="Transferência bancária">Transferência bancária</option>
+            <option value="Depósito">Depósito</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Bonificação">Bonificação</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="entryDescription">Descrição</label>
+          <textarea id="entryDescription" placeholder="Detalhe o lançamento"></textarea>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:16px;">
+        <button class="btn btn-ghost" id="cancelBtn" type="button">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Salvar lançamento</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal" id="clientModal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle">
+    <form class="modal-card" id="clientForm">
+      <div class="modal-head">
+        <h2 id="clientModalTitle">Novo cliente</h2>
+        <button class="icon-btn" id="closeClientModalBtn" type="button" aria-label="Fechar">X</button>
+      </div>
+      <input id="clientId" type="hidden" />
+      <input id="clientOriginalKey" type="hidden" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="clientType">Tipo de cliente</label>
+          <select id="clientType" required>
+            <option value="pj">Pessoa jurídica</option>
+            <option value="pf">Pessoa física</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="clientStatus">Status</label>
+          <select id="clientStatus" required>
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+            <option value="suspenso">Suspenso</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="clientName">Razão social / Nome completo</label>
+          <input id="clientName" type="text" placeholder="Nome do cliente" required />
+        </div>
+        <div class="field">
+          <label for="clientTradeName">Nome fantasia / Apelido</label>
+          <input id="clientTradeName" type="text" placeholder="Como você identifica o cliente" />
+        </div>
+        <div class="field">
+          <label for="clientDocument">CPF/CNPJ</label>
+          <input id="clientDocument" type="text" placeholder="Documento do cliente" required />
+        </div>
+        <div class="field">
+          <label for="clientStateRegistration">Inscrição estadual</label>
+          <input id="clientStateRegistration" type="text" />
+        </div>
+        <div class="field">
+          <label for="clientCityRegistration">Inscrição municipal</label>
+          <input id="clientCityRegistration" type="text" />
+        </div>
+        <div class="field">
+          <label for="clientResponsible">Responsável</label>
+          <input id="clientResponsible" type="text" />
+        </div>
+        <div class="field">
+          <label for="clientPhone">WhatsApp</label>
+          <input id="clientPhone" type="tel" placeholder="Número do cliente" />
+        </div>
+        <div class="field">
+          <label for="clientWhatsappAllowed">Autorizou contato por WhatsApp</label>
+          <select id="clientWhatsappAllowed">
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="clientEmail">E-mail</label>
+          <input id="clientEmail" type="email" placeholder="cliente@email.com" />
+        </div>
+        <div class="field full">
+          <label for="clientAddress">Endereço</label>
+          <input id="clientAddress" type="text" />
+        </div>
+        <div class="field">
+          <label for="clientCity">Cidade/UF</label>
+          <input id="clientCity" type="text" />
+        </div>
+        <div class="field">
+          <label for="clientService">Serviço contratado</label>
+          <input id="clientService" type="text" value="Honorários contábeis" />
+        </div>
+        <div class="field">
+          <label for="clientMonthlyFee">Honorário mensal</label>
+          <input id="clientMonthlyFee" type="number" min="0" step="0.01" placeholder="0,00" required />
+        </div>
+        <div class="field">
+          <label for="clientDueDay">Dia de vencimento</label>
+          <input id="clientDueDay" type="number" min="1" max="31" value="5" required />
+        </div>
+        <div class="field">
+          <label for="clientPaymentMethod">Forma padrão</label>
+          <select id="clientPaymentMethod">
+            <option value="Pix">Pix</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Boleto">Boleto</option>
+            <option value="Cartão de crédito">Cartão de crédito</option>
+            <option value="Cartão de débito">Cartão de débito</option>
+            <option value="Transferência bancária">Transferência bancária</option>
+            <option value="Depósito">Depósito</option>
+            <option value="Cheque">Cheque</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="clientNotes">Observações</label>
+          <textarea id="clientNotes" placeholder="Informações internas do atendimento"></textarea>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:16px;">
+        <button class="btn btn-ghost" id="cancelClientBtn" type="button">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Salvar cliente</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwmzq8a6lFoVwl3XKpPl8hJ_lPv8JFVUA",
+      authDomain: "alfa-financeiro.firebaseapp.com",
+      projectId: "alfa-financeiro",
+      storageBucket: "alfa-financeiro.firebasestorage.app",
+      messagingSenderId: "540966854216",
+      appId: "1:540966854216:web:674684de13d3252bf8827d",
+      measurementId: "G-RPJ6WCCG5H"
+    };
+
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+    const googleProvider = new GoogleAuthProvider();
+    const authorizedEmail = "alfacontabilidade2014@gmail.com";
+
+    const storageKey = "alfaFinanceiroLancamentosV1";
+    const clientsStorageKey = "alfaFinanceiroClientesV1";
+    const whatsappSettingsKey = "alfaFinanceiroWhatsappSettingsV1";
+    const whatsappLogsKey = "alfaFinanceiroWhatsappLogsV1";
+    const backupHistoryKey = "alfaFinanceiroBackupsV1";
+    const lastBackupDateKey = "alfaFinanceiroUltimoBackupV1";
+    const balanceVisibilityKey = "alfaFinanceiroOcultarSaldosV1";
+    const officeWhatsAppNumber = "5563984500300";
+    const firstChargeMonth = "2026-05";
+    const lastChargeMonth = "2027-02";
+    const loginScreen = document.getElementById("loginScreen");
+    const app = document.getElementById("app");
+    const toast = document.getElementById("toast");
+    const modal = document.getElementById("entryModal");
+    const form = document.getElementById("entryForm");
+    const clientModal = document.getElementById("clientModal");
+    const clientForm = document.getElementById("clientForm");
+
+    const titles = {
+      dashboard: ["Visão geral financeira", "Resumo do mês, vencimentos e fluxo dos lançamentos."],
+      lancamentos: ["Lançamentos", "Controle completo de receitas, despesas, status e vencimentos."],
+      clientes: ["Clientes", "Cadastro automático, documentos e recebimentos por cliente."],
+      receber: ["Contas a receber", "Entradas previstas, clientes pendentes e recebimentos pagos."],
+      pagar: ["Contas a pagar", "Despesas, fornecedores, vencimentos e pagamentos realizados."],
+      detalhes: ["Detalhes financeiros", "Lista focada do indicador selecionado."],
+      relatorios: ["Relatórios", "Leitura rápida das categorias e do resultado financeiro mensal."]
+    };
+
+    const demoNames = new Set([
+      "Mercado Central Ltda",
+      "Clínica Vida",
+      "Sistema de Gestão",
+      "Energia",
+      "Auto Peças Norte",
+      "Folha interna"
+    ].map(normalizeText));
+
+    const seedEntries = [];
+
+    let entries = loadEntries();
+    let clients = loadClients();
+    let clientQuickFilter = "";
+    let activeKpiFilter = "";
+    let detailMode = "";
+    let balancesHidden = localStorage.getItem(balanceVisibilityKey) === "true";
+    let whatsappSettings;
+    let whatsappLogs;
+
+    const paymentMethods = [
+      "Pix",
+      "Dinheiro",
+      "Boleto",
+      "Cartão de crédito",
+      "Cartão de débito",
+      "Transferência bancária",
+      "Depósito",
+      "Cheque"
+    ];
+
+    const defaultWhatsappOpenTemplate = `Olá, {{cliente}}! Tudo bem?
+
+Identificamos uma cobrança em aberto referente a {{descricao}}.
+
+Valor: R$ {{valor}}
+Vencimento: {{vencimento}}
+
+O pagamento pode ser realizado via PIX:
+{{pix}}
+
+Após o pagamento, por gentileza, envie o comprovante por aqui.
+
+Atenciosamente,
+{{empresa}}`;
+
+    const defaultWhatsappLateTemplate = `Olá, {{cliente}}! Tudo bem?
+
+Consta em nosso controle uma cobrança vencida referente a {{descricao}}.
+
+Valor: R$ {{valor}}
+Vencimento: {{vencimento}}
+
+Pedimos, por gentileza, a regularização ou o envio do comprovante caso o pagamento já tenha sido realizado.
+
+PIX:
+{{pix}}
+
+Atenciosamente,
+{{empresa}}`;
+
+    whatsappSettings = loadWhatsappSettings();
+    whatsappLogs = loadWhatsappLogs();
+
+    function todayISO(offset = 0) {
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function loadEntries() {
+      const official = getOfficialEntries();
+      const expenses = getOfficialExpenses();
+      const officialBase = [...official, ...expenses];
+      const saved = localStorage.getItem(storageKey);
+      if (!saved) return officialBase.length ? officialBase : seedEntries;
+      try {
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) return officialBase.length ? officialBase : seedEntries;
+        const cleaned = cleanupDemoEntries(parsed);
+        return shouldUseOfficialEntries(cleaned) ? officialBase : mergeOfficialExpenses(cleaned, expenses);
+      } catch {
+        return officialBase.length ? officialBase : seedEntries;
+      }
+    }
+
+    function cleanupDemoEntries(list) {
+      return list.filter(entry => !demoNames.has(normalizeText(entry.name)));
+    }
+
+    function getOfficialEntries() {
+      const official = Array.isArray(window.ALFA_OFFICIAL_ENTRIES) ? window.ALFA_OFFICIAL_ENTRIES : [];
+      return expandRecurringEntries(official.map(entry => ({ ...entry })));
+    }
+
+    function expandRecurringEntries(baseEntries) {
+      const months = monthSequence();
+      return baseEntries.flatMap(entry => {
+        if (entry.type !== "receita") return [{ ...entry, id: crypto.randomUUID() }];
+        return months.map(month => {
+          const isFirstMonth = month === firstChargeMonth;
+          const sourceId = `${entry.sourceId || entry.id}-${month}`;
+          const monthLabel = formatMonth(month);
+          return {
+            ...entry,
+            id: `recorrente-${sourceId}`,
+            source: isFirstMonth ? entry.source : "recorrencia-oficial",
+            sourceId,
+            recurringParentId: entry.sourceId || entry.id,
+            billingMonth: month,
+            date: dateInMonth(entry.date, month),
+            status: isFirstMonth ? entry.status : "aberto",
+            paidAt: isFirstMonth ? entry.paidAt : "",
+            paidAmount: isFirstMonth ? Number(entry.paidAmount || 0) : 0,
+            receiptProtocol: isFirstMonth ? entry.receiptProtocol : "",
+            receiptDescription: isFirstMonth ? entry.receiptDescription : "",
+            description: `${entry.description || "Honorário contábil"} - competência ${monthLabel}`
+          };
+        });
+      });
+    }
+
+    function getOfficialExpenses() {
+      const official = Array.isArray(window.ALFA_OFFICIAL_EXPENSES) ? window.ALFA_OFFICIAL_EXPENSES : [];
+      return official.map(entry => ({ ...entry }));
+    }
+
+    function mergeOfficialExpenses(list, expenses) {
+      const keys = new Set(list.map(entryImportKey));
+      const missing = expenses.filter(expense => !keys.has(entryImportKey(expense)));
+      return [...list, ...missing];
+    }
+
+    function shouldUseOfficialEntries(list) {
+      const official = Array.isArray(window.ALFA_OFFICIAL_ENTRIES) ? window.ALFA_OFFICIAL_ENTRIES : [];
+      const expenses = Array.isArray(window.ALFA_OFFICIAL_EXPENSES) ? window.ALFA_OFFICIAL_EXPENSES : [];
+      if (!official.length) return false;
+      const officialExpanded = expandRecurringEntries(official);
+      if (!list.length) return true;
+      const revenue = list.filter(entry => entry.type === "receita");
+      const missingDocuments = revenue.filter(entry => !entry.document).length;
+      const total = revenue.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const officialTotal = officialExpanded.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const expenseCount = list.filter(entry => entry.source === "pdf-despesa").length;
+      const hasBrokenText = revenue.some(entry =>
+        [entry.name, entry.category, entry.description, entry.method].some(value =>
+          typeof value === "string" && /(Cobran\?|Honor\?rios|cont\?beis|emiss\?|Ã|�)/.test(value)
+        )
+      );
+      const hasOldOfficialSource = revenue.some(entry =>
+        entry.source === "planilha-oficial" && String(entry.sourceId || "").startsWith("linha-")
+      );
+      return revenue.length !== officialExpanded.length || missingDocuments > 0 || Math.round(total * 100) !== Math.round(officialTotal * 100) || expenseCount < expenses.length || hasBrokenText || hasOldOfficialSource;
+    }
+
+    function loadClients() {
+      const saved = localStorage.getItem(clientsStorageKey);
+      if (!saved) return [];
+      try {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveEntries() {
+      localStorage.setItem(storageKey, JSON.stringify(entries));
+    }
+
+    function saveClients() {
+      localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
+    }
+
+    function loadWhatsappSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(whatsappSettingsKey) || "{}");
+        return {
+          company: saved.company || "Alfa Contabilidade",
+          pix: saved.pix || "Informe a chave PIX da Alfa Contabilidade.",
+          openTemplate: saved.openTemplate || defaultWhatsappOpenTemplate,
+          lateTemplate: saved.lateTemplate || defaultWhatsappLateTemplate
+        };
+      } catch {
+        return {
+          company: "Alfa Contabilidade",
+          pix: "Informe a chave PIX da Alfa Contabilidade.",
+          openTemplate: defaultWhatsappOpenTemplate,
+          lateTemplate: defaultWhatsappLateTemplate
+        };
+      }
+    }
+
+    function saveWhatsappSettings() {
+      localStorage.setItem(whatsappSettingsKey, JSON.stringify(whatsappSettings));
+    }
+
+    function loadWhatsappLogs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(whatsappLogsKey) || "[]");
+        return Array.isArray(saved) ? saved : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveWhatsappLogs() {
+      localStorage.setItem(whatsappLogsKey, JSON.stringify(whatsappLogs.slice(0, 300)));
+    }
+
+    function normalizeEmail(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function buildBackupData(reason = "automatico") {
+      return {
+        app: "Alfa Financeiro",
+        version: 2,
+        reason,
+        createdAt: new Date().toISOString(),
+        entries,
+        clients,
+        whatsappLogs,
+        settings: {
+          firstChargeMonth,
+          lastChargeMonth,
+          officeWhatsAppNumber,
+          authorizedEmail,
+          whatsapp: whatsappSettings
+        }
+      };
+    }
+
+    function rememberBackup(backup) {
+      let history = [];
+      try {
+        history = JSON.parse(localStorage.getItem(backupHistoryKey) || "[]");
+      } catch {
+        history = [];
+      }
+      history.unshift({
+        createdAt: backup.createdAt,
+        reason: backup.reason,
+        entries: backup.entries.length,
+        clients: backup.clients.length,
+        data: backup
+      });
+      localStorage.setItem(backupHistoryKey, JSON.stringify(history.slice(0, 10)));
+    }
+
+    function downloadBackup(backup) {
+      const date = backup.createdAt.slice(0, 10);
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `alfa-financeiro-backup-${date}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function createBackup(reason = "manual", forceDownload = true) {
+      syncClientsFromEntries();
+      const backup = buildBackupData(reason);
+      rememberBackup(backup);
+      if (forceDownload) downloadBackup(backup);
+      return backup;
+    }
+
+    function runDailyBackup() {
+      const today = todayISO();
+      if (localStorage.getItem(lastBackupDateKey) === today) return false;
+      createBackup("automatico-diario", true);
+      localStorage.setItem(lastBackupDateKey, today);
+      return true;
+    }
+
+    function applyBalanceVisibility() {
+      app.classList.toggle("balances-hidden", balancesHidden);
+      const button = document.getElementById("toggleBalancesBtn");
+      if (button) {
+        button.textContent = balancesHidden ? "Ver" : "Oc";
+        button.title = balancesHidden ? "Mostrar saldos" : "Ocultar saldos";
+      }
+    }
+
+    function toggleBalances() {
+      balancesHidden = !balancesHidden;
+      localStorage.setItem(balanceVisibilityKey, String(balancesHidden));
+      applyBalanceVisibility();
+    }
+
+    function normalizeText(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+        .replace(/\s+/g, " ");
+    }
+
+    function normalizeMatchText(value) {
+      return normalizeText(value)
+        .replace(/\bltda\b/g, "")
+        .replace(/\bme\b/g, "")
+        .replace(/\beireli\b/g, "")
+        .replace(/\bconstrutora\b/g, "c")
+        .replace(/\bconstrucoes\b/g, "c")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizeDocument(value) {
+      return String(value || "").replace(/\D/g, "");
+    }
+
+    function clientKey(name, documentValue) {
+      const documentKey = normalizeDocument(documentValue);
+      return documentKey ? `doc:${documentKey}` : `name:${normalizeText(name)}`;
+    }
+
+    function sortByNameThenDate(a, b) {
+      const byName = normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR");
+      if (byName) return byName;
+      return String(a.date || "").localeCompare(String(b.date || ""));
+    }
+
+    function upsertClientFromEntry(entry) {
+      if (!entry || entry.type !== "receita" || !entry.name) return null;
+      const key = clientKey(entry.name, entry.document);
+      const now = new Date().toISOString();
+      let client = clients.find(item => item.key === key);
+
+      if (!client) {
+        client = {
+          id: crypto.randomUUID(),
+          key,
+          name: entry.name,
+          type: normalizeDocument(entry.document).length === 11 ? "pf" : "pj",
+          document: entry.document || "",
+          tradeName: "",
+          responsible: "",
+          phone: "",
+          whatsappAllowed: "sim",
+          email: "",
+          address: "",
+          city: "",
+          stateRegistration: "",
+          cityRegistration: "",
+          service: entry.category || "Honorários contábeis",
+          monthlyFee: Number(entry.amount || 0),
+          dueDay: Number(String(entry.date || "").slice(-2)) || 5,
+          paymentMethod: entry.method || "Pix",
+          status: "ativo",
+          notes: "",
+          firstChargeMonth,
+          createdAt: now,
+          updatedAt: now,
+          source: entry.source || "manual"
+        };
+        clients.push(client);
+      } else {
+        client.name = client.name || entry.name;
+        if (!client.document && entry.document) client.document = entry.document;
+        client.type = client.type || (normalizeDocument(client.document).length === 11 ? "pf" : "pj");
+        client.monthlyFee = Number(client.monthlyFee || entry.amount || 0);
+        client.dueDay = Number(client.dueDay || String(entry.date || "").slice(-2) || 5);
+        client.paymentMethod = client.paymentMethod || entry.method || "Pix";
+        client.service = client.service || entry.category || "Honorários contábeis";
+        client.status = client.status || "ativo";
+        client.whatsappAllowed = client.whatsappAllowed || "sim";
+        client.firstChargeMonth = client.firstChargeMonth || firstChargeMonth;
+        client.updatedAt = now;
+        if (entry.source === "csv") client.source = "csv";
+      }
+      return client;
+    }
+
+    function preserveManualClients(previousClients) {
+      previousClients
+        .filter(client => client.source === "manual-client")
+        .forEach(client => {
+          if (!clients.some(item => item.key === client.key)) clients.push(client);
+        });
+    }
+
+    function syncClientsFromEntries() {
+      const previousClients = clients;
+      clients = [];
+      entries.forEach(entry => {
+        const existing = previousClients.find(item => item.key === clientKey(entry.name, entry.document));
+        const client = upsertClientFromEntry(entry);
+        if (client && existing) Object.assign(client, { ...existing, key: client.key, updatedAt: client.updatedAt });
+      });
+      preserveManualClients(previousClients);
+      clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+      saveClients();
+    }
+
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function moneySpan(value, className = "") {
+      return `<span class="sensitive-money ${className}">${formatMoney(value)}</span>`;
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const [year, month, day] = value.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatMonth(value) {
+      if (!value) return "-";
+      const [year, month] = value.split("-");
+      return `${month}/${year}`;
+    }
+
+    function monthSequence(startMonth = firstChargeMonth, endMonth = lastChargeMonth) {
+      const months = [];
+      const [startYear, start] = startMonth.split("-").map(Number);
+      const [endYear, end] = endMonth.split("-").map(Number);
+      const cursor = new Date(startYear, start - 1, 1);
+      const limit = new Date(endYear, end - 1, 1);
+      while (cursor <= limit) {
+        months.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`);
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+      return months;
+    }
+
+    function dateInMonth(originalDate, month) {
+      const [, , originalDay = "05"] = String(originalDate || "").split("-");
+      const [year, monthNumber] = month.split("-").map(Number);
+      const lastDay = new Date(year, monthNumber, 0).getDate();
+      const day = Math.min(Number(originalDay) || 5, lastDay);
+      return `${year}-${String(monthNumber).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    function selectedMonth() {
+      return document.getElementById("monthFilter")?.value || new Date().toISOString().slice(0, 7);
+    }
+
+    function isClosedEntry(entry) {
+      return entry.status === "pago" || entry.status === "cancelado" || entry.status === "bonificado";
+    }
+
+    function isOpenEntry(entry) {
+      return !isClosedEntry(entry);
+    }
+
+    function isPaidInMonth(entry, month) {
+      return entry.status === "pago" && ((entry.paidAt && entry.paidAt.startsWith(month)) || (!entry.paidAt && entry.date?.startsWith(month)));
+    }
+
+    function isLate(entry) {
+      return isOpenEntry(entry) && entry.date < todayISO();
+    }
+
+    function visibleStatus(entry) {
+      if (entry.status === "cancelado") return "cancelado";
+      if (entry.status === "bonificado") return "bonificado";
+      return isLate(entry) ? "vencido" : entry.status;
+    }
+
+    function statusLabel(entry) {
+      const status = visibleStatus(entry);
+      if (status === "pago") return `<span class="pill paid">Pago</span>`;
+      if (status === "vencido") return `<span class="pill late">Vencido</span>`;
+      if (status === "cancelado") return `<span class="pill canceled">Cancelado</span>`;
+      if (status === "bonificado") return `<span class="pill bonus">Bonificado</span>`;
+      return `<span class="pill open">Em aberto</span>`;
+    }
+
+    function paymentOptions(entry) {
+      const methods = entry.type === "receita" ? [...paymentMethods, "Bonificação"] : paymentMethods;
+      const currentMethod = methods.includes(entry.method) ? entry.method : methods[0];
+      return methods.map(method => `<option value="${escapeHTML(method)}"${method === currentMethod ? " selected" : ""}>${escapeHTML(method)}</option>`).join("");
+    }
+
+    function paymentControl(entry) {
+      if (!isOpenEntry(entry)) return "";
+      return `<select class="payment-select" data-payment-method="${entry.id}" title="Forma de pagamento">${paymentOptions(entry)}</select>`;
+    }
+
+    function clientPaymentControl(client, summary) {
+      const pending = firstPendingClientEntry(summary);
+      if (!pending) return "";
+      return `<select class="payment-select" data-client-payment="${escapeHTML(client.key)}" title="Forma de pagamento">${paymentOptions(pending)}</select>`;
+    }
+
+    function pendingClientEntries(summary) {
+      return summary.related
+        .filter(entry => entry.type === "receita" && isOpenEntry(entry))
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    }
+
+    function clientCompetenceControl(client, summary) {
+      const pending = pendingClientEntries(summary);
+      if (!pending.length) return "";
+      const options = pending.map(entry => {
+        const month = entry.billingMonth || entry.date.slice(0, 7);
+        const lateLabel = isLate(entry) ? " - vencida" : "";
+        return `<option value="${escapeHTML(entry.id)}">${formatMonth(month)} - ${formatMoney(entry.amount)}${lateLabel}</option>`;
+      }).join("");
+      return `<select class="competence-select" data-client-entry="${escapeHTML(client.key)}" title="Competência em aberto">${options}</select>`;
+    }
+
+    function firstPendingClientEntry(summary) {
+      return pendingClientEntries(summary)[0] || null;
+    }
+
+    function whatsappStatus(entry) {
+      if (entry.date < todayISO()) return "vencido";
+      if (entry.date === todayISO()) return "vencendo hoje";
+      return "a vencer";
+    }
+
+    function whatsappMessageType(entry) {
+      if (entry.date < todayISO()) return "vencida";
+      if (entry.date === todayISO()) return "lembrete";
+      return "a vencer";
+    }
+
+    function findClientForEntry(entry) {
+      const key = clientKey(entry.name, entry.document);
+      return clients.find(client => client.key === key) || upsertClientFromEntry(entry);
+    }
+
+    function normalizeWhatsappPhone(value) {
+      const digits = String(value || "").replace(/\D/g, "");
+      if (digits.length === 10 || digits.length === 11) return `55${digits}`;
+      if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) return digits;
+      return "";
+    }
+
+    function whatsappTemplateForEntry(entry) {
+      return entry.date < todayISO() ? whatsappSettings.lateTemplate : whatsappSettings.openTemplate;
+    }
+
+    function whatsappChargeMessage(client, entry) {
+      const variables = {
+        cliente: client.name || entry.name,
+        valor: formatMoney(entry.amount).replace("R$", "").trim(),
+        vencimento: formatDate(entry.date),
+        descricao: entry.description || entry.category || "cobrança",
+        competencia: formatMonth(entry.billingMonth || entry.date.slice(0, 7)),
+        pix: whatsappSettings.pix || "Informe a chave PIX da Alfa Contabilidade.",
+        empresa: whatsappSettings.company || "Alfa Contabilidade",
+        status: whatsappStatus(entry)
+      };
+      return whatsappTemplateForEntry(entry).replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] || "");
+    }
+
+    function recordWhatsappLog(client, entry, type) {
+      whatsappLogs.unshift({
+        createdAt: new Date().toISOString(),
+        user: document.getElementById("userLabel").textContent || authorizedEmail,
+        client: client.name || entry.name,
+        clientDocument: client.document || entry.document || "",
+        entryId: entry.id,
+        description: entry.description || "",
+        amount: Number(entry.amount || 0),
+        dueDate: entry.date,
+        messageType: type,
+        channel: "wa.me"
+      });
+      saveWhatsappLogs();
+    }
+
+    function openWhatsappCharge(entry) {
+      const client = findClientForEntry(entry);
+      if (!client || client.whatsappAllowed === "nao") {
+        alert("Cliente sem autorização para contato por WhatsApp.");
+        return false;
+      }
+      const phone = normalizeWhatsappPhone(client.phone);
+      if (!phone) {
+        alert("Cliente sem telefone válido para WhatsApp.");
+        return false;
+      }
+      const type = whatsappMessageType(entry);
+      const message = whatsappChargeMessage(client, entry);
+      recordWhatsappLog(client, entry, type);
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      return true;
+    }
+
+    function whatsappChargeButton(client, summary) {
+      const pending = firstPendingClientEntry(summary);
+      if (!pending) return "";
+      return `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${escapeHTML(pending.id)}" type="button">Enviar WhatsApp</button>`;
+    }
+
+    function escapeHTML(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getFilters() {
+      return {
+        search: document.getElementById("searchInput")?.value.trim().toLowerCase() || "",
+        type: document.getElementById("typeFilter")?.value || "todos",
+        status: document.getElementById("statusFilter")?.value || "todos",
+        month: document.getElementById("monthFilter")?.value || ""
+      };
+    }
+
+    function filteredEntries(extraType = null) {
+      const filters = getFilters();
+      return entries.filter(entry => {
+        const haystack = [entry.description, entry.name, entry.category, entry.method, entry.type].join(" ").toLowerCase();
+        const matchesSearch = !filters.search || haystack.includes(filters.search);
+        const matchesType = extraType ? entry.type === extraType : filters.type === "todos" || entry.type === filters.type;
+        const matchesStatus = filters.status === "todos" || visibleStatus(entry) === filters.status;
+        const matchesMonth = !filters.month || entry.date.startsWith(filters.month);
+        return matchesSearch && matchesType && matchesStatus && matchesMonth;
+      }).sort(extraType === "receita" ? sortByNameThenDate : (a, b) => a.date.localeCompare(b.date));
+    }
+
+    function activeEntries(list = entries) {
+      return list.filter(entry => entry.status !== "cancelado");
+    }
+
+    function financialEntries(list = entries) {
+      return list.filter(entry => entry.status !== "cancelado" && entry.status !== "bonificado");
+    }
+
+    function renderKpis() {
+      const currentMonth = selectedMonth();
+      const monthEntries = financialEntries(entries).filter(entry => entry.date.startsWith(currentMonth));
+      const incomeOpen = monthEntries.filter(entry => entry.type === "receita" && isOpenEntry(entry)).reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const expenseOpen = monthEntries.filter(entry => entry.type === "despesa" && isOpenEntry(entry)).reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const billedIncome = monthEntries.filter(entry => entry.type === "receita").reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const monthExpense = monthEntries.filter(entry => entry.type === "despesa").reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const receivedIncome = activeEntries(entries).filter(entry => entry.type === "receita" && isPaidInMonth(entry, currentMonth)).reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0);
+      document.getElementById("kpiBalance").innerHTML = moneySpan(billedIncome - monthExpense);
+      document.getElementById("kpiIncome").innerHTML = moneySpan(incomeOpen);
+      document.getElementById("kpiReceived").innerHTML = moneySpan(receivedIncome);
+      document.getElementById("kpiExpense").innerHTML = moneySpan(expenseOpen);
+      document.getElementById("kpiLate").textContent = entries.filter(isLate).length;
+      document.querySelectorAll("[data-kpi-filter]").forEach(button => {
+        button.classList.toggle("active", button.dataset.kpiFilter === activeKpiFilter);
+      });
+    }
+
+    function rowTemplate(entry, compact = false) {
+      const amountClass = entry.type === "receita" ? "money-in" : "money-out";
+      const signal = entry.type === "receita" ? "+" : "-";
+      const typeLabel = entry.type === "receita" ? "Receita" : "Despesa";
+      const actionCells = compact ? "" : `
+        <td>
+          <div class="row-actions">
+            ${paymentControl(entry)}
+            ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
+            <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
+            <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
+            <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+          </div>
+        </td>`;
+      return `
+        <tr>
+          <td>${formatDate(entry.date)}</td>
+          <td>${escapeHTML(entry.description || "Sem descrição")}</td>
+          <td>${escapeHTML(entry.name)}</td>
+          <td>${escapeHTML(entry.category)}</td>
+          ${compact ? "" : `<td>${typeLabel}</td>`}
+          <td class="${amountClass}">${signal} ${moneySpan(entry.amount)}</td>
+          <td>${statusLabel(entry)}</td>
+          ${actionCells}
+        </tr>`;
+    }
+
+    function renderRows(tbodyId, list, countId = null, compact = false) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      tbody.innerHTML = list.length ? list.map(entry => rowTemplate(entry, compact)).join("") : `<tr><td colspan="8"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
+      if (countId) {
+        document.getElementById(countId).textContent = `${list.length} registro${list.length === 1 ? "" : "s"}`;
+      }
+    }
+
+    function accountRowTemplate(entry) {
+      const amountClass = entry.type === "receita" ? "money-in" : "money-out";
+      const signal = entry.type === "receita" ? "+" : "-";
+      return `
+        <tr>
+          <td>${formatDate(entry.date)}</td>
+          <td>${escapeHTML(entry.name)}</td>
+          <td>${escapeHTML(entry.description || "Sem descrição")}</td>
+          <td>${escapeHTML(entry.category)}</td>
+          <td class="${amountClass}">${signal} ${moneySpan(entry.amount)}</td>
+          <td>${statusLabel(entry)}</td>
+          <td>
+            <div class="row-actions">
+              ${paymentControl(entry)}
+              ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
+              <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
+              <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
+              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    function detailRowTemplate(entry) {
+      const amountClass = entry.type === "receita" ? "money-in" : "money-out";
+      const signal = entry.type === "receita" ? "+" : "-";
+      return `
+        <tr>
+          <td>${formatDate(entry.date)}</td>
+          <td>${escapeHTML(entry.name)}</td>
+          <td>${escapeHTML(entry.document || "-")}</td>
+          <td>${formatMonth(entry.billingMonth || entry.date.slice(0, 7))}</td>
+          <td>${escapeHTML(entry.category)}</td>
+          <td>${escapeHTML(entry.method || "-")}</td>
+          <td class="${amountClass}">${signal} ${moneySpan(entry.paidAmount || entry.amount || 0)}</td>
+          <td>${statusLabel(entry)}</td>
+          <td>
+            <div class="row-actions">
+              ${paymentControl(entry)}
+              ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
+              <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
+              <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    function renderAccountRows(tbodyId, list, countId) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      tbody.innerHTML = list.length ? list.map(accountRowTemplate).join("") : `<tr><td colspan="7"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
+      document.getElementById(countId).textContent = `${list.length} registro${list.length === 1 ? "" : "s"}`;
+    }
+
+    function receivableWhatsappFilter(entry) {
+      const mode = document.getElementById("receberWhatsappFilter")?.value || "open";
+      if (entry.type !== "receita" || !isOpenEntry(entry)) return false;
+      if (mode === "late") return entry.date < todayISO();
+      if (mode === "today") return entry.date === todayISO();
+      if (mode === "three") return entry.date >= todayISO() && entry.date <= todayISO(3);
+      return true;
+    }
+
+    function filteredReceivablesForWhatsapp() {
+      return filteredEntries("receita").filter(receivableWhatsappFilter);
+    }
+
+    function getClientSummary(client) {
+      const related = entries.filter(entry => entry.type === "receita" && clientKey(entry.name, entry.document) === client.key);
+      const month = selectedMonth();
+      const monthEntries = related.filter(entry => entry.date?.startsWith(month));
+      const open = monthEntries.filter(isOpenEntry);
+      const paid = monthEntries.filter(entry => entry.status === "pago");
+      const nextDue = open.map(entry => entry.date).sort()[0] || "";
+      const lastPaid = paid.map(entry => entry.paidAt || "").filter(Boolean).sort().pop() || "";
+      const honorarioAmount = monthEntries.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const receivedAmount = related.filter(entry => isPaidInMonth(entry, month)).reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0);
+      const openAmount = open.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const hasLate = open.some(isLate);
+      const lateMonths = [...new Set(related
+        .filter(entry => isOpenEntry(entry) && entry.date < todayISO())
+        .map(entry => entry.date.slice(0, 7)))]
+        .sort();
+      const lateAmount = related
+        .filter(entry => isOpenEntry(entry) && entry.date < todayISO())
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      return { related, monthEntries, open, paid, nextDue, lastPaid, honorarioAmount, receivedAmount, openAmount, hasLate, lateMonths, lateAmount };
+    }
+
+    function matchesClientQuickFilter(summary) {
+      if (clientQuickFilter === "vencidos") return summary.lateMonths.length > 0 || summary.hasLate;
+      if (clientQuickFilter === "pendentes") return summary.openAmount > 0;
+      if (clientQuickFilter === "recebidos") return summary.receivedAmount > 0;
+      return true;
+    }
+
+    function clientFilterLabel() {
+      if (clientQuickFilter === "vencidos") return "vencidos";
+      if (clientQuickFilter === "pendentes") return "pendentes";
+      if (clientQuickFilter === "recebidos") return "recebidos no mês";
+      return "";
+    }
+
+    function renderClients() {
+      syncClientsFromEntries();
+      const sortedClients = [...clients].sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+      const visibleClients = sortedClients
+        .map(client => ({ client, summary: getClientSummary(client) }))
+        .filter(item => matchesClientQuickFilter(item.summary));
+      const rows = visibleClients.map(({ client, summary }) => {
+      const status = !summary.monthEntries.length
+          ? `<span class="pill">Sem cobrança</span>`
+          : summary.monthEntries.every(entry => entry.status === "bonificado" || entry.status === "cancelado")
+            ? `<span class="pill bonus">Bonificado</span>`
+          : summary.lateMonths.length
+            ? `<span class="pill late">Atraso anterior</span>`
+            : summary.receivedAmount >= summary.honorarioAmount && summary.honorarioAmount > 0
+            ? `<span class="pill paid">Em dia</span>`
+            : summary.hasLate
+              ? `<span class="pill late">Vencido</span>`
+              : `<span class="pill open">Pendente</span>`;
+        const lateText = summary.lateMonths.length
+          ? `${summary.lateMonths.map(formatMonth).join(", ")} (${moneySpan(summary.lateAmount)})`
+          : "-";
+        return `
+          <tr>
+            <td>${escapeHTML(client.name)}</td>
+            <td>${client.type === "pf" ? "PF" : "PJ"}</td>
+            <td>${escapeHTML(client.document || "-")}</td>
+            <td>${escapeHTML([client.phone, client.email].filter(Boolean).join(" / ") || "-")}</td>
+            <td>${formatMonth(client.firstChargeMonth || firstChargeMonth)}</td>
+            <td class="money-in">${moneySpan(summary.honorarioAmount)}</td>
+            <td class="money-in">${moneySpan(summary.receivedAmount)}</td>
+            <td class="${summary.openAmount > 0 ? "money-out" : "money-in"}">${moneySpan(summary.openAmount)}</td>
+            <td>${summary.nextDue ? formatDate(summary.nextDue) : "-"}</td>
+            <td>${escapeHTML(lateText)}</td>
+            <td>${status}</td>
+            <td>
+              <div class="row-actions">
+                <button class="icon-btn" data-action="edit-client" data-client-key="${escapeHTML(client.key)}" title="Editar cadastro">E</button>
+                ${clientCompetenceControl(client, summary)}
+                ${clientPaymentControl(client, summary)}
+                <button class="icon-btn" data-action="client-cash" data-client-key="${escapeHTML(client.key)}" title="Baixar cobrança">✓</button>
+                ${whatsappChargeButton(client, summary)}
+              </div>
+            </td>
+          </tr>`;
+      });
+      document.getElementById("clientRows").innerHTML = rows.length ? rows.join("") : `<tr><td colspan="12"><div class="empty">Nenhum cliente cadastrado ainda.</div></td></tr>`;
+      const label = clientFilterLabel();
+      document.getElementById("clientCount").textContent = `${visibleClients.length} cliente${visibleClients.length === 1 ? "" : "s"}${label ? ` - ${label}` : ""}`;
+    }
+
+    function renderDashboard() {
+      const next = entries
+        .filter(isOpenEntry)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 8);
+      renderRows("nextRows", next, null, true);
+      document.getElementById("nextCount").textContent = `${next.length} item${next.length === 1 ? "" : "s"}`;
+
+      const totals = new Map();
+      financialEntries(entries).forEach(entry => totals.set(entry.category, (totals.get(entry.category) || 0) + Number(entry.amount)));
+      const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+      const max = sorted[0]?.[1] || 1;
+      document.getElementById("categoryCount").textContent = `${sorted.length} categoria${sorted.length === 1 ? "" : "s"}`;
+      document.getElementById("categoryBars").innerHTML = sorted.length ? sorted.map(([category, total]) => `
+        <div class="bar-item">
+          <strong><span>${escapeHTML(category)}</span>${moneySpan(total)}</strong>
+          <div class="bar-track"><div class="bar-fill" style="--w:${Math.max(4, (total / max) * 100)}%"></div></div>
+        </div>
+      `).join("") : `<div class="empty">Sem categorias para exibir.</div>`;
+    }
+
+    function renderReports() {
+      const month = document.getElementById("monthFilter").value || new Date().toISOString().slice(0, 7);
+      const scoped = entries.filter(entry => entry.date.startsWith(month));
+      const activeScoped = financialEntries(scoped);
+      const income = activeScoped.filter(entry => entry.type === "receita").reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const expense = activeScoped.filter(entry => entry.type === "despesa").reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const open = activeScoped.filter(isOpenEntry).reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const paid = activeScoped.filter(entry => entry.status === "pago").reduce((sum, entry) => sum + Number(entry.amount), 0);
+      const imported = scoped.filter(entry => entry.source === "csv").length;
+      document.getElementById("reportMonthLabel").textContent = month.split("-").reverse().join("/");
+      document.getElementById("reportImported").textContent = imported;
+      document.getElementById("reportPaid").textContent = scoped.filter(entry => entry.source === "csv" && entry.status === "pago").length;
+      document.getElementById("reportLate").textContent = scoped.filter(entry => entry.source === "csv" && visibleStatus(entry) === "vencido").length;
+      document.getElementById("reportCanceled").textContent = scoped.filter(entry => entry.source === "csv" && entry.status === "cancelado").length;
+      document.getElementById("reportList").innerHTML = [
+        ["Receitas lançadas", income],
+        ["Despesas lançadas", expense],
+        ["Resultado previsto", income - expense],
+        ["Total em aberto", open],
+        ["Total baixado", paid]
+      ].map(([label, value]) => `
+        <div class="bar-item">
+          <strong><span>${label}</span>${moneySpan(value)}</strong>
+          <div class="bar-track"><div class="bar-fill" style="--w:${Math.min(100, Math.max(5, Math.abs(value) / Math.max(income, expense, open, paid, 1) * 100))}%"></div></div>
+        </div>
+      `).join("");
+      renderWhatsappSettings();
+    }
+
+    function renderWhatsappSettings() {
+      document.getElementById("whatsappPix").value = whatsappSettings.pix || "";
+      document.getElementById("whatsappCompany").value = whatsappSettings.company || "Alfa Contabilidade";
+      document.getElementById("whatsappTemplateOpen").value = whatsappSettings.openTemplate || defaultWhatsappOpenTemplate;
+      document.getElementById("whatsappTemplateLate").value = whatsappSettings.lateTemplate || defaultWhatsappLateTemplate;
+    }
+
+    function saveWhatsappSettingsFromForm() {
+      whatsappSettings = {
+        pix: document.getElementById("whatsappPix").value.trim() || "Informe a chave PIX da Alfa Contabilidade.",
+        company: document.getElementById("whatsappCompany").value.trim() || "Alfa Contabilidade",
+        openTemplate: document.getElementById("whatsappTemplateOpen").value || defaultWhatsappOpenTemplate,
+        lateTemplate: document.getElementById("whatsappTemplateLate").value || defaultWhatsappLateTemplate
+      };
+      saveWhatsappSettings();
+      showToast("Modelos de WhatsApp salvos.");
+    }
+
+    function renderBatchWhatsappPanel() {
+      const panel = document.getElementById("batchWhatsappPanel");
+      const rows = filteredReceivablesForWhatsapp();
+      panel.hidden = false;
+      if (!rows.length) {
+        panel.innerHTML = "Nenhuma cobrança em aberto encontrada para o filtro selecionado.";
+        return;
+      }
+      panel.innerHTML = `
+        <strong>${rows.length} cobrança${rows.length === 1 ? "" : "s"} em aberto</strong>
+        <div class="row-actions" style="margin-top:10px;">
+          ${rows.map(entry => `
+            <button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${escapeHTML(entry.id)}" type="button">
+              Enviar WhatsApp - ${escapeHTML(entry.name)} - ${formatMoney(entry.amount)}
+            </button>
+          `).join("")}
+        </div>
+        <p style="margin:10px 0 0;">Envie uma mensagem por vez. O sistema apenas abre o WhatsApp com a mensagem preenchida.</p>
+      `;
+    }
+
+    function detailConfig() {
+      const month = selectedMonth();
+      const configs = {
+        vencidos: {
+          title: "Clientes vencidos",
+          subtitle: "Cobranças com prazo vencido, por cliente e competência.",
+          rows: () => entries.filter(entry => entry.type === "receita" && isLate(entry)).sort(sortByNameThenDate),
+          total: rows => rows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+        },
+        pendentes: {
+          title: "A receber no mês",
+          subtitle: "Cobranças abertas da competência selecionada.",
+          rows: () => entries.filter(entry => entry.type === "receita" && isOpenEntry(entry) && entry.date.startsWith(month)).sort(sortByNameThenDate),
+          total: rows => rows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+        },
+        recebidos: {
+          title: "Recebidos no mês",
+          subtitle: "Baixas registradas no mês selecionado.",
+          rows: () => entries.filter(entry => entry.type === "receita" && isPaidInMonth(entry, month)).sort(sortByNameThenDate),
+          total: rows => rows.reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0)
+        },
+        pagar: {
+          title: "A pagar no mês",
+          subtitle: "Despesas abertas da competência selecionada.",
+          rows: () => entries.filter(entry => entry.type === "despesa" && isOpenEntry(entry) && entry.date.startsWith(month)).sort((a, b) => a.date.localeCompare(b.date)),
+          total: rows => rows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+        }
+      };
+      return configs[detailMode] || configs.vencidos;
+    }
+
+    function renderDetails() {
+      const config = detailConfig();
+      const rows = config.rows();
+      const people = new Set(rows.map(entry => clientKey(entry.name, entry.document))).size;
+      document.getElementById("detailTitle").textContent = config.title;
+      document.getElementById("detailCount").textContent = `${rows.length} registro${rows.length === 1 ? "" : "s"}`;
+      document.getElementById("detailTotal").innerHTML = moneySpan(config.total(rows));
+      document.getElementById("detailPeople").textContent = people;
+      document.getElementById("detailMonth").textContent = detailMode === "vencidos" ? "Todos" : formatMonth(selectedMonth());
+      document.getElementById("detailRows").innerHTML = rows.length ? rows.map(detailRowTemplate).join("") : `<tr><td colspan="9"><div class="empty">Nenhum registro encontrado.</div></td></tr>`;
+      titles.detalhes = [config.title, config.subtitle];
+    }
+
+    function enhanceTableScrollers() {
+      document.querySelectorAll(".table-wrap").forEach(wrap => {
+        const table = wrap.querySelector("table");
+        if (!table || !wrap.parentNode?.insertBefore) return;
+
+        let topScroll = wrap.previousElementSibling;
+        if (!topScroll?.classList?.contains("table-x-scroll")) {
+          topScroll = document.createElement("div");
+          topScroll.className = "table-x-scroll";
+          topScroll.innerHTML = `<div class="table-x-scroll-inner"></div>`;
+          wrap.parentNode.insertBefore(topScroll, wrap);
+        }
+
+        const inner = topScroll.querySelector(".table-x-scroll-inner");
+        if (!inner) return;
+        inner.style.width = `${Math.max(table.scrollWidth, wrap.clientWidth)}px`;
+        topScroll.scrollLeft = wrap.scrollLeft;
+
+        if (!wrap.dataset.scrollLinked) {
+          wrap.dataset.scrollLinked = "true";
+          wrap.addEventListener("scroll", () => {
+            const linked = wrap.previousElementSibling;
+            if (linked?.classList?.contains("table-x-scroll")) linked.scrollLeft = wrap.scrollLeft;
+          });
+        }
+
+        if (!topScroll.dataset.scrollLinked) {
+          topScroll.dataset.scrollLinked = "true";
+          topScroll.addEventListener("scroll", () => {
+            wrap.scrollLeft = topScroll.scrollLeft;
+          });
+        }
+      });
+    }
+
+    function render() {
+      renderKpis();
+      renderDashboard();
+      renderRows("entryRows", filteredEntries(), "entryCount");
+      renderClients();
+      renderAccountRows("receberRows", filteredReceivablesForWhatsapp(), "receberCount");
+      renderAccountRows("pagarRows", filteredEntries("despesa"), "pagarCount");
+      renderReports();
+      renderDetails();
+      enhanceTableScrollers();
+    }
+
+    function setView(view, options = {}) {
+      if (view === "clientes" && !options.keepClientFilter) {
+        clientQuickFilter = "";
+        activeKpiFilter = "";
+      }
+      if (view !== "detalhes" && !options.keepDetailMode) {
+        detailMode = "";
+      }
+      document.querySelectorAll(".view").forEach(el => el.classList.toggle("active", el.id === view));
+      document.querySelectorAll(".nav button").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
+      document.getElementById("kpiSection").classList.toggle("hidden", view !== "dashboard");
+      document.getElementById("topActions").classList.toggle("hidden", view !== "dashboard");
+      document.getElementById("pageTitle").textContent = titles[view][0];
+      document.getElementById("pageSubtitle").textContent = titles[view][1];
+      render();
+    }
+
+    function applyQuickFilter(filter) {
+      activeKpiFilter = filter;
+      clientQuickFilter = "";
+
+      document.getElementById("typeFilter").value = "todos";
+      document.getElementById("statusFilter").value = "todos";
+
+      if (filter === "saldo") {
+        activeKpiFilter = "";
+        setView("dashboard");
+        return;
+      }
+
+      if (filter === "pendentes" || filter === "recebidos" || filter === "vencidos") {
+        detailMode = filter;
+        setView("detalhes", { keepDetailMode: true });
+        return;
+      }
+
+      if (filter === "pagar") {
+        detailMode = "pagar";
+        setView("detalhes", { keepDetailMode: true });
+      }
+    }
+
+    function openModal(entry = null) {
+      document.getElementById("modalTitle").textContent = entry ? "Editar lançamento" : "Novo lançamento";
+      document.getElementById("entryId").value = entry?.id || "";
+      document.getElementById("entryType").value = entry?.type || "receita";
+      document.getElementById("entryStatus").value = entry?.status || "aberto";
+      document.getElementById("entryDate").value = entry?.date || todayISO();
+      document.getElementById("entryAmount").value = entry?.amount || "";
+      document.getElementById("entryName").value = entry?.name || "";
+      document.getElementById("entryDocument").value = entry?.document || "";
+      document.getElementById("entryCategory").value = entry?.category || "";
+      document.getElementById("entryMethod").value = entry?.method || "Pix";
+      document.getElementById("entryDescription").value = entry?.description || "";
+      modal.classList.add("show");
+    }
+
+    function closeModal() {
+      modal.classList.remove("show");
+      form.reset();
+    }
+
+    function updateClientTypeLabels() {
+      const type = document.getElementById("clientType").value;
+      document.querySelector("label[for='clientName']").textContent = type === "pf" ? "Nome completo" : "Razão social";
+      document.querySelector("label[for='clientTradeName']").textContent = type === "pf" ? "Apelido" : "Nome fantasia";
+      document.querySelector("label[for='clientDocument']").textContent = type === "pf" ? "CPF" : "CNPJ";
+    }
+
+    function openClientModal(client = null) {
+      document.getElementById("clientModalTitle").textContent = client ? "Editar cliente" : "Novo cliente";
+      document.getElementById("clientId").value = client?.id || "";
+      document.getElementById("clientOriginalKey").value = client?.key || "";
+      document.getElementById("clientType").value = client?.type || "pj";
+      document.getElementById("clientStatus").value = client?.status || "ativo";
+      document.getElementById("clientName").value = client?.name || "";
+      document.getElementById("clientTradeName").value = client?.tradeName || "";
+      document.getElementById("clientDocument").value = client?.document || "";
+      document.getElementById("clientStateRegistration").value = client?.stateRegistration || "";
+      document.getElementById("clientCityRegistration").value = client?.cityRegistration || "";
+      document.getElementById("clientResponsible").value = client?.responsible || "";
+      document.getElementById("clientPhone").value = client?.phone || "";
+      document.getElementById("clientWhatsappAllowed").value = client?.whatsappAllowed || "sim";
+      document.getElementById("clientEmail").value = client?.email || "";
+      document.getElementById("clientAddress").value = client?.address || "";
+      document.getElementById("clientCity").value = client?.city || "";
+      document.getElementById("clientService").value = client?.service || "Honorários contábeis";
+      document.getElementById("clientMonthlyFee").value = client?.monthlyFee || "";
+      document.getElementById("clientDueDay").value = client?.dueDay || 5;
+      document.getElementById("clientPaymentMethod").value = client?.paymentMethod || "Pix";
+      document.getElementById("clientNotes").value = client?.notes || "";
+      updateClientTypeLabels();
+      clientModal.classList.add("show");
+    }
+
+    function closeClientModal() {
+      clientModal.classList.remove("show");
+      clientForm.reset();
+    }
+
+    function validateClientDocument(type, documentValue) {
+      const digits = normalizeDocument(documentValue);
+      if (type === "pf") return digits.length === 11;
+      return digits.length === 14;
+    }
+
+    function updateClientEntries(oldKey, client) {
+      if (!oldKey || oldKey === client.key) return;
+      entries.forEach(entry => {
+        if (entry.type === "receita" && clientKey(entry.name, entry.document) === oldKey) {
+          entry.name = client.name;
+          entry.document = client.document;
+          entry.category = client.service || entry.category;
+          entry.method = client.paymentMethod || entry.method;
+        }
+      });
+    }
+
+    function ensureMonthlyChargesForClient(client) {
+      if (client.status !== "ativo" || !Number(client.monthlyFee)) return;
+      const months = monthSequence(client.firstChargeMonth || firstChargeMonth, lastChargeMonth);
+      months.forEach(month => {
+        const exists = entries.some(entry =>
+          entry.type === "receita" &&
+          clientKey(entry.name, entry.document) === client.key &&
+          (entry.billingMonth || entry.date?.slice(0, 7)) === month
+        );
+        if (exists) return;
+        entries.push({
+          id: `cliente-${client.id}-${month}`,
+          type: "receita",
+          status: "aberto",
+          date: dateInMonth(`${month}-${String(client.dueDay || 5).padStart(2, "0")}`, month),
+          amount: Number(client.monthlyFee || 0),
+          paidAmount: 0,
+          paidAt: "",
+          name: client.name,
+          document: client.document,
+          category: client.service || "Honorários contábeis",
+          method: client.paymentMethod || "Pix",
+          description: `Honorários ${formatMonth(month)}`,
+          source: "cadastro-cliente",
+          sourceId: client.id,
+          recurringParentId: client.id,
+          billingMonth: month
+        });
+      });
+    }
+
+    function saveClientForm(event) {
+      event.preventDefault();
+      const type = document.getElementById("clientType").value;
+      const name = document.getElementById("clientName").value.trim();
+      const documentValue = document.getElementById("clientDocument").value.trim();
+      const originalKey = document.getElementById("clientOriginalKey").value;
+      if (!name || !documentValue) {
+        showToast("Preencha nome e documento do cliente.");
+        return;
+      }
+      if (!validateClientDocument(type, documentValue)) {
+        showToast(type === "pf" ? "CPF deve ter 11 dígitos." : "CNPJ deve ter 14 dígitos.");
+        return;
+      }
+      const key = clientKey(name, documentValue);
+      const duplicate = clients.find(client => client.key === key && client.key !== originalKey);
+      if (duplicate) {
+        showToast("Já existe cliente cadastrado com este CPF/CNPJ.");
+        return;
+      }
+      const now = new Date().toISOString();
+      const existing = clients.find(client => client.key === originalKey);
+      const client = {
+        id: document.getElementById("clientId").value || existing?.id || crypto.randomUUID(),
+        key,
+        type,
+        status: document.getElementById("clientStatus").value,
+        name,
+        tradeName: document.getElementById("clientTradeName").value.trim(),
+        document: documentValue,
+        stateRegistration: document.getElementById("clientStateRegistration").value.trim(),
+        cityRegistration: document.getElementById("clientCityRegistration").value.trim(),
+        responsible: document.getElementById("clientResponsible").value.trim(),
+        phone: document.getElementById("clientPhone").value.trim(),
+        whatsappAllowed: document.getElementById("clientWhatsappAllowed").value,
+        email: document.getElementById("clientEmail").value.trim(),
+        address: document.getElementById("clientAddress").value.trim(),
+        city: document.getElementById("clientCity").value.trim(),
+        service: document.getElementById("clientService").value.trim() || "Honorários contábeis",
+        monthlyFee: Number(document.getElementById("clientMonthlyFee").value || 0),
+        dueDay: Number(document.getElementById("clientDueDay").value || 5),
+        paymentMethod: document.getElementById("clientPaymentMethod").value,
+        notes: document.getElementById("clientNotes").value.trim(),
+        firstChargeMonth: existing?.firstChargeMonth || firstChargeMonth,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+        source: "manual-client"
+      };
+      clients = clients.filter(item => item.key !== originalKey && item.key !== key);
+      clients.push(client);
+      updateClientEntries(originalKey, client);
+      ensureMonthlyChargesForClient(client);
+      clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+      saveClients();
+      saveEntries();
+      closeClientModal();
+      render();
+      showToast("Cliente salvo com sucesso.");
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 3200);
+    }
+
+    function selectedPaymentMethod(entryId, fallback = "Pix") {
+      const selector = `[data-payment-method="${String(entryId).replaceAll('"', '\\"')}"]`;
+      const control = document.querySelector(selector);
+      return control?.value || fallback;
+    }
+
+    function selectedClientPaymentMethod(clientKeyValue, fallback = "Dinheiro") {
+      const selector = `[data-client-payment="${String(clientKeyValue).replaceAll('"', '\\"')}"]`;
+      const control = document.querySelector(selector);
+      return control?.value || fallback;
+    }
+
+    function selectedClientEntryId(clientKeyValue) {
+      const selector = `[data-client-entry="${String(clientKeyValue).replaceAll('"', '\\"')}"]`;
+      return document.querySelector(selector)?.value || "";
+    }
+
+    function closeEntryWithMethod(entry, method) {
+      if (method === "Bonificação") {
+        entry.status = "bonificado";
+        entry.paidAt = todayISO();
+        entry.paidAmount = 0;
+        entry.method = "Bonificação";
+        entry.receiptProtocol = `BONIFICACAO-${todayISO()}-${entry.id}`;
+        entry.receiptDescription = "Cliente bonificado. Valor não somado aos recebimentos.";
+        return;
+      }
+
+      entry.status = "pago";
+      entry.paidAt = todayISO();
+      entry.paidAmount = Number(entry.amount || 0);
+      entry.method = method || "Pix";
+    }
+
+    function reopenEntry(entry) {
+      entry.status = "aberto";
+      entry.paidAt = "";
+      entry.paidAmount = 0;
+      entry.receiptProtocol = "";
+      entry.receiptDescription = "";
+    }
+
+    function saveForm(event) {
+      event.preventDefault();
+      const id = document.getElementById("entryId").value || crypto.randomUUID();
+      const payload = {
+        id,
+        type: document.getElementById("entryType").value,
+        status: document.getElementById("entryStatus").value,
+        date: document.getElementById("entryDate").value,
+        amount: Number(document.getElementById("entryAmount").value),
+        name: document.getElementById("entryName").value.trim(),
+        document: document.getElementById("entryDocument").value.trim(),
+        category: document.getElementById("entryCategory").value.trim(),
+        method: document.getElementById("entryMethod").value,
+        description: document.getElementById("entryDescription").value.trim()
+      };
+
+      if (!payload.name || !payload.category || !payload.amount) {
+        showToast("Preencha nome, categoria e valor antes de salvar.");
+        return;
+      }
+
+      if (payload.status === "bonificado") {
+        payload.method = "Bonificação";
+        payload.paidAt = todayISO();
+        payload.paidAmount = 0;
+        payload.receiptProtocol = `BONIFICACAO-${todayISO()}-${id}`;
+        payload.receiptDescription = "Cliente bonificado. Valor não somado aos recebimentos.";
+      }
+
+      const index = entries.findIndex(entry => entry.id === id);
+      if (index >= 0) entries[index] = payload;
+      else entries.unshift(payload);
+      upsertClientFromEntry(payload);
+      saveClients();
+      saveEntries();
+      closeModal();
+      render();
+      showToast("Lançamento salvo com sucesso.");
+    }
+
+    function handleTableAction(event) {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+
+      if (button.dataset.action === "client-cash") {
+        const key = button.dataset.clientKey;
+        const selectedEntryId = selectedClientEntryId(key);
+        const pending = entries
+          .filter(entry => entry.type === "receita" && clientKey(entry.name, entry.document) === key && isOpenEntry(entry))
+          .sort((a, b) => a.date.localeCompare(b.date));
+
+        if (!pending.length) {
+          showToast("Este cliente não tem cobrança pendente.");
+          return;
+        }
+
+        const entry = pending.find(item => item.id === selectedEntryId) || pending[0];
+        const method = selectedClientPaymentMethod(key, "Dinheiro");
+        const competence = formatMonth(entry.billingMonth || entry.date.slice(0, 7));
+        const confirmPayment = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name} na competência ${competence}, valor ${formatMoney(entry.amount)}, usando ${method}?`);
+        if (!confirmPayment) return;
+
+        closeEntryWithMethod(entry, method);
+        if (method === "Dinheiro") {
+          entry.receiptProtocol = `DINHEIRO-${todayISO()}-${entry.id}`;
+          entry.receiptDescription = "Recebimento em dinheiro baixado manualmente";
+        }
+        saveEntries();
+        render();
+        showToast(entry.status === "bonificado" ? `Bonificação registrada para ${entry.name}.` : `Recebimento baixado para ${entry.name} via ${entry.method}.`);
+        return;
+      }
+
+      if (button.dataset.action === "edit-client") {
+        const client = clients.find(item => item.key === button.dataset.clientKey);
+        if (client) openClientModal(client);
+        return;
+      }
+
+      if (button.dataset.action === "whatsapp-entry") {
+        const entry = entries.find(item => item.id === button.dataset.id);
+        if (entry) openWhatsappCharge(entry);
+        return;
+      }
+
+      const entry = entries.find(item => item.id === button.dataset.id);
+      if (!entry) return;
+
+      if (button.dataset.action === "edit") {
+        openModal(entry);
+        return;
+      }
+
+      if (button.dataset.action === "toggle") {
+        if (entry.status === "cancelado") {
+          showToast("Lançamento cancelado não é baixado. Edite o status primeiro.");
+          return;
+        }
+        if (entry.status === "pago" || entry.status === "bonificado") {
+          reopenEntry(entry);
+        } else {
+          closeEntryWithMethod(entry, selectedPaymentMethod(entry.id, entry.method || "Pix"));
+        }
+        saveEntries();
+        render();
+        showToast(entry.status === "bonificado" ? "Cobrança marcada como bonificação sem somar recebimento." : entry.status === "pago" ? "Recebimento baixado com forma de pagamento." : "Lançamento reaberto.");
+        return;
+      }
+
+      if (button.dataset.action === "delete" && confirm("Excluir este lançamento financeiro?")) {
+        entries = entries.filter(item => item.id !== entry.id);
+        saveEntries();
+        render();
+        showToast("Lançamento excluído.");
+      }
+    }
+
+    function exportCsv() {
+      const header = ["tipo", "status", "vencimento", "nome", "documento", "categoria", "forma", "valor", "valor_pago", "pago_em", "descricao"];
+      const lines = [header.join(";")].concat(entries.map(entry => [
+        entry.type,
+        visibleStatus(entry),
+        entry.date,
+        entry.name,
+        entry.document || "",
+        entry.category,
+        entry.method,
+        String(entry.amount).replace(".", ","),
+        entry.paidAmount ? String(entry.paidAmount).replace(".", ",") : "",
+        entry.paidAt ? formatDate(entry.paidAt) : "",
+        entry.description
+      ].map(value => `"${String(value || "").replaceAll('"', '""')}"`).join(";")));
+      const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "alfa-financeiro-lancamentos.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function parseCsvLine(line) {
+      const cells = [];
+      let value = "";
+      let quoted = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const next = line[i + 1];
+        if (char === '"' && quoted && next === '"') {
+          value += '"';
+          i++;
+        } else if (char === '"') {
+          quoted = !quoted;
+        } else if (char === ";" && !quoted) {
+          cells.push(value);
+          value = "";
+        } else {
+          value += char;
+        }
+      }
+      cells.push(value);
+      return cells.map(cell => cell.trim());
+    }
+
+    function parseCsvRows(text) {
+      const rows = [];
+      let line = "";
+      let quoted = false;
+      const source = text.replace(/^\uFEFF/, "");
+      for (let i = 0; i < source.length; i++) {
+        const char = source[i];
+        const next = source[i + 1];
+        if (char === '"' && quoted && next === '"') {
+          line += '""';
+          i++;
+        } else if (char === '"') {
+          quoted = !quoted;
+          line += char;
+        } else if ((char === "\n" || char === "\r") && !quoted) {
+          if (line.trim()) rows.push(parseCsvLine(line));
+          line = "";
+          if (char === "\r" && next === "\n") i++;
+        } else {
+          line += char;
+        }
+      }
+      if (line.trim()) rows.push(parseCsvLine(line));
+      return rows;
+    }
+
+    function normalizeHeader(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_|_$/g, "");
+    }
+
+    function parseBrazilianDate(value) {
+      const text = String(value || "").trim();
+      const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!match) return todayISO();
+      return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+
+    function parseOptionalBrazilianDate(value) {
+      const text = String(value || "").trim();
+      const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!match) return "";
+      return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+
+    function parseBrazilianMoney(value) {
+      const normalized = String(value || "0").replace(/\./g, "").replace(",", ".");
+      return Number(normalized) || 0;
+    }
+
+    function isReceiptStatement(headers) {
+      const names = headers.join("|");
+      return headers.includes("tipo") && headers.includes("protocolo") && headers.includes("data") && headers.includes("valor") && !headers.includes("nome");
+    }
+
+    function parseReceiptClientName(typeText) {
+      const text = String(typeText || "").trim();
+      const afterBullet = text.includes("•") ? text.split("•").pop().trim() : text;
+      const lastDe = afterBullet.toLowerCase().lastIndexOf(" de ");
+      if (lastDe >= 0) return afterBullet.slice(lastDe + 4).trim();
+      return afterBullet.replace(/^pix recebido via chave\s*/i, "").trim();
+    }
+
+    function tokenScore(a, b) {
+      const aTokens = new Set(normalizeMatchText(a).split(" ").filter(Boolean));
+      const bTokens = new Set(normalizeMatchText(b).split(" ").filter(Boolean));
+      if (!aTokens.size || !bTokens.size) return 0;
+      let hits = 0;
+      aTokens.forEach(token => {
+        if (bTokens.has(token) || [...bTokens].some(other => other.startsWith(token) || token.startsWith(other))) hits++;
+      });
+      return hits / Math.max(aTokens.size, bTokens.size);
+    }
+
+    function findReceiptCandidates(receiptName) {
+      const normalizedReceipt = normalizeMatchText(receiptName);
+      return entries
+        .filter(entry => entry.type === "receita" && entry.status !== "cancelado")
+        .map(entry => {
+          const normalizedEntry = normalizeMatchText(entry.name);
+          let score = tokenScore(normalizedReceipt, normalizedEntry);
+          if (normalizedEntry.includes(normalizedReceipt) || normalizedReceipt.includes(normalizedEntry)) score = Math.max(score, 0.92);
+          return { entry, score };
+        })
+        .filter(item => item.score >= 0.45)
+        .sort((a, b) => b.score - a.score);
+    }
+
+    function applyReceiptToEntries(candidates, receipt) {
+      const receiptMonth = String(receipt.date || "").slice(0, 7);
+      const open = candidates
+        .map(item => item.entry)
+        .filter(entry => isOpenEntry(entry) && !entry.receiptProtocol)
+        .sort((a, b) => {
+          const aSameMonth = a.date?.startsWith(receiptMonth) ? 0 : 1;
+          const bSameMonth = b.date?.startsWith(receiptMonth) ? 0 : 1;
+          if (aSameMonth !== bSameMonth) return aSameMonth - bSameMonth;
+          const byAmount = Math.abs(Number(a.amount || 0) - receipt.amount) - Math.abs(Number(b.amount || 0) - receipt.amount);
+          if (byAmount) return byAmount;
+          return String(a.date || "").localeCompare(String(b.date || ""));
+        });
+
+      if (!open.length) return 0;
+
+      const exact = open.find(entry => Math.abs(Number(entry.amount || 0) - receipt.amount) <= 0.01);
+      const close = open.find(entry => Math.abs(Number(entry.amount || 0) - receipt.amount) <= Math.max(15, Number(entry.amount || 0) * 0.08));
+      if (exact || close) {
+        const entry = exact || close;
+        entry.status = "pago";
+        entry.paidAt = receipt.date;
+        entry.paidAmount = receipt.amount;
+        entry.receiptProtocol = receipt.protocol;
+        entry.receiptDescription = receipt.rawType;
+        return 1;
+      }
+
+      const totalOpen = open.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      if (totalOpen > 0 && receipt.amount >= totalOpen * 0.85) {
+        open.forEach(entry => {
+          entry.status = "pago";
+          entry.paidAt = receipt.date;
+          entry.paidAmount = Number(((Number(entry.amount || 0) / totalOpen) * receipt.amount).toFixed(2));
+          entry.receiptProtocol = receipt.protocol;
+          entry.receiptDescription = receipt.rawType;
+        });
+        return open.length;
+      }
+
+      return 0;
+    }
+
+    function importReceiptStatementRows(rows, headers) {
+      const records = rows.slice(1).map(cells => {
+        const record = {};
+        headers.forEach((header, index) => record[header] = cells[index] || "");
+        return {
+          rawType: record.tipo || "",
+          protocol: record.protocolo || "",
+          date: parseBrazilianDate(record.data),
+          amount: parseBrazilianMoney(record.valor),
+          clientName: parseReceiptClientName(record.tipo)
+        };
+      }).filter(item => item.amount > 0 && item.date);
+
+      const existingProtocols = new Set(entries.map(entry => entry.receiptProtocol).filter(Boolean));
+      let appliedReceipts = 0;
+      let appliedEntries = 0;
+      const unmatched = [];
+
+      records.forEach(receipt => {
+        if (receipt.protocol && existingProtocols.has(receipt.protocol)) return;
+        const candidates = findReceiptCandidates(receipt.clientName);
+        const changed = applyReceiptToEntries(candidates, receipt);
+        if (changed) {
+          appliedReceipts++;
+          appliedEntries += changed;
+          if (receipt.protocol) existingProtocols.add(receipt.protocol);
+        } else {
+          unmatched.push(receipt);
+        }
+      });
+
+      saveEntries();
+      render();
+      showToast(`${appliedReceipts} recebimento${appliedReceipts === 1 ? "" : "s"} identificado${appliedReceipts === 1 ? "" : "s"} e ${appliedEntries} cobrança${appliedEntries === 1 ? "" : "s"} baixada${appliedEntries === 1 ? "" : "s"}.${unmatched.length ? ` ${unmatched.length} sem cliente correspondente.` : ""}`);
+      return { appliedReceipts, appliedEntries, unmatched };
+    }
+
+    function entryImportKey(entry) {
+      return [entry.sourceId || "", entry.name, entry.date, entry.amount, entry.description].join("|").toLowerCase();
+    }
+
+    function recurringEntryKey(entry) {
+      const parent = entry.recurringParentId || String(entry.sourceId || "").replace(/-\d{4}-\d{2}$/, "");
+      return [parent, entry.billingMonth || String(entry.date || "").slice(0, 7), clientKey(entry.name, entry.document)].join("|").toLowerCase();
+    }
+
+    function getRecordValue(record, names) {
+      for (const name of names) {
+        if (record[name]) return record[name];
+      }
+      return "";
+    }
+
+    function importCsvText(text) {
+      const rows = parseCsvRows(text);
+      if (rows.length < 2) {
+        showToast("O CSV não tem linhas suficientes para importar.");
+        return;
+      }
+
+      const headers = rows[0].map(normalizeHeader);
+      if (isReceiptStatement(headers)) {
+        return importReceiptStatementRows(rows, headers);
+      }
+      const incomingSourceIds = new Set();
+      const preservedClosures = new Map(entries
+        .filter(entry => entry.type === "receita" && (entry.status === "pago" || entry.status === "bonificado") && (entry.receiptProtocol || entry.method === "Dinheiro" || entry.method === "Bonificação"))
+        .map(entry => [recurringEntryKey(entry), {
+          status: entry.status,
+          paidAt: entry.paidAt,
+          paidAmount: Number(entry.paidAmount || 0),
+          method: entry.method,
+          receiptProtocol: entry.receiptProtocol,
+          receiptDescription: entry.receiptDescription
+        }]));
+      const baseImported = rows.slice(1).map(cells => {
+        const record = {};
+        headers.forEach((header, index) => record[header] = cells[index] || "");
+        const rawStatus = (record.status || "").toLowerCase();
+        const paid = rawStatus.includes("pago");
+        const canceled = rawStatus.includes("cancelado");
+        const originalAmount = parseBrazilianMoney(getRecordValue(record, ["valor_r", "valor"]));
+        const paidAmount = parseBrazilianMoney(getRecordValue(record, ["valor_pago_r", "valor_pago"]));
+        const sourceId = getRecordValue(record, ["numero_da_cobranca", "numero_cobranca", "cobranca"]);
+        if (sourceId) incomingSourceIds.add(sourceId);
+        const documentValue = getRecordValue(record, ["documento", "cnpj", "cpf"]);
+        const originalDueDate = getRecordValue(record, ["data_de_vencimento", "data_vencimento", "vencimento"]);
+        const originalPaidDate = getRecordValue(record, ["pago_em", "data_de_pagamento", "pagamento"]);
+        return {
+          id: crypto.randomUUID(),
+          source: "csv",
+          sourceId,
+          type: "receita",
+          status: canceled ? "cancelado" : paid ? "pago" : "aberto",
+          date: parseBrazilianDate(originalDueDate),
+          paidAt: parseOptionalBrazilianDate(originalPaidDate),
+          amount: originalAmount,
+          paidAmount,
+          name: record.nome || "Cliente sem nome",
+          document: documentValue,
+          category: "Honorários contábeis",
+          method: getRecordValue(record, ["forma_de_cobranca", "forma_cobranca"]) || "CSV",
+          description: [
+            sourceId ? `Cobrança ${sourceId}` : "Honorário importado",
+            getRecordValue(record, ["data_de_emissao", "data_emissao"]) ? `emissão ${getRecordValue(record, ["data_de_emissao", "data_emissao"])}` : "",
+            record.status ? `status original: ${record.status}` : "",
+            originalPaidDate ? `pago em ${originalPaidDate}` : "",
+            paidAmount && originalAmount && paidAmount !== originalAmount ? `valor pago R$ ${String(paidAmount).replace(".", ",")}` : ""
+          ].filter(Boolean).join(" - ")
+        };
+      });
+
+      const allImported = expandRecurringEntries(baseImported);
+      allImported.forEach(entry => {
+        const preserved = preservedClosures.get(recurringEntryKey(entry));
+        if (!preserved) return;
+        entry.status = preserved.status;
+        entry.paidAt = preserved.paidAt;
+        entry.paidAmount = preserved.paidAmount;
+        entry.method = preserved.method;
+        entry.receiptProtocol = preserved.receiptProtocol;
+        entry.receiptDescription = preserved.receiptDescription;
+      });
+
+      entries = cleanupDemoEntries(entries).filter(entry => {
+        if (entry.source === "csv" || entry.source === "planilha-oficial" || entry.source === "recorrencia-oficial") return false;
+        if (entry.sourceId && incomingSourceIds.has(entry.sourceId)) return false;
+        if (entry.recurringParentId && incomingSourceIds.has(entry.recurringParentId)) return false;
+        return true;
+      });
+      clients = [];
+      syncClientsFromEntries();
+
+      const existingKeys = new Set(entries.map(entryImportKey));
+      const imported = allImported.filter(entry => {
+        const key = entryImportKey(entry);
+        if (existingKeys.has(key)) return false;
+        existingKeys.add(key);
+        return true;
+      });
+
+      if (!imported.length) {
+        saveEntries();
+        saveClients();
+        render();
+        showToast("A planilha já estava atualizada no sistema.");
+        return;
+      }
+
+      entries = [...imported, ...entries];
+      imported.forEach(upsertClientFromEntry);
+      saveClients();
+      saveEntries();
+      render();
+      const ignored = allImported.length - imported.length;
+      showToast(`${imported.length} cobrança${imported.length === 1 ? "" : "s"} importada${imported.length === 1 ? "" : "s"} do CSV.${ignored ? ` ${ignored} duplicada${ignored === 1 ? "" : "s"} ignorada${ignored === 1 ? "" : "s"}.` : ""}`);
+    }
+
+    function handleCsvImport(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => importCsvText(String(reader.result || ""));
+      reader.onerror = () => showToast("Não foi possível ler o arquivo CSV.");
+      reader.readAsText(file, "utf-8");
+      event.target.value = "";
+    }
+
+    function setLoginError(message = "") {
+      document.getElementById("loginError").textContent = message;
+      if (message) showToast(message);
+    }
+
+    function firebaseErrorMessage(error) {
+      const code = error?.code || "";
+      if (code.includes("operation-not-allowed")) {
+        return "Login por e-mail e senha ainda não está ativado no Firebase.";
+      }
+      if (code.includes("unauthorized-domain")) {
+        return "Este domínio ainda não está autorizado no Firebase Authentication.";
+      }
+      if (code.includes("network-request-failed")) {
+        return "Sem conexão com o Firebase. Verifique a internet e tente novamente.";
+      }
+      if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
+        return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";
+      }
+      if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) {
+        return "E-mail ou senha não cadastrados no Firebase.";
+      }
+      if (code.includes("popup-closed-by-user")) return "Login com Google cancelado.";
+      if (code.includes("too-many-requests")) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+      return `Não foi possível entrar. Código do Firebase: ${code || "erro desconhecido"}.`;
+    }
+
+    function showProtectedApp(user) {
+      document.getElementById("userLabel").textContent = user.email || authorizedEmail;
+      loginScreen.style.display = "none";
+      app.classList.add("visible");
+      applyBalanceVisibility();
+      const initialView = new URLSearchParams(window.location.search).get("view");
+      if (titles[initialView]) setView(initialView);
+      const backupCreated = runDailyBackup();
+      showToast(backupCreated ? "Bem-vindo. Backup diário gerado automaticamente." : "Bem-vindo ao Alfa Financeiro.");
+    }
+
+    function showLoginScreen(message = "") {
+      app.classList.remove("visible");
+      loginScreen.style.display = "grid";
+      document.getElementById("userLabel").textContent = "";
+      setLoginError(message);
+    }
+
+    async function blockUnauthorizedUser() {
+      await signOut(auth);
+      showLoginScreen("Usuário não autorizado.");
+    }
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        showLoginScreen();
+        return;
+      }
+      if (normalizeEmail(user.email) !== authorizedEmail) {
+        blockUnauthorizedUser();
+        return;
+      }
+      setLoginError();
+      showProtectedApp(user);
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      setLoginError();
+      const email = normalizeEmail(document.getElementById("emailInput").value);
+      const password = document.getElementById("passwordInput").value;
+      if (email !== authorizedEmail) {
+        setLoginError("Usuário não autorizado.");
+        return;
+      }
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        setLoginError(firebaseErrorMessage(error));
+      }
+    });
+
+    document.getElementById("googleLoginBtn").addEventListener("click", async () => {
+      setLoginError();
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        if (normalizeEmail(result.user?.email) !== authorizedEmail) {
+          await blockUnauthorizedUser();
+        }
+      } catch (error) {
+        setLoginError(firebaseErrorMessage(error));
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    document.querySelectorAll(".nav button").forEach(button => {
+      button.addEventListener("click", () => setView(button.dataset.view));
+    });
+
+    document.querySelectorAll("[data-kpi-filter]").forEach(button => {
+      button.addEventListener("click", () => applyQuickFilter(button.dataset.kpiFilter));
+    });
+
+    document.getElementById("newEntryBtn").addEventListener("click", () => openModal());
+    document.getElementById("newClientBtn").addEventListener("click", () => openClientModal());
+    document.getElementById("detailBackBtn").addEventListener("click", () => setView("dashboard"));
+    document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+    document.getElementById("cancelBtn").addEventListener("click", closeModal);
+    document.getElementById("closeClientModalBtn").addEventListener("click", closeClientModal);
+    document.getElementById("cancelClientBtn").addEventListener("click", closeClientModal);
+    document.getElementById("clientType").addEventListener("change", updateClientTypeLabels);
+    document.getElementById("saveWhatsappSettingsBtn").addEventListener("click", saveWhatsappSettingsFromForm);
+    document.getElementById("batchWhatsappBtn").addEventListener("click", renderBatchWhatsappPanel);
+    document.getElementById("receberWhatsappFilter").addEventListener("change", () => {
+      document.getElementById("batchWhatsappPanel").hidden = true;
+      render();
+    });
+    document.getElementById("exportBtn").addEventListener("click", exportCsv);
+    document.getElementById("manualBackupBtn").addEventListener("click", () => {
+      createBackup("manual", true);
+      localStorage.setItem(lastBackupDateKey, todayISO());
+      showToast("Backup manual gerado.");
+    });
+    document.getElementById("toggleBalancesBtn").addEventListener("click", event => {
+      event.stopPropagation();
+      toggleBalances();
+    });
+    document.getElementById("toggleBalancesBtn").addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.stopPropagation();
+      toggleBalances();
+    });
+    document.getElementById("importBtn").addEventListener("click", () => document.getElementById("csvImportInput").click());
+    document.getElementById("csvImportInput").addEventListener("change", handleCsvImport);
+    form.addEventListener("submit", saveForm);
+    clientForm.addEventListener("submit", saveClientForm);
+    modal.addEventListener("click", event => {
+      if (event.target === modal) closeModal();
+    });
+    clientModal.addEventListener("click", event => {
+      if (event.target === clientModal) closeClientModal();
+    });
+
+    ["searchInput", "typeFilter", "statusFilter", "monthFilter"].forEach(id => {
+      document.getElementById(id).addEventListener("input", render);
+      document.getElementById(id).addEventListener("change", render);
+    });
+
+    document.querySelector(".main").addEventListener("click", handleTableAction);
+    document.getElementById("monthFilter").value = new Date().toISOString().slice(0, 7);
+    applyBalanceVisibility();
+    render();
+  </script>
+</body>
+</html>
