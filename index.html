@@ -924,6 +924,32 @@
         max-width: 205px;
       }
     }
+
+    @media print {
+      body { background: #fff; color: #111; }
+      body * { visibility: hidden; }
+      #printableReport,
+      #printableReport * { visibility: visible; }
+      #printableReport {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+        max-height: none;
+        background: #fff;
+        color: #111;
+      }
+      #printableReport table {
+        min-width: 0;
+        width: 100%;
+        font-size: 11px;
+      }
+      #printableReport th,
+      #printableReport td {
+        color: #111;
+        border: 1px solid #ddd;
+      }
+      .sensitive-money { visibility: visible; }
+    }
   </style>
 </head>
 <body>
@@ -988,6 +1014,7 @@
           <button class="btn btn-secondary" id="importBtn" type="button">Importar CSV</button>
           <button class="btn btn-secondary" id="exportBtn" type="button">Exportar CSV</button>
           <button class="btn btn-secondary" id="manualBackupBtn" type="button">Backup</button>
+          <button class="btn btn-ghost" id="clearEntriesBtn" type="button">Excluir lançamentos</button>
           <button class="btn btn-primary" id="newEntryBtn" type="button">Novo lançamento</button>
           <button class="btn btn-ghost" id="logoutBtn" type="button">Sair</button>
         </div>
@@ -1172,6 +1199,29 @@
             </table>
           </div>
         </section>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Recebimentos não identificados</h2>
+              <span class="pill" id="unidentifiedIncomeCount">0 registros</span>
+            </div>
+            <span class="pill">Vincular ou transformar em receita avulsa</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Pagador</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="unidentifiedIncomeRows"></tbody>
+            </table>
+          </div>
+        </section>
       </section>
 
       <section class="view" id="pagar">
@@ -1194,6 +1244,30 @@
                 </tr>
               </thead>
               <tbody id="pagarRows"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Despesas a classificar</h2>
+              <span class="pill" id="unclassifiedExpenseCount">0 registros</span>
+            </div>
+            <span class="pill">Taxas, Pix, boletos e saídas do extrato</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Favorecido</th>
+                  <th>Descrição</th>
+                  <th>Categoria sugerida</th>
+                  <th>Valor</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="unclassifiedExpenseRows"></tbody>
             </table>
           </div>
         </section>
@@ -1268,6 +1342,133 @@
             </div>
           </div>
           <div class="bar-list" id="reportList"></div>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Modelos de relatório</h2>
+                <span class="pill" id="customReportCount">0 registros</span>
+              </div>
+              <div class="row-actions">
+                <select id="reportModelSelect" title="Modelo de relatório">
+                  <option value="gerencial">Resumo gerencial</option>
+                  <option value="inadimplencia">Inadimplência</option>
+                  <option value="recebidos">Recebidos no mês</option>
+                  <option value="honorarios">Honorários mensais</option>
+                  <option value="receitas-avulsas">Receitas avulsas</option>
+                  <option value="nao-identificados">Recebimentos não identificados</option>
+                  <option value="despesas-classificar">Despesas a classificar</option>
+                  <option value="clientes">Clientes cadastrados</option>
+                </select>
+                <button class="btn btn-secondary" id="exportReportCsvBtn" type="button">Excel/CSV</button>
+                <button class="btn btn-secondary" id="exportReportJsonBtn" type="button">JSON</button>
+                <button class="btn btn-primary" id="printReportBtn" type="button">PDF / Imprimir</button>
+              </div>
+            </div>
+            <div class="hint" id="reportOrientation">Escolha um modelo para gerar o relatório.</div>
+            <div class="table-wrap" id="printableReport">
+              <table>
+                <thead id="customReportHead"></thead>
+                <tbody id="customReportRows"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Inadimplência e atrasos detalhados</h2>
+                <span class="pill" id="lateDetailedCount">0 registros</span>
+              </div>
+              <span class="pill" id="lateDetailedTotal">R$ 0,00</span>
+            </div>
+            <div class="hint">Mostra clientes vencidos em aberto e cobranças pagas depois do vencimento, com competência e valor.</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>CNPJ/Documento</th>
+                    <th>Competência</th>
+                    <th>Vencimento</th>
+                    <th>Valor</th>
+                    <th>Situação</th>
+                    <th>Pago em</th>
+                    <th>Histórico</th>
+                  </tr>
+                </thead>
+                <tbody id="lateDetailedRows"></tbody>
+              </table>
+            </div>
+          </section>
+          <div class="summary-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Recebimentos a identificar</h2>
+                  <span class="pill" id="reportUnidentifiedCount">0 registros</span>
+                </div>
+                <span class="pill" id="reportUnidentifiedTotal">R$ 0,00</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Pagador</th>
+                      <th>Histórico do extrato</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportUnidentifiedRows"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Despesas a classificar</h2>
+                  <span class="pill" id="reportUnclassifiedCount">0 registros</span>
+                </div>
+                <span class="pill" id="reportUnclassifiedTotal">R$ 0,00</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Favorecido</th>
+                      <th>Histórico do extrato</th>
+                      <th>Categoria</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportUnclassifiedRows"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Receitas avulsas do escritório</h2>
+                <span class="pill" id="reportAvulsaCount">0 registros</span>
+              </div>
+              <span class="pill" id="reportAvulsaTotal">R$ 0,00</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Forma</th>
+                    <th>Valor</th>
+                  </tr>
+                </thead>
+                <tbody id="reportAvulsaRows"></tbody>
+              </table>
+            </div>
+          </section>
           <div class="settings-grid">
             <div class="field">
               <label for="whatsappPix">PIX / orientação de pagamento</label>
@@ -1343,8 +1544,22 @@
           <input id="entryCategory" type="text" list="categoryOptions" placeholder="Ex.: Honorários" required />
           <datalist id="categoryOptions">
             <option value="Honorários contábeis"></option>
+            <option value="Abertura de empresa"></option>
+            <option value="Declaração de imposto de renda"></option>
+            <option value="Alteração contratual"></option>
+            <option value="Regularização de pendência"></option>
+            <option value="Consultoria contábil"></option>
+            <option value="Certificado digital"></option>
+            <option value="Outras receitas do escritório"></option>
+            <option value="Recebimentos não identificados"></option>
             <option value="Impostos"></option>
             <option value="Folha de pagamento"></option>
+            <option value="Taxa Pix"></option>
+            <option value="Tarifa bancária"></option>
+            <option value="Boleto pago"></option>
+            <option value="Pix efetuado"></option>
+            <option value="Fornecedor"></option>
+            <option value="Despesas a classificar"></option>
             <option value="Sistemas"></option>
             <option value="Administrativo"></option>
           </datalist>
@@ -1519,7 +1734,7 @@
     const lastBackupDateKey = "alfaFinanceiroUltimoBackupV1";
     const balanceVisibilityKey = "alfaFinanceiroOcultarSaldosV1";
     const officeWhatsAppNumber = "5563984500300";
-    const firstChargeMonth = "2026-05";
+    const firstChargeMonth = "2026-04";
     const lastChargeMonth = "2027-02";
     const loginScreen = document.getElementById("loginScreen");
     const app = document.getElementById("app");
@@ -1871,6 +2086,7 @@ Atenciosamente,
       if (!entry || entry.type !== "receita" || !entry.name) return null;
       const key = clientKey(entry.name, entry.document);
       const now = new Date().toISOString();
+      const entryMonth = entry.billingMonth || String(entry.date || firstChargeMonth).slice(0, 7);
       let client = clients.find(item => item.key === key);
 
       if (!client) {
@@ -1895,7 +2111,7 @@ Atenciosamente,
           paymentMethod: entry.method || "Pix",
           status: "ativo",
           notes: "",
-          firstChargeMonth,
+          firstChargeMonth: entryMonth || firstChargeMonth,
           createdAt: now,
           updatedAt: now,
           source: entry.source || "manual"
@@ -1911,11 +2127,18 @@ Atenciosamente,
         client.service = client.service || entry.category || "Honorários contábeis";
         client.status = client.status || "ativo";
         client.whatsappAllowed = client.whatsappAllowed || "sim";
-        client.firstChargeMonth = client.firstChargeMonth || firstChargeMonth;
+        client.firstChargeMonth = earliestMonth(client.firstChargeMonth, entryMonth || firstChargeMonth);
         client.updatedAt = now;
         if (entry.source === "csv") client.source = "csv";
       }
       return client;
+    }
+
+    function earliestMonth(...months) {
+      return months
+        .filter(Boolean)
+        .map(month => String(month).slice(0, 7))
+        .sort()[0] || firstChargeMonth;
     }
 
     function preserveManualClients(previousClients) {
@@ -1932,7 +2155,11 @@ Atenciosamente,
       entries.forEach(entry => {
         const existing = previousClients.find(item => item.key === clientKey(entry.name, entry.document));
         const client = upsertClientFromEntry(entry);
-        if (client && existing) Object.assign(client, { ...existing, key: client.key, updatedAt: client.updatedAt });
+        if (client && existing) {
+          const detectedFirstMonth = client.firstChargeMonth;
+          Object.assign(client, { ...existing, key: client.key, updatedAt: client.updatedAt });
+          client.firstChargeMonth = earliestMonth(detectedFirstMonth, existing.firstChargeMonth);
+        }
       });
       preserveManualClients(previousClients);
       clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
@@ -1994,6 +2221,10 @@ Atenciosamente,
 
     function isPaidInMonth(entry, month) {
       return entry.status === "pago" && ((entry.paidAt && entry.paidAt.startsWith(month)) || (!entry.paidAt && entry.date?.startsWith(month)));
+    }
+
+    function isPaidLate(entry) {
+      return entry.status === "pago" && entry.paidAt && entry.date && entry.paidAt > entry.date;
     }
 
     function isLate(entry) {
@@ -2173,6 +2404,10 @@ Atenciosamente,
       return list.filter(entry => entry.status !== "cancelado" && entry.status !== "bonificado");
     }
 
+    function isCsvEntry(entry) {
+      return String(entry.source || "").startsWith("csv");
+    }
+
     function renderKpis() {
       const currentMonth = selectedMonth();
       const monthEntries = financialEntries(entries).filter(entry => entry.date.startsWith(currentMonth));
@@ -2279,6 +2514,85 @@ Atenciosamente,
       if (!tbody) return;
       tbody.innerHTML = list.length ? list.map(accountRowTemplate).join("") : `<tr><td colspan="7"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
       document.getElementById(countId).textContent = `${list.length} registro${list.length === 1 ? "" : "s"}`;
+    }
+
+    function unidentifiedIncomeRows() {
+      return entries
+        .filter(entry => entry.type === "receita" && entry.category === "Recebimentos não identificados")
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+    }
+
+    function unclassifiedExpenseRows() {
+      return entries
+        .filter(entry => entry.type === "despesa" && (entry.category === "Despesas a classificar" || entry.source === "extrato-despesa"))
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+    }
+
+    function reviewIncomeRowTemplate(entry) {
+      return `
+        <tr>
+          <td>${formatDate(entry.date)}</td>
+          <td>${escapeHTML(entry.name || "Pagador não identificado")}</td>
+          <td>
+            <strong>${escapeHTML(entry.description || "Recebimento importado do extrato")}</strong>
+            <small>${escapeHTML(entryHistory(entry))}</small>
+          </td>
+          <td class="money-in">+ ${moneySpan(entry.paidAmount || entry.amount || 0)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-secondary table-btn" data-action="make-avulsa" data-id="${entry.id}" type="button">Receita avulsa</button>
+              <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
+              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    function reviewExpenseRowTemplate(entry) {
+      return `
+        <tr>
+          <td>${formatDate(entry.date)}</td>
+          <td>${escapeHTML(entry.name || "Favorecido não identificado")}</td>
+          <td>
+            <strong>${escapeHTML(entry.description || "Saída importada do extrato")}</strong>
+            <small>${escapeHTML(entryHistory(entry))}</small>
+          </td>
+          <td>${escapeHTML(entry.category || "Despesas a classificar")}</td>
+          <td class="money-out">- ${moneySpan(entry.amount || 0)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-secondary table-btn" data-action="classify-expense" data-id="${entry.id}" type="button">Classificar</button>
+              <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
+              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    function entryHistory(entry) {
+      const parts = [
+        entry.receiptDescription ? `Histórico: ${entry.receiptDescription}` : "",
+        entry.receiptProtocol ? `Protocolo: ${entry.receiptProtocol}` : "",
+        entry.sourceId && entry.sourceId !== entry.receiptProtocol ? `Origem: ${entry.sourceId}` : "",
+        entry.method ? `Forma: ${entry.method}` : ""
+      ].filter(Boolean);
+      return parts.join(" | ");
+    }
+
+    function renderReviewRows() {
+      const income = unidentifiedIncomeRows();
+      const incomeBody = document.getElementById("unidentifiedIncomeRows");
+      if (incomeBody) {
+        incomeBody.innerHTML = income.length ? income.map(reviewIncomeRowTemplate).join("") : `<tr><td colspan="5"><div class="empty">Nenhum recebimento pendente de identificação.</div></td></tr>`;
+        document.getElementById("unidentifiedIncomeCount").textContent = `${income.length} registro${income.length === 1 ? "" : "s"}`;
+      }
+
+      const expenses = unclassifiedExpenseRows();
+      const expenseBody = document.getElementById("unclassifiedExpenseRows");
+      if (expenseBody) {
+        expenseBody.innerHTML = expenses.length ? expenses.map(reviewExpenseRowTemplate).join("") : `<tr><td colspan="6"><div class="empty">Nenhuma despesa pendente de classificação.</div></td></tr>`;
+        document.getElementById("unclassifiedExpenseCount").textContent = `${expenses.length} registro${expenses.length === 1 ? "" : "s"}`;
+      }
     }
 
     function receivableWhatsappFilter(entry) {
@@ -2409,12 +2723,13 @@ Atenciosamente,
       const expense = activeScoped.filter(entry => entry.type === "despesa").reduce((sum, entry) => sum + Number(entry.amount), 0);
       const open = activeScoped.filter(isOpenEntry).reduce((sum, entry) => sum + Number(entry.amount), 0);
       const paid = activeScoped.filter(entry => entry.status === "pago").reduce((sum, entry) => sum + Number(entry.amount), 0);
-      const imported = scoped.filter(entry => entry.source === "csv").length;
+      const importedRows = scoped.filter(isCsvEntry);
+      const imported = importedRows.length;
       document.getElementById("reportMonthLabel").textContent = month.split("-").reverse().join("/");
       document.getElementById("reportImported").textContent = imported;
-      document.getElementById("reportPaid").textContent = scoped.filter(entry => entry.source === "csv" && entry.status === "pago").length;
-      document.getElementById("reportLate").textContent = scoped.filter(entry => entry.source === "csv" && visibleStatus(entry) === "vencido").length;
-      document.getElementById("reportCanceled").textContent = scoped.filter(entry => entry.source === "csv" && entry.status === "cancelado").length;
+      document.getElementById("reportPaid").textContent = importedRows.filter(entry => entry.status === "pago").length;
+      document.getElementById("reportLate").textContent = importedRows.filter(entry => visibleStatus(entry) === "vencido").length;
+      document.getElementById("reportCanceled").textContent = importedRows.filter(entry => entry.status === "cancelado").length;
       document.getElementById("reportList").innerHTML = [
         ["Receitas lançadas", income],
         ["Despesas lançadas", expense],
@@ -2427,7 +2742,276 @@ Atenciosamente,
           <div class="bar-track"><div class="bar-fill" style="--w:${Math.min(100, Math.max(5, Math.abs(value) / Math.max(income, expense, open, paid, 1) * 100))}%"></div></div>
         </div>
       `).join("");
+      renderCustomReport();
+      renderLateDetailedReport();
+      renderConciliationReports(scoped);
       renderWhatsappSettings();
+    }
+
+    function lateDetailedRows() {
+      return entries
+        .filter(entry => entry.type === "receita" && (isLate(entry) || isPaidLate(entry)))
+        .sort((a, b) => {
+          const openFirst = Number(isClosedEntry(a)) - Number(isClosedEntry(b));
+          if (openFirst) return openFirst;
+          const byName = normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR");
+          if (byName) return byName;
+          return String(a.date || "").localeCompare(String(b.date || ""));
+        });
+    }
+
+    function renderLateDetailedReport() {
+      const rows = lateDetailedRows();
+      const body = document.getElementById("lateDetailedRows");
+      if (!body) return;
+      body.innerHTML = rows.length ? rows.map(entry => `
+        <tr>
+          <td>${escapeHTML(entry.name || "-")}</td>
+          <td>${escapeHTML(entry.document || "-")}</td>
+          <td>${formatMonth(entry.billingMonth || String(entry.date || "").slice(0, 7))}</td>
+          <td>${formatDate(entry.date)}</td>
+          <td class="${isLate(entry) ? "money-out" : "money-in"}">${moneySpan(entry.paidAmount || entry.amount || 0)}</td>
+          <td>${isLate(entry) ? `<span class="pill late">Devendo / vencido</span>` : `<span class="pill paid">Quitado com atraso</span>`}</td>
+          <td>${entry.paidAt ? formatDate(entry.paidAt) : "-"}</td>
+          <td>${escapeHTML(entryHistory(entry) || entry.description || "-")}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="8"><div class="empty">Nenhum cliente vencido ou pago com atraso encontrado.</div></td></tr>`;
+      const totalOpen = rows.filter(isLate).reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const totalPaidLate = rows.filter(isPaidLate).reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0);
+      document.getElementById("lateDetailedCount").textContent = `${rows.length} registro${rows.length === 1 ? "" : "s"}`;
+      document.getElementById("lateDetailedTotal").textContent = totalOpen ? `Devendo ${formatMoney(totalOpen)}` : `Atrasos pagos ${formatMoney(totalPaidLate)}`;
+    }
+
+    function renderConciliationReports(scoped) {
+      const unidentified = scoped
+        .filter(entry => entry.type === "receita" && entry.category === "Recebimentos não identificados")
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+      const unclassified = scoped
+        .filter(entry => entry.type === "despesa" && (entry.category === "Despesas a classificar" || entry.source === "extrato-despesa"))
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+      const avulsas = scoped
+        .filter(entry => entry.type === "receita" && entry.category !== "Honorários contábeis" && entry.category !== "Recebimentos não identificados")
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+
+      renderReportTable(
+        "reportUnidentifiedRows",
+        unidentified,
+        entry => `
+          <tr>
+            <td>${formatDate(entry.date)}</td>
+            <td>${escapeHTML(entry.name || "Pagador não identificado")}</td>
+            <td>${escapeHTML(entryHistory(entry) || entry.description || "-")}</td>
+            <td class="money-in">+ ${moneySpan(entry.paidAmount || entry.amount || 0)}</td>
+          </tr>`,
+        4,
+        "Nenhum recebimento pendente de identificação neste mês."
+      );
+      renderReportTable(
+        "reportUnclassifiedRows",
+        unclassified,
+        entry => `
+          <tr>
+            <td>${formatDate(entry.date)}</td>
+            <td>${escapeHTML(entry.name || "Favorecido não identificado")}</td>
+            <td>${escapeHTML(entryHistory(entry) || entry.description || "-")}</td>
+            <td>${escapeHTML(entry.category || "Despesas a classificar")}</td>
+            <td class="money-out">- ${moneySpan(entry.amount || 0)}</td>
+          </tr>`,
+        5,
+        "Nenhuma despesa pendente de classificação neste mês."
+      );
+      renderReportTable(
+        "reportAvulsaRows",
+        avulsas,
+        entry => `
+          <tr>
+            <td>${formatDate(entry.paidAt || entry.date)}</td>
+            <td>${escapeHTML(entry.name || "-")}</td>
+            <td>${escapeHTML(entry.category || entry.description || "Receita avulsa")}</td>
+            <td>${escapeHTML(entry.method || "-")}</td>
+            <td class="money-in">+ ${moneySpan(entry.paidAmount || entry.amount || 0)}</td>
+          </tr>`,
+        5,
+        "Nenhuma receita avulsa neste mês."
+      );
+
+      updateReportCounter("reportUnidentifiedCount", "reportUnidentifiedTotal", unidentified, "receita");
+      updateReportCounter("reportUnclassifiedCount", "reportUnclassifiedTotal", unclassified, "despesa");
+      updateReportCounter("reportAvulsaCount", "reportAvulsaTotal", avulsas, "receita");
+    }
+
+    function renderReportTable(tbodyId, list, template, colspan, emptyText) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      tbody.innerHTML = list.length ? list.map(template).join("") : `<tr><td colspan="${colspan}"><div class="empty">${emptyText}</div></td></tr>`;
+    }
+
+    function updateReportCounter(countId, totalId, list, type) {
+      const total = list.reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0);
+      document.getElementById(countId).textContent = `${list.length} registro${list.length === 1 ? "" : "s"}`;
+      document.getElementById(totalId).textContent = `${type === "despesa" ? "-" : "+"} ${formatMoney(total)}`;
+    }
+
+    function reportModels() {
+      const month = selectedMonth();
+      const monthLabel = formatMonth(month);
+      const model = document.getElementById("reportModelSelect")?.value || "gerencial";
+      const scoped = entries.filter(entry => String(entry.date || "").startsWith(month));
+      const activeScoped = financialEntries(scoped);
+      const columns = {
+        financial: ["Data", "Nome", "Documento", "Categoria", "Descrição/Histórico", "Forma", "Valor", "Status"],
+        clients: ["Cliente", "Tipo", "Documento", "Contato", "Primeira cobrança", "Honorário", "Situação"]
+      };
+      const rowsForFinancial = list => list.map(entry => ({
+        raw: entry,
+        values: [
+          formatDate(entry.paidAt || entry.date),
+          entry.name || "-",
+          entry.document || "-",
+          entry.category || "-",
+          entryHistory(entry) || entry.description || "-",
+          entry.method || "-",
+          formatMoney(entry.paidAmount || entry.amount || 0),
+          visibleStatus(entry)
+        ]
+      }));
+      const clientRows = [...clients].sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR")).map(client => {
+        const summary = getClientSummary(client);
+        const status = summary.lateMonths.length ? "Com atraso" : summary.openAmount > 0 ? "Pendente" : "Em dia";
+        return {
+          raw: client,
+          values: [
+            client.name || "-",
+            client.type === "pf" ? "PF" : "PJ",
+            client.document || "-",
+            [client.phone, client.email].filter(Boolean).join(" / ") || "-",
+            formatMonth(client.firstChargeMonth || firstChargeMonth),
+            formatMoney(client.monthlyFee || 0),
+            status
+          ]
+        };
+      });
+
+      const allOpenLate = entries.filter(entry => entry.type === "receita" && isLate(entry)).sort(sortByNameThenDate);
+      const lateOrPaidLate = entries
+        .filter(entry => entry.type === "receita" && (isLate(entry) || isPaidLate(entry)))
+        .sort((a, b) => {
+          const byStatus = Number(isClosedEntry(a)) - Number(isClosedEntry(b));
+          if (byStatus) return byStatus;
+          return sortByNameThenDate(a, b);
+        });
+      const configs = {
+        gerencial: {
+          title: `Resumo gerencial - ${monthLabel}`,
+          orientation: "Visão para decisão rápida: receitas, despesas, resultado, aberto, baixado e pontos de atenção do mês.",
+          columns: ["Indicador", "Valor"],
+          rows: [
+            ["Receitas lançadas", formatMoney(activeScoped.filter(entry => entry.type === "receita").reduce((sum, entry) => sum + Number(entry.amount || 0), 0))],
+            ["Despesas lançadas", formatMoney(activeScoped.filter(entry => entry.type === "despesa").reduce((sum, entry) => sum + Number(entry.amount || 0), 0))],
+            ["Resultado previsto", formatMoney(activeScoped.reduce((sum, entry) => sum + (entry.type === "receita" ? Number(entry.amount || 0) : -Number(entry.amount || 0)), 0))],
+            ["Recebimentos não identificados", unidentifiedIncomeRows().filter(entry => entry.date.startsWith(month)).length],
+            ["Despesas a classificar", unclassifiedExpenseRows().filter(entry => entry.date.startsWith(month)).length]
+          ].map(values => ({ values }))
+        },
+        inadimplencia: {
+          title: "Inadimplência e atrasos por competência",
+          orientation: "Mostra quem ainda está devendo e também quem pagou depois do vencimento, com cliente, competência, vencimento, valor e histórico.",
+          columns: ["Cliente", "Documento", "Competência", "Vencimento", "Valor", "Situação", "Pago em", "Histórico"],
+          rows: lateOrPaidLate.map(entry => ({
+            raw: entry,
+            values: [
+              entry.name || "-",
+              entry.document || "-",
+              formatMonth(entry.billingMonth || String(entry.date || "").slice(0, 7)),
+              formatDate(entry.date),
+              formatMoney(entry.paidAmount || entry.amount || 0),
+              isLate(entry) ? "DEVENDO / VENCIDO" : "Quitado com atraso",
+              entry.paidAt ? formatDate(entry.paidAt) : "-",
+              entryHistory(entry) || entry.description || "-"
+            ]
+          }))
+        },
+        recebidos: {
+          title: `Recebidos no mês - ${monthLabel}`,
+          orientation: "Confere tudo que foi baixado no mês, incluindo honorários e receitas avulsas.",
+          columns: columns.financial,
+          rows: rowsForFinancial(entries.filter(entry => entry.type === "receita" && isPaidInMonth(entry, month)).sort(sortByNameThenDate))
+        },
+        honorarios: {
+          title: `Honorários mensais - ${monthLabel}`,
+          orientation: "Mostra apenas honorários contábeis da competência selecionada.",
+          columns: columns.financial,
+          rows: rowsForFinancial(scoped.filter(entry => entry.type === "receita" && entry.category === "Honorários contábeis").sort(sortByNameThenDate))
+        },
+        "receitas-avulsas": {
+          title: `Receitas avulsas - ${monthLabel}`,
+          orientation: "Use para acompanhar abertura de empresa, IRPF, alteração contratual, consultoria e outros serviços fora da mensalidade.",
+          columns: columns.financial,
+          rows: rowsForFinancial(scoped.filter(entry => entry.type === "receita" && entry.category !== "Honorários contábeis" && entry.category !== "Recebimentos não identificados").sort(sortByNameThenDate))
+        },
+        "nao-identificados": {
+          title: `Recebimentos não identificados - ${monthLabel}`,
+          orientation: "Lista entradas do extrato que ainda precisam ser vinculadas a cliente, honorário ou receita avulsa.",
+          columns: columns.financial,
+          rows: rowsForFinancial(unidentifiedIncomeRows().filter(entry => entry.date.startsWith(month)))
+        },
+        "despesas-classificar": {
+          title: `Despesas a classificar - ${monthLabel}`,
+          orientation: "Lista saídas do extrato que ainda precisam de conferência contábil: taxas, Pix, boletos e fornecedores.",
+          columns: columns.financial,
+          rows: rowsForFinancial(unclassifiedExpenseRows().filter(entry => entry.date.startsWith(month)))
+        },
+        clientes: {
+          title: "Clientes cadastrados",
+          orientation: "Cadastro base para conferência de PF/PJ, documento, contato, início da cobrança e situação.",
+          columns: columns.clients,
+          rows: clientRows
+        }
+      };
+      return configs[model] || configs.gerencial;
+    }
+
+    function renderCustomReport() {
+      const report = reportModels();
+      const head = document.getElementById("customReportHead");
+      const body = document.getElementById("customReportRows");
+      document.getElementById("customReportCount").textContent = `${report.rows.length} registro${report.rows.length === 1 ? "" : "s"}`;
+      document.getElementById("reportOrientation").innerHTML = `<strong>${escapeHTML(report.title)}</strong><br>${escapeHTML(report.orientation)}`;
+      head.innerHTML = `<tr>${report.columns.map(column => `<th>${escapeHTML(column)}</th>`).join("")}</tr>`;
+      body.innerHTML = report.rows.length
+        ? report.rows.map(row => `<tr>${row.values.map(value => `<td>${escapeHTML(value)}</td>`).join("")}</tr>`).join("")
+        : `<tr><td colspan="${report.columns.length}"><div class="empty">Nenhum registro encontrado para este relatório.</div></td></tr>`;
+    }
+
+    function downloadTextFile(filename, content, type = "text/plain;charset=utf-8") {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportSelectedReportCsv() {
+      const report = reportModels();
+      const lines = [report.columns.join(";")].concat(report.rows.map(row => row.values
+        .map(value => `"${String(value || "").replaceAll('"', '""')}"`)
+        .join(";")));
+      const safeName = normalizeHeader(report.title).replaceAll("_", "-") || "relatorio";
+      downloadTextFile(`${safeName}.csv`, "\ufeff" + lines.join("\n"), "text/csv;charset=utf-8");
+    }
+
+    function exportSelectedReportJson() {
+      const report = reportModels();
+      const rows = report.rows.map(row => Object.fromEntries(report.columns.map((column, index) => [column, row.values[index] || ""])));
+      const safeName = normalizeHeader(report.title).replaceAll("_", "-") || "relatorio";
+      downloadTextFile(`${safeName}.json`, JSON.stringify({ title: report.title, orientation: report.orientation, generatedAt: new Date().toISOString(), rows }, null, 2), "application/json;charset=utf-8");
+    }
+
+    function printSelectedReport() {
+      renderCustomReport();
+      window.print();
     }
 
     function renderWhatsappSettings() {
@@ -2555,6 +3139,7 @@ Atenciosamente,
       renderClients();
       renderAccountRows("receberRows", filteredReceivablesForWhatsapp(), "receberCount");
       renderAccountRows("pagarRows", filteredEntries("despesa"), "pagarCount");
+      renderReviewRows();
       renderReports();
       renderDetails();
       enhanceTableScrollers();
@@ -2906,6 +3491,32 @@ Atenciosamente,
       const entry = entries.find(item => item.id === button.dataset.id);
       if (!entry) return;
 
+      if (button.dataset.action === "make-avulsa") {
+        const category = prompt("Informe a categoria da receita avulsa. Exemplos: Abertura de empresa, Declaração de imposto de renda, Alteração contratual.", "Outras receitas do escritório");
+        if (!category) return;
+        entry.category = category.trim();
+        entry.description = entry.description || "Receita avulsa vinculada manualmente";
+        entry.source = "receita-avulsa";
+        entry.status = "pago";
+        entry.paidAt = entry.paidAt || entry.date || todayISO();
+        entry.paidAmount = Number(entry.paidAmount || entry.amount || 0);
+        saveEntries();
+        render();
+        showToast("Recebimento classificado como receita avulsa.");
+        return;
+      }
+
+      if (button.dataset.action === "classify-expense") {
+        const category = prompt("Informe a categoria da despesa. Exemplos: Taxa Pix, Tarifa bancária, Boleto pago, Pix efetuado, Fornecedor.", entry.category || "Despesas a classificar");
+        if (!category) return;
+        entry.category = category.trim();
+        entry.source = "despesa-classificada";
+        saveEntries();
+        render();
+        showToast("Despesa classificada.");
+        return;
+      }
+
       if (button.dataset.action === "edit") {
         openModal(entry);
         return;
@@ -3032,7 +3643,7 @@ Atenciosamente,
     }
 
     function parseBrazilianMoney(value) {
-      const normalized = String(value || "0").replace(/\./g, "").replace(",", ".");
+      const normalized = String(value || "0").replace(/[^0-9,.-]/g, "").replace(/\./g, "").replace(",", ".");
       return Number(normalized) || 0;
     }
 
@@ -3047,6 +3658,66 @@ Atenciosamente,
       const lastDe = afterBullet.toLowerCase().lastIndexOf(" de ");
       if (lastDe >= 0) return afterBullet.slice(lastDe + 4).trim();
       return afterBullet.replace(/^pix recebido via chave\s*/i, "").trim();
+    }
+
+    function classifyBankExpenseCategory(typeText) {
+      const text = normalizeText(typeText);
+      if (text.includes("tar") && text.includes("pix")) return "Taxa Pix";
+      if (text.includes("tarifa") || text.includes("cesta") || text.includes("manutencao")) return "Tarifa bancária";
+      if (text.includes("boleto")) return "Boleto pago";
+      if (text.includes("pix") && (text.includes("enviado") || text.includes("efetuado") || text.includes("transferido") || text.includes("pagamento"))) return "Pix efetuado";
+      if (text.includes("fgts")) return "FGTS";
+      if (text.includes("inss") || text.includes("darf")) return "INSS / DARF";
+      return "Despesas a classificar";
+    }
+
+    function isBankExpense(typeText, amount) {
+      const text = normalizeText(typeText);
+      if (Number(amount) < 0) return true;
+      return text.includes("pix enviado") || text.includes("pix efetuado") || text.includes("boleto pago") || text.includes("tarifa") || text.includes("debito");
+    }
+
+    function createUnidentifiedIncome(receipt) {
+      return {
+        id: crypto.randomUUID(),
+        source: "extrato-nao-identificado",
+        sourceId: receipt.protocol || crypto.randomUUID(),
+        type: "receita",
+        status: "pago",
+        date: receipt.date,
+        paidAt: receipt.date,
+        amount: Math.abs(Number(receipt.amount || 0)),
+        paidAmount: Math.abs(Number(receipt.amount || 0)),
+        name: receipt.clientName || "Recebimento não identificado",
+        document: "",
+        category: "Recebimentos não identificados",
+        method: receipt.rawType?.toLowerCase().includes("pix") ? "Pix" : "Extrato",
+        description: `Recebimento do extrato sem vínculo automático${receipt.rawType ? ` - ${receipt.rawType}` : ""}`,
+        receiptProtocol: receipt.protocol,
+        receiptDescription: receipt.rawType
+      };
+    }
+
+    function createBankExpense(receipt) {
+      const category = classifyBankExpenseCategory(receipt.rawType);
+      return {
+        id: crypto.randomUUID(),
+        source: "extrato-despesa",
+        sourceId: receipt.protocol || crypto.randomUUID(),
+        type: "despesa",
+        status: "pago",
+        date: receipt.date,
+        paidAt: receipt.date,
+        amount: Math.abs(Number(receipt.amount || 0)),
+        paidAmount: Math.abs(Number(receipt.amount || 0)),
+        name: receipt.clientName || "Saída do extrato",
+        document: "",
+        category,
+        method: receipt.rawType?.toLowerCase().includes("pix") ? "Pix" : "Extrato",
+        description: `Saída importada do extrato${receipt.rawType ? ` - ${receipt.rawType}` : ""}`,
+        receiptProtocol: receipt.protocol,
+        receiptDescription: receipt.rawType
+      };
     }
 
     function tokenScore(a, b) {
@@ -3121,22 +3792,33 @@ Atenciosamente,
       const records = rows.slice(1).map(cells => {
         const record = {};
         headers.forEach((header, index) => record[header] = cells[index] || "");
+        const amount = parseBrazilianMoney(record.valor);
         return {
           rawType: record.tipo || "",
           protocol: record.protocolo || "",
           date: parseBrazilianDate(record.data),
-          amount: parseBrazilianMoney(record.valor),
-          clientName: parseReceiptClientName(record.tipo)
+          amount,
+          clientName: parseReceiptClientName(record.tipo),
+          isExpense: isBankExpense(record.tipo, amount)
         };
-      }).filter(item => item.amount > 0 && item.date);
+      }).filter(item => item.amount !== 0 && item.date);
 
       const existingProtocols = new Set(entries.map(entry => entry.receiptProtocol).filter(Boolean));
       let appliedReceipts = 0;
       let appliedEntries = 0;
       const unmatched = [];
+      let importedExpenses = 0;
+      let importedUnidentified = 0;
 
       records.forEach(receipt => {
         if (receipt.protocol && existingProtocols.has(receipt.protocol)) return;
+        if (receipt.isExpense) {
+          entries.unshift(createBankExpense(receipt));
+          importedExpenses++;
+          if (receipt.protocol) existingProtocols.add(receipt.protocol);
+          return;
+        }
+
         const candidates = findReceiptCandidates(receipt.clientName);
         const changed = applyReceiptToEntries(candidates, receipt);
         if (changed) {
@@ -3145,13 +3827,16 @@ Atenciosamente,
           if (receipt.protocol) existingProtocols.add(receipt.protocol);
         } else {
           unmatched.push(receipt);
+          entries.unshift(createUnidentifiedIncome(receipt));
+          importedUnidentified++;
+          if (receipt.protocol) existingProtocols.add(receipt.protocol);
         }
       });
 
       saveEntries();
       render();
-      showToast(`${appliedReceipts} recebimento${appliedReceipts === 1 ? "" : "s"} identificado${appliedReceipts === 1 ? "" : "s"} e ${appliedEntries} cobrança${appliedEntries === 1 ? "" : "s"} baixada${appliedEntries === 1 ? "" : "s"}.${unmatched.length ? ` ${unmatched.length} sem cliente correspondente.` : ""}`);
-      return { appliedReceipts, appliedEntries, unmatched };
+      showToast(`${appliedReceipts} recebimento${appliedReceipts === 1 ? "" : "s"} identificado${appliedReceipts === 1 ? "" : "s"} e ${appliedEntries} cobrança${appliedEntries === 1 ? "" : "s"} baixada${appliedEntries === 1 ? "" : "s"}.${importedUnidentified ? ` ${importedUnidentified} recebimento${importedUnidentified === 1 ? "" : "s"} para revisar.` : ""}${importedExpenses ? ` ${importedExpenses} despesa${importedExpenses === 1 ? "" : "s"} importada${importedExpenses === 1 ? "" : "s"}.` : ""}`);
+      return { appliedReceipts, appliedEntries, unmatched, importedUnidentified, importedExpenses };
     }
 
     function entryImportKey(entry) {
@@ -3168,6 +3853,163 @@ Atenciosamente,
         if (record[name]) return record[name];
       }
       return "";
+    }
+
+    function importedRevenueCategory(record) {
+      const forma = normalizeText(getRecordValue(record, ["forma_de_cobranca", "forma_cobranca"]));
+      const descricao = normalizeText(getRecordValue(record, ["descricao", "historico", "nome"]));
+      if (forma.includes("carne") || descricao.includes("honorario") || descricao.includes("contabil")) {
+        return "Honorários contábeis";
+      }
+      return "Outras receitas do escritório";
+    }
+
+    function clearAllFinancialData() {
+      const option = prompt([
+        "O que deseja excluir?",
+        "",
+        "1 - Excluir tudo",
+        "2 - Excluir lançamentos de um cliente",
+        "3 - Excluir lançamentos de uma competência",
+        "4 - Resetar sistema local",
+        "",
+        "Digite o número da opção:"
+      ].join("\n"));
+      if (!option) return;
+      const choice = option.trim();
+      if (choice === "1") return clearAllEntriesAndClients();
+      if (choice === "2") return clearEntriesByClient();
+      if (choice === "3") return clearEntriesByCompetence();
+      if (choice === "4") return resetLocalSystem();
+      showToast("Opção de exclusão inválida.");
+    }
+
+    function clearAllEntriesAndClients() {
+      const ok = confirm("Excluir todos os lançamentos, clientes, logs de WhatsApp e backups salvos neste navegador? Use isso quando uma importação ficar errada.");
+      if (!ok) return;
+      entries = [];
+      clients = [];
+      whatsappLogs = [];
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(clientsStorageKey);
+      localStorage.removeItem(whatsappLogsKey);
+      localStorage.removeItem(backupHistoryKey);
+      localStorage.removeItem(lastBackupDateKey);
+      render();
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(clientsStorageKey);
+      localStorage.removeItem(whatsappLogsKey);
+      showToast("Todos os lançamentos e cadastros locais foram excluídos deste navegador.");
+    }
+
+    function clearEntriesByClient() {
+      const clientNames = [...new Set(entries.map(entry => entry.name).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "pt-BR"));
+      if (!clientNames.length) {
+        showToast("Não existem lançamentos para excluir por cliente.");
+        return;
+      }
+
+      const typedName = prompt([
+        "Digite o nome do cliente exatamente como aparece no sistema.",
+        "",
+        "Clientes encontrados:",
+        clientNames.slice(0, 40).join("\n"),
+        clientNames.length > 40 ? `... e mais ${clientNames.length - 40} cliente(s).` : ""
+      ].filter(Boolean).join("\n"));
+      if (!typedName) return;
+
+      const targetName = normalizeText(typedName);
+      const before = entries.length;
+      entries = entries.filter(entry => normalizeText(entry.name) !== targetName);
+      const removed = before - entries.length;
+      if (!removed) {
+        showToast("Nenhum lançamento encontrado para esse cliente.");
+        return;
+      }
+
+      clients = clients.filter(client => normalizeText(client.name) !== targetName);
+      saveEntries();
+      saveClients();
+      render();
+      showToast(`${removed} lançamento${removed === 1 ? "" : "s"} excluído${removed === 1 ? "" : "s"} do cliente informado.`);
+    }
+
+    function clearEntriesByCompetence() {
+      const competence = prompt("Digite a competência que deseja excluir no formato MM/AAAA ou AAAA-MM. Exemplo: 05/2026");
+      if (!competence) return;
+      const normalized = normalizeCompetenceInput(competence);
+      if (!normalized) {
+        showToast("Competência inválida. Use MM/AAAA ou AAAA-MM.");
+        return;
+      }
+
+      const before = entries.length;
+      entries = entries.filter(entry => entryCompetence(entry) !== normalized);
+      const removed = before - entries.length;
+      if (!removed) {
+        showToast("Nenhum lançamento encontrado nessa competência.");
+        return;
+      }
+
+      syncClientsAfterEntryRemoval();
+      saveEntries();
+      saveClients();
+      render();
+      showToast(`${removed} lançamento${removed === 1 ? "" : "s"} excluído${removed === 1 ? "" : "s"} da competência ${formatMonth(normalized)}.`);
+    }
+
+    function resetLocalSystem() {
+      const ok = confirm("Resetar o sistema local? Isso apaga lançamentos, clientes, backups, modelos de WhatsApp, logs e preferências salvas neste computador.");
+      if (!ok) return;
+      entries = [];
+      clients = [];
+      whatsappLogs = [];
+      whatsappSettings = {
+        pix: "",
+        company: "Alfa Contabilidade",
+        openTemplate: defaultWhatsappOpenTemplate,
+        lateTemplate: defaultWhatsappLateTemplate
+      };
+      balancesHidden = false;
+      [
+        storageKey,
+        clientsStorageKey,
+        whatsappLogsKey,
+        backupHistoryKey,
+        lastBackupDateKey,
+        whatsappSettingsKey,
+        balanceVisibilityKey
+      ].forEach(key => localStorage.removeItem(key));
+      render();
+      showToast("Sistema local resetado. Nenhum dado financeiro ficou salvo neste navegador.");
+    }
+
+    function normalizeCompetenceInput(value) {
+      const text = String(value || "").trim();
+      const brazilian = text.match(/^(\d{1,2})\/(\d{4})$/);
+      if (brazilian) {
+        const month = brazilian[1].padStart(2, "0");
+        if (Number(month) < 1 || Number(month) > 12) return "";
+        return `${brazilian[2]}-${month}`;
+      }
+      const iso = text.match(/^(\d{4})-(\d{1,2})$/);
+      if (iso) {
+        const month = iso[2].padStart(2, "0");
+        if (Number(month) < 1 || Number(month) > 12) return "";
+        return `${iso[1]}-${month}`;
+      }
+      return "";
+    }
+
+    function entryCompetence(entry) {
+      if (entry.billingMonth) return String(entry.billingMonth).slice(0, 7);
+      return String(entry.date || "").slice(0, 7);
+    }
+
+    function syncClientsAfterEntryRemoval() {
+      const remainingClientKeys = new Set(entries.map(entry => clientKey(entry.name, entry.document)));
+      clients = clients.filter(client => remainingClientKeys.has(client.key || clientKey(client.name, client.document)));
     }
 
     function importCsvText(text) {
@@ -3199,7 +4041,8 @@ Atenciosamente,
         const paid = rawStatus.includes("pago");
         const canceled = rawStatus.includes("cancelado");
         const originalAmount = parseBrazilianMoney(getRecordValue(record, ["valor_r", "valor"]));
-        const paidAmount = parseBrazilianMoney(getRecordValue(record, ["valor_pago_r", "valor_pago"]));
+        const rawPaidAmount = parseBrazilianMoney(getRecordValue(record, ["valor_pago_r", "valor_pago"]));
+        const paidAmount = paid && !rawPaidAmount ? originalAmount : rawPaidAmount;
         const sourceId = getRecordValue(record, ["numero_da_cobranca", "numero_cobranca", "cobranca"]);
         if (sourceId) incomingSourceIds.add(sourceId);
         const documentValue = getRecordValue(record, ["documento", "cnpj", "cpf"]);
@@ -3217,7 +4060,7 @@ Atenciosamente,
           paidAmount,
           name: record.nome || "Cliente sem nome",
           document: documentValue,
-          category: "Honorários contábeis",
+          category: importedRevenueCategory(record),
           method: getRecordValue(record, ["forma_de_cobranca", "forma_cobranca"]) || "CSV",
           description: [
             sourceId ? `Cobrança ${sourceId}` : "Honorário importado",
@@ -3229,7 +4072,7 @@ Atenciosamente,
         };
       });
 
-      const allImported = expandRecurringEntries(baseImported);
+      const allImported = baseImported;
       allImported.forEach(entry => {
         const preserved = preservedClosures.get(recurringEntryKey(entry));
         if (!preserved) return;
@@ -3403,11 +4246,16 @@ Atenciosamente,
       render();
     });
     document.getElementById("exportBtn").addEventListener("click", exportCsv);
+    document.getElementById("reportModelSelect").addEventListener("change", render);
+    document.getElementById("exportReportCsvBtn").addEventListener("click", exportSelectedReportCsv);
+    document.getElementById("exportReportJsonBtn").addEventListener("click", exportSelectedReportJson);
+    document.getElementById("printReportBtn").addEventListener("click", printSelectedReport);
     document.getElementById("manualBackupBtn").addEventListener("click", () => {
       createBackup("manual", true);
       localStorage.setItem(lastBackupDateKey, todayISO());
       showToast("Backup manual gerado.");
     });
+    document.getElementById("clearEntriesBtn").addEventListener("click", clearAllFinancialData);
     document.getElementById("toggleBalancesBtn").addEventListener("click", event => {
       event.stopPropagation();
       toggleBalances();
