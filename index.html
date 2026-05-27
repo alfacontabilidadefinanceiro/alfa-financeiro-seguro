@@ -1090,7 +1090,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V22 - Nuvem automática por coleções e baixa automática de boletos.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V24 - Nuvem automática, carregar/salvar manual e diagnóstico Firestore.</div>
     </form>
   </section>
 
@@ -1100,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V22 nuvem por coleções</span>
+          <span>Controle interno • V24 nuvem automática</span>
         </div>
       </div>
 
@@ -1117,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V22. Login por senha, Firestore por coleções e baixa automática de boletos pagos.</p>
+        <p><span class="status-dot"></span>VERSÃO V24. Login por senha, Firestore em nuvem, sincronização automática e botões de conferência.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1135,6 +1135,9 @@
           <input id="payablesImportInput" type="file" accept=".csv,text/csv,.txt,text/plain,.pdf,application/pdf" multiple hidden />
           <label class="top-month-control" for="globalMonthFilter"><span>Mês de análise</span><input id="globalMonthFilter" type="month" title="Mês de análise do sistema" /></label>
           <span class="cloud-status warn" id="cloudStatusBadge" title="Sincronização automática com Firebase/Firestore">Nuvem automática aguardando</span>
+          <button class="btn btn-secondary" id="cloudLoadNowBtn" type="button" title="Busca os dados salvos no Firestore e atualiza a tela">Carregar nuvem</button>
+          <button class="btn btn-secondary" id="cloudSyncNowBtn" type="button" title="Força o salvamento dos dados atuais no Firestore">Salvar nuvem</button>
+          <button class="btn btn-secondary" id="cloudDiagnosticBtn" type="button" title="Mostra e testa a comunicação com o Firestore">Diagnóstico</button>
           <button class="btn btn-secondary" id="importClientsTopBtn" type="button">Importar clientes</button>
           <button class="btn btn-secondary" id="importMonthlyPaymentsBtn" type="button">Baixar boletos pagos</button>
           <button class="btn btn-secondary" id="importBtn" type="button">Importar extrato/saídas</button>
@@ -2187,7 +2190,7 @@
     let cloudPendingReason = "";
     let cloudLastSavedAt = "";
     let cloudLastLoadedAt = "";
-    const cloudTimeoutMs = 30000;
+    const cloudTimeoutMs = 60000;
 
     const storageKey = "alfaFinanceiroLancamentosV1";
     const clientsStorageKey = "alfaFinanceiroClientesV1";
@@ -2957,7 +2960,7 @@ Atenciosamente,
         const operations = [];
 
         operations.push(batch => batch.set(cloudStateRef(), {
-          version: "V23-Firestore-Diagnostico",
+          version: "V24-Firestore-Sync-Diagnostico",
           storageMode: "collections_v22",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -7096,11 +7099,34 @@ Atenciosamente,
     });
 
     document.getElementById("cloudLoadNowBtn")?.addEventListener("click", async () => {
+      setCloudStatus("Buscando dados diretamente do Firestore...", "warn");
       const status = await loadCloudState();
       renderOfficeProfile();
       renderWhatsappSettings();
       render();
       showToast(status === "carregado" ? `Dados carregados da nuvem: ${cloudSummaryText()}.` : "Nuvem verificada.");
+    });
+
+    document.getElementById("cloudDiagnosticBtn")?.addEventListener("click", async () => {
+      try {
+        if (!isAuthorizedUser(auth.currentUser)) {
+          showToast("Usuário não autenticado/autorizado para testar a nuvem.");
+          return;
+        }
+        setCloudStatus("Testando Firestore...", "warn");
+        const stateSnap = await withTimeout(getDoc(cloudStateRef()), cloudTimeoutMs, "Tempo esgotado no teste do Firestore.");
+        const state = stateSnap.exists() ? (stateSnap.data() || {}) : {};
+        const clientsMap = await getCollectionDocsMap("clients");
+        const entriesMap = await getCollectionDocsMap("entries");
+        const msg = `Firestore OK. E-mail: ${auth.currentUser.email}. Clientes na nuvem: ${clientsMap.size}. Lançamentos na nuvem: ${entriesMap.size}. Documento principal: ${stateSnap.exists() ? "existe" : "não existe"}.`;
+        setCloudStatus(msg, "ok");
+        showToast(msg);
+        console.info("Diagnóstico Alfa Financeiro", { state, clientes: clientsMap.size, lancamentos: entriesMap.size });
+      } catch (error) {
+        console.error("Diagnóstico Firestore falhou", error);
+        setCloudStatus(firebaseErrorMessage(error), "err");
+        showToast(firebaseErrorMessage(error));
+      }
     });
 
     document.querySelectorAll(".nav button").forEach(button => {

@@ -1,0 +1,18 @@
+ALFA FINANCEIRO V24 - NUVEM AUTOMATICA E DIAGNOSTICO
+
+1. Publique somente os arquivos extraidos no GitHub Pages.
+2. Nao publique CSV de clientes, extratos, boletos, XLS, PDF, ZIP ou RAR.
+3. Apos login, o sistema carrega a nuvem automaticamente.
+4. Se abrir em outro computador e nao aparecer, clique em Carregar nuvem.
+5. Clique em Diagnostico para conferir: clientes na nuvem, lancamentos na nuvem e documento principal.
+6. No Firebase, os dados ficam em: Cloud Firestore > Dados > alfaFinanceiro > principal. As subcolecoes sao clients e entries.
+7. Regras recomendadas:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null && request.auth.token.email == "alfacontabilidade2014@gmail.com";
+    }
+  }
+}
