@@ -2,9 +2,9 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="alfa-financeiro-version" content="2026-05-26-profissional-v5-relatorios-totais-whatsapp-escritorio" />
+  <meta name="alfa-financeiro-version" content="2026-05-27-v19-firestore-nuvem-obrigatoria" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V14 | Honorário mensal corrigido</title>
+  <title>Alfa Financeiro V19 | Nuvem obrigatória</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1071,7 +1071,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V12 SEGURA - Relatórios gerenciais, reclassificação, duplicidade e publicação sem dados reais.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V19 NUVEM - Dados devem sincronizar no Firebase/Firestore para acesso em outros computadores.</div>
     </form>
   </section>
 
@@ -1081,7 +1081,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V17 importações separadas</span>
+          <span>Controle interno • V19 nuvem</span>
         </div>
       </div>
 
@@ -1098,7 +1098,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V18 nuvem. Importação separada: clientes, baixa de boletos pagos e extrato/saídas. Dados sincronizados no Firebase/Firestore para acesso em outros computadores.</p>
+        <p><span class="status-dot"></span>VERSÃO V19 nuvem. Dados salvos no Firebase/Firestore para acesso em outros computadores. Use “Salvar nuvem” após importações.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1115,6 +1115,9 @@
           <input id="clientImportInput" type="file" accept=".csv,text/csv" hidden />
           <input id="payablesImportInput" type="file" accept=".csv,text/csv,.txt,text/plain,.pdf,application/pdf" multiple hidden />
           <label class="top-month-control" for="globalMonthFilter"><span>Mês de análise</span><input id="globalMonthFilter" type="month" title="Mês de análise do sistema" /></label>
+          <span class="cloud-status warn" id="cloudStatusBadge">Nuvem aguardando</span>
+          <button class="btn btn-secondary" id="cloudSyncNowBtn" type="button" title="Gravar agora no Firebase/Firestore">Salvar nuvem</button>
+          <button class="btn btn-secondary" id="cloudLoadNowBtn" type="button" title="Recarregar dados do Firebase/Firestore">Carregar nuvem</button>
           <button class="btn btn-secondary" id="importClientsTopBtn" type="button">Importar clientes</button>
           <button class="btn btn-secondary" id="importMonthlyPaymentsBtn" type="button">Baixar boletos pagos</button>
           <button class="btn btn-secondary" id="importBtn" type="button">Importar extrato/saídas</button>
@@ -2665,6 +2668,18 @@ Atenciosamente,
       return normalizeWhatsappPhone(officeProfile.whatsapp || officeWhatsAppNumber) || officeWhatsAppNumber;
     }
 
+    function setCloudStatus(message, mode = "warn") {
+      const badge = document.getElementById("cloudStatusBadge");
+      if (!badge) return;
+      badge.textContent = message;
+      badge.classList.remove("ok", "warn", "err");
+      badge.classList.add(mode);
+    }
+
+    function cloudSummaryText() {
+      return `${clients.length} cliente(s) • ${entries.length} lançamento(s)`;
+    }
+
     function renderOfficeProfile() {
       const controls = {
         officeName: officeProfile.name,
@@ -2775,6 +2790,7 @@ Atenciosamente,
 
     async function loadCloudState() {
       if (!isAuthorizedUser(auth.currentUser)) return "sem-usuario";
+      setCloudStatus("Carregando nuvem...", "warn");
       try {
         const snap = await getDoc(cloudStateRef());
         if (snap.exists()) {
@@ -2790,15 +2806,18 @@ Atenciosamente,
             whatsappLogs = Array.isArray(data.whatsappLogs) ? data.whatsappLogs.slice(0, 300) : whatsappLogs;
             persistCloudStateLocally();
             cloudLoaded = true;
+            setCloudStatus(`Nuvem carregada: ${cloudSummaryText()}`, "ok");
             return "carregado";
           }
         }
         cloudLoaded = true;
         await syncCloudState("primeira-carga");
+        setCloudStatus(`Nuvem iniciada: ${cloudSummaryText()}`, "ok");
         return "iniciado";
       } catch (error) {
         console.error("Erro ao carregar dados do Firestore", error);
         cloudLoaded = false;
+        setCloudStatus("Erro na nuvem", "err");
         showToast(firebaseErrorMessage(error));
         return "erro";
       }
@@ -2808,6 +2827,7 @@ Atenciosamente,
       if (!isAuthorizedUser(auth.currentUser)) return;
       if (cloudSyncInProgress) return;
       cloudSyncInProgress = true;
+      setCloudStatus("Salvando nuvem...", "warn");
       try {
         const payload = {
           version: "V18-Firestore",
@@ -2822,9 +2842,11 @@ Atenciosamente,
         };
         await setDoc(cloudStateRef(), payload, { merge: true });
         cloudLoaded = true;
+        setCloudStatus(`Salvo na nuvem: ${cloudSummaryText()}`, "ok");
         console.info(`Alfa Financeiro: sincronizado no Firestore (${reason}).`);
       } catch (error) {
         console.error("Erro ao sincronizar com Firestore", error);
+        setCloudStatus("Erro ao salvar nuvem", "err");
         showToast(firebaseErrorMessage(error));
       } finally {
         cloudSyncInProgress = false;
@@ -6845,6 +6867,19 @@ Atenciosamente,
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       await signOut(auth);
+    });
+
+    document.getElementById("cloudSyncNowBtn")?.addEventListener("click", async () => {
+      await forceCloudSync("manual-botao");
+      showToast(`Dados salvos na nuvem: ${cloudSummaryText()}.`);
+    });
+
+    document.getElementById("cloudLoadNowBtn")?.addEventListener("click", async () => {
+      const status = await loadCloudState();
+      renderOfficeProfile();
+      renderWhatsappSettings();
+      render();
+      showToast(status === "carregado" ? `Dados carregados da nuvem: ${cloudSummaryText()}.` : "Nuvem verificada.");
     });
 
     document.querySelectorAll(".nav button").forEach(button => {

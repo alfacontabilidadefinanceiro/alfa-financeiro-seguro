@@ -72,3 +72,7 @@ Após login autorizado, clientes, cobranças, pagamentos, despesas, extratos e c
 
 Para segurança, os dados reais devem ser importados somente dentro do sistema, nunca enviados para o GitHub.
 As regras recomendadas estão no arquivo `FIRESTORE-RULES-ALFA-FINANCEIRO.txt`.
+
+
+## V19 - Nuvem obrigatória
+Esta versão tem botões Salvar nuvem e Carregar nuvem para confirmar sincronização no Firestore.

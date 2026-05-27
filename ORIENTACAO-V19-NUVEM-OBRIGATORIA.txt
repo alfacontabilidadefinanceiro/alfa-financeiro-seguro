@@ -1,0 +1,10 @@
+VERSÃO V19 - NUVEM OBRIGATÓRIA
+
+1. Publique esta versão no GitHub Pages.
+2. Configure Authentication e Firestore no Firebase.
+3. Cole as regras do arquivo FIRESTORE-RULES-ALFA-FINANCEIRO.txt.
+4. Após importar clientes ou lançamentos, clique em SALVAR NUVEM.
+5. Em outro computador, entre com o mesmo e-mail autorizado e clique em CARREGAR NUVEM se os dados não aparecerem automaticamente.
+
+Se aparecer erro de permissão, o problema está nas regras do Firestore ou no e-mail logado.
+Não envie arquivos CSV, XLSX, PDF, extratos ou dados reais para o GitHub.
