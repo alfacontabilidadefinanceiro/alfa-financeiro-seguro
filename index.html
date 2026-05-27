@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V30 | Serviços e Cobranças</title>
+  <title>Alfa Financeiro V31 | Serviços e Cobranças</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1090,7 +1090,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V30 - Firestore estável, serviços por cobrança e conferência mensal automática.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V31 - Firestore estável, serviços por cobrança e conferência mensal automática.</div>
     </form>
   </section>
 
@@ -1100,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V30 mensalidades</span>
+          <span>Controle interno • V31 mensalidades</span>
         </div>
       </div>
 
@@ -1117,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V30. Confere mensalidade de todos os clientes ativos por competência, permite serviços extras e evita duplicidade por cliente, competência e serviço.</p>
+        <p><span class="status-dot"></span>VERSÃO V31. Confere mensalidade de todos os clientes ativos por competência, permite serviços extras e evita duplicidade por cliente, competência e serviço.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1561,7 +1561,7 @@
               <strong id="reportCanceled">0</strong>
             </div>
           </div>
-          <div class="hint"><strong>VERSÃO V30 - CONFERÊNCIA MENSAL POR CLIENTE, COMPETÊNCIA E SERVIÇO.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
+          <div class="hint"><strong>VERSÃO V31 - CONFERÊNCIA MENSAL POR CLIENTE, COMPETÊNCIA E SERVIÇO.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
           <div class="bar-list" id="reportList"></div>
           <div class="hint" id="reportDiagnostic">Diagnóstico: aguardando leitura dos lançamentos.</div>
           <section class="panel">
@@ -2926,6 +2926,32 @@ Atenciosamente,
       return map;
     }
 
+    function chooseBestCloudArrays(data = {}, clientDocs = new Map(), entryDocs = new Map()) {
+      const compactClients = Array.isArray(data.clients) ? data.clients : [];
+      const compactEntries = Array.isArray(data.entries) ? data.entries : [];
+
+      const rawActiveEntryIds = Array.isArray(data.activeEntryIds) ? data.activeEntryIds : null;
+      const rawActiveClientIds = Array.isArray(data.activeClientIds) ? data.activeClientIds : null;
+      const activeEntryIds = new Set(rawActiveEntryIds && rawActiveEntryIds.length ? rawActiveEntryIds : [...entryDocs.keys()]);
+      const activeClientIds = new Set(rawActiveClientIds && rawActiveClientIds.length ? rawActiveClientIds : [...clientDocs.keys()]);
+
+      const collectionEntries = [...entryDocs.entries()].filter(([id]) => activeEntryIds.has(id)).map(([, value]) => value);
+      const collectionClients = [...clientDocs.entries()].filter(([id]) => activeClientIds.has(id)).map(([, value]) => value);
+
+      const useCollectionEntries = collectionEntries.length > compactEntries.length;
+      const useCollectionClients = collectionClients.length > compactClients.length;
+
+      return {
+        entries: useCollectionEntries ? collectionEntries : compactEntries,
+        clients: useCollectionClients ? collectionClients : compactClients,
+        source: `${useCollectionClients || useCollectionEntries ? "colecoes" : "compacto"}`,
+        compactClients: compactClients.length,
+        compactEntries: compactEntries.length,
+        collectionClients: collectionClients.length,
+        collectionEntries: collectionEntries.length
+      };
+    }
+
     function safeJsonCopy(value) {
       try {
         return JSON.parse(JSON.stringify(value ?? null));
@@ -2982,40 +3008,23 @@ Atenciosamente,
       if (!isAuthorizedUser(auth.currentUser)) return "sem-usuario";
       setCloudStatus("Carregando dados da nuvem...", "warn");
       try {
-        const snap = await withTimeout(getDoc(cloudStateRef()), cloudTimeoutMs, "Tempo esgotado ao carregar a nuvem.");
+        const snap = await withTimeout(getDoc(cloudStateRef()), cloudTimeoutMs, "Tempo esgotado ao carregar documento principal da nuvem.");
         const data = snap.exists() ? (snap.data() || {}) : {};
-        let cloudEntries = [];
-        let cloudClients = [];
 
-        const hasCompactPayload = Array.isArray(data.entries) || Array.isArray(data.clients);
-        if (hasCompactPayload && ((data.entries || []).length || (data.clients || []).length)) {
-          // V26: carregamento rápido pelo documento principal quando couber no limite do Firestore.
-          // Isso evita depender de centenas de leituras para abrir em outro computador.
-          cloudEntries = Array.isArray(data.entries) ? data.entries : [];
-          cloudClients = Array.isArray(data.clients) ? data.clients : [];
-        } else {
-          const useCollections = data.storageMode === "collections_v22" || data.storageMode === "hybrid_v26" || data.storageMode === "hybrid_v27" || data.storageMode === "collections_v27" || Array.isArray(data.activeEntryIds) || Array.isArray(data.activeClientIds);
-          if (useCollections) {
-            const [entryDocs, clientDocs] = await Promise.all([
-              getCollectionDocsMap("entries"),
-              getCollectionDocsMap("clients")
-            ]);
-            // Proteção V26: se o documento principal foi salvo vazio por outro navegador,
-            // mas as subcoleções ainda possuem dados, carregamos todos os documentos das coleções.
-            const rawActiveEntryIds = Array.isArray(data.activeEntryIds) ? data.activeEntryIds : null;
-            const rawActiveClientIds = Array.isArray(data.activeClientIds) ? data.activeClientIds : null;
-            const activeEntryIds = new Set(rawActiveEntryIds && rawActiveEntryIds.length ? rawActiveEntryIds : [...entryDocs.keys()]);
-            const activeClientIds = new Set(rawActiveClientIds && rawActiveClientIds.length ? rawActiveClientIds : [...clientDocs.keys()]);
-            cloudEntries = [...entryDocs.entries()].filter(([id]) => activeEntryIds.has(id)).map(([, value]) => value);
-            cloudClients = [...clientDocs.entries()].filter(([id]) => activeClientIds.has(id)).map(([, value]) => value);
-          } else {
-            // Compatibilidade com versões antigas que salvavam tudo em um único documento.
-            cloudEntries = Array.isArray(data.entries) ? data.entries : [];
-            cloudClients = Array.isArray(data.clients) ? data.clients : [];
-          }
-        }
+        let entryDocs = new Map();
+        let clientDocs = new Map();
+        const collectionResults = await Promise.allSettled([
+          getCollectionDocsMap("entries"),
+          getCollectionDocsMap("clients")
+        ]);
+        if (collectionResults[0].status === "fulfilled") entryDocs = collectionResults[0].value;
+        if (collectionResults[1].status === "fulfilled") clientDocs = collectionResults[1].value;
 
+        const chosen = chooseBestCloudArrays(data, clientDocs, entryDocs);
+        const cloudEntries = Array.isArray(chosen.entries) ? chosen.entries : [];
+        const cloudClients = Array.isArray(chosen.clients) ? chosen.clients : [];
         const hasCloudData = cloudEntries.length || cloudClients.length || data.officeProfile || data.whatsappSettings;
+
         if (hasCloudData) {
           entries = dedupeEntries(sanitizeEntries(cloudEntries));
           clients = cloudClients.filter(client => client && client.name && client.document);
@@ -3026,7 +3035,7 @@ Atenciosamente,
           cloudLoaded = true;
           cloudReadyForWrites = true;
           cloudLastLoadedAt = nowTimeText();
-          setCloudStatus(`Nuvem carregada ${cloudLastLoadedAt}: ${cloudSummaryText()}`, "ok");
+          setCloudStatus(`Nuvem carregada ${cloudLastLoadedAt}: ${cloudSummaryText()} • fonte ${chosen.source} • compacto ${chosen.compactClients}/${chosen.compactEntries} • coleções ${chosen.collectionClients}/${chosen.collectionEntries}`, "ok");
           return "carregado";
         }
 
@@ -3070,14 +3079,14 @@ Atenciosamente,
         // Proteção V27: jamais sobrescrever a nuvem com uma base zerada por abertura em outro computador.
         if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
           setCloudStatus("Proteção ativada: base local vazia não foi salva. Clique em Carregar nuvem.", "warn");
-          console.warn("Alfa Financeiro V30: bloqueado salvamento vazio", { reason });
+          console.warn("Alfa Financeiro V31: bloqueado salvamento vazio", { reason });
           return;
         }
 
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
         const statePayload = {
-          version: "V30-Conferencia-Mensalidades-Servicos",
+          version: "V31-Conferencia-Mensalidades-Servicos",
           storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -3103,7 +3112,7 @@ Atenciosamente,
         cloudReadyForWrites = true;
         cloudLastSavedAt = nowTimeText();
         updateCloudSummaryStatus("Salvo na nuvem");
-        console.info(`Alfa Financeiro: documento principal sincronizado no Firestore V30 (${reason}).`);
+        console.info(`Alfa Financeiro: documento principal sincronizado no Firestore V31 (${reason}).`);
 
         // Depois salva as coleções como espelho/recuperação. Não bloqueia a operação principal.
         // Se a internet oscilar, o documento principal já fica disponível para outros computadores.
@@ -3136,7 +3145,7 @@ Atenciosamente,
         await commitBatchOperations(operations, 100);
         cloudLastSavedAt = nowTimeText();
         updateCloudSummaryStatus("Salvo completo");
-        console.info(`Alfa Financeiro: coleções sincronizadas em segundo plano V30 (${reason}).`);
+        console.info(`Alfa Financeiro: coleções sincronizadas em segundo plano V31 (${reason}).`);
       } catch (error) {
         console.warn("Documento principal foi salvo, mas o espelho por coleções falhou.", error);
         setCloudStatus(`Documento principal salvo. Espelho em coleções pendente: ${firebaseErrorMessage(error)}`, "warn");
@@ -5418,7 +5427,7 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V30. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V31. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
 </body>
 </html>`;
@@ -7249,7 +7258,7 @@ Atenciosamente,
         return "Limite do Firestore atingido. Aguarde alguns minutos e tente novamente.";
       }
       if (String(error?.message || "").toLowerCase().includes("exceeds") || String(error?.message || "").toLowerCase().includes("1048487")) {
-        return "Base muito grande para salvar em um único documento. Esta versão salva por documento principal e coleções; publique novamente a V30 e tente outra vez.";
+        return "Base muito grande para salvar em um único documento. Esta versão salva por documento principal e coleções; publique novamente a V31 e tente outra vez.";
       }
       if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
         return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";
@@ -7381,12 +7390,27 @@ Atenciosamente,
         const state = stateSnap.exists() ? (stateSnap.data() || {}) : {};
         const clientsMap = await getCollectionDocsMap("clients");
         const entriesMap = await getCollectionDocsMap("entries");
-        const compactClients = Array.isArray(state.clients) ? state.clients.length : 0;
-        const compactEntries = Array.isArray(state.entries) ? state.entries.length : 0;
-        const msg = `Firestore OK. E-mail: ${auth.currentUser.email}. Documento principal: ${stateSnap.exists() ? "existe" : "não existe"}. Compacto: ${compactClients} cliente(s) e ${compactEntries} lançamento(s). Coleções: ${clientsMap.size} cliente(s) e ${entriesMap.size} lançamento(s).`;
+        const chosen = chooseBestCloudArrays(state, clientsMap, entriesMap);
+        const compactClients = chosen.compactClients;
+        const compactEntries = chosen.compactEntries;
+        if ((chosen.clients || []).length || (chosen.entries || []).length) {
+          entries = dedupeEntries(sanitizeEntries(chosen.entries || []));
+          clients = (chosen.clients || []).filter(client => client && client.name && client.document);
+          officeProfile = { ...loadOfficeProfile(), ...(state.officeProfile || {}) };
+          whatsappSettings = { ...loadWhatsappSettings(), ...(state.whatsappSettings || {}) };
+          whatsappLogs = Array.isArray(state.whatsappLogs) ? state.whatsappLogs.slice(0, 300) : whatsappLogs;
+          persistCloudStateLocally();
+          cloudLoaded = true;
+          cloudReadyForWrites = true;
+          cloudLastLoadedAt = nowTimeText();
+          renderOfficeProfile();
+          renderWhatsappSettings();
+          render();
+        }
+        const msg = `Firestore OK. E-mail: ${auth.currentUser.email}. Documento principal: ${stateSnap.exists() ? "existe" : "não existe"}. Compacto: ${compactClients} cliente(s) e ${compactEntries} lançamento(s). Coleções: ${clientsMap.size} cliente(s) e ${entriesMap.size} lançamento(s). Tela carregada pela fonte: ${chosen.source}.`;
         setCloudStatus(msg, "ok");
         showToast(msg);
-        console.info("Diagnóstico Alfa Financeiro", { state, clientes: clientsMap.size, lancamentos: entriesMap.size });
+        console.info("Diagnóstico Alfa Financeiro", { state, clientes: clientsMap.size, lancamentos: entriesMap.size, carregado: chosen });
       } catch (error) {
         console.error("Diagnóstico Firestore falhou", error);
         setCloudStatus(firebaseErrorMessage(error), "err");

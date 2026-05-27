@@ -1,0 +1,18 @@
+ALFA FINANCEIRO V31 - CARREGAMENTO DA NUVEM CORRIGIDO
+
+Correção principal:
+- O botão Diagnóstico agora também carrega os dados encontrados na nuvem para a tela.
+- O botão Carregar nuvem passa a escolher automaticamente a melhor fonte: documento principal ou coleções.
+- Se o documento principal tiver menos lançamentos que as coleções, o sistema usa as coleções.
+- Não é necessário importar clientes novamente quando o diagnóstico indicar que os dados existem no Firestore.
+
+Como testar:
+1. Publicar a V31 no GitHub Pages.
+2. Abrir o sistema em aba anônima.
+3. Fazer login.
+4. Clicar em Diagnóstico ou Carregar nuvem.
+5. Conferir se a tela de clientes mostra os clientes carregados.
+
+Segurança:
+- Não publicar CSV de clientes, extratos, boletos, PDFs ou backups no GitHub.
+- Dados reais devem ficar somente no Firestore.
