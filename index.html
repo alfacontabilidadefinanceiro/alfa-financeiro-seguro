@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V32 | Serviços e Cobranças</title>
+  <title>Alfa Financeiro V33 | Serviços e Cobranças</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -3143,14 +3143,14 @@ Atenciosamente,
         // Proteção V27: jamais sobrescrever a nuvem com uma base zerada por abertura em outro computador.
         if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
           setCloudStatus("Proteção ativada: base local vazia não foi salva. Clique em Carregar nuvem.", "warn");
-          console.warn("Alfa Financeiro V32: bloqueado salvamento vazio", { reason });
+          console.warn("Alfa Financeiro V33: bloqueado salvamento vazio", { reason });
           return;
         }
 
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
         const statePayload = {
-          version: "V32-Clientes-Mestre-Nuvem-Corrigida",
+          version: "V33-Clientes-Mestre-Nuvem-Corrigida",
           storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -3347,6 +3347,28 @@ Atenciosamente,
         .replace(/\s+/g, " ");
     }
 
+
+    function serviceKey(value) {
+      const normalized = normalizeText(value || "Honorários contábeis");
+      if (!normalized) return "honorarios-contabeis";
+      const aliases = {
+        "honorario": "honorarios-contabeis",
+        "honorarios": "honorarios-contabeis",
+        "honorario contabil": "honorarios-contabeis",
+        "honorarios contabeis": "honorarios-contabeis",
+        "honorario contabeis": "honorarios-contabeis",
+        "programa sgr": "programa-sgr",
+        "sgr": "programa-sgr",
+        "declaracao de imposto de renda": "declaracao-imposto-renda",
+        "declaracao irpf": "declaracao-imposto-renda",
+        "irpf": "declaracao-imposto-renda",
+        "contrato": "contratos",
+        "contratos": "contratos",
+        "alteracao contratual": "alteracao-contratual"
+      };
+      return aliases[normalized] || normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
+
     function normalizeMatchText(value) {
       return normalizeText(value)
         .replace(/\bltda\b/g, "")
@@ -3441,7 +3463,7 @@ Atenciosamente,
     }
 
     function syncClientsFromEntries(options = {}) {
-      // V32: cliente cadastrado é base mestre. Esta rotina nunca zera a lista de clientes.
+      // V33: cliente cadastrado é base mestre. Esta rotina nunca zera a lista de clientes.
       // Ela apenas complementa clientes ausentes a partir de lançamentos de receita.
       const byKey = new Map();
       sanitizeClients(clients).forEach(client => byKey.set(client.key || clientKey(client.name, client.document), client));
@@ -5522,7 +5544,7 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V32. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V33. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
 </body>
 </html>`;

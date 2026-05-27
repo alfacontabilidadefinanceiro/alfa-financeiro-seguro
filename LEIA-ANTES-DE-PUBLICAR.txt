@@ -1,11 +1,13 @@
-LEIA ANTES DE PUBLICAR - ALFA FINANCEIRO
+ALFA FINANCEIRO V33 - PACOTE LIMPO PARA PUBLICAR
 
-1. Publique somente os arquivos desta pasta.
-2. Nao envie arquivos da pasta C:\AlfaFinanceiro_PRIVADO_NAO_PUBLICAR.
-3. Esta pasta nao contem dados reais de clientes.
-4. Os dados financeiros devem ser importados dentro do sistema, depois do login.
-5. O acesso fica restrito pelo Firebase Authentication ao e-mail autorizado.
-6. Se trocar de repositorio no GitHub Pages, adicione o dominio no Firebase Authentication.
+Correção principal:
+- Corrigido erro: serviceKey is not defined.
+- Criada função serviceKey() usada na comparação de duplicidade por tipo de cobrança/serviço.
+- Mantida a regra de cliente mestre e serviços extras por cliente.
 
-Dominio atual esperado:
-https://alfacontabilidadefinanceiro.github.io/alfa-financeiro-seguro/
+Arquivos deste pacote são apenas do sistema.
+Não coloque no GitHub: CSV de clientes, extratos, boletos, planilhas ou backups reais.
+
+Teste executado antes da liberação:
+- JavaScript extraído do index.html validado com node --check, sem erro de sintaxe.
+- Verificado que a função serviceKey() existe no código antes da liberação.
