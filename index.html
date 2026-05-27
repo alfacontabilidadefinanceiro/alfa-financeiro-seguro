@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V19 | Nuvem obrigatória</title>
+  <title>Alfa Financeiro V25 | Nuvem segura</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1090,7 +1090,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V24 - Nuvem automática, carregar/salvar manual e diagnóstico Firestore.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V25 - Nuvem segura, recuperação de coleções e proteção contra salvar vazio.</div>
     </form>
   </section>
 
@@ -1100,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V24 nuvem automática</span>
+          <span>Controle interno • V25 nuvem segura</span>
         </div>
       </div>
 
@@ -1117,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V24. Login por senha, Firestore em nuvem, sincronização automática e botões de conferência.</p>
+        <p><span class="status-dot"></span>VERSÃO V25. Firestore em nuvem, recuperação automática e proteção contra sobrescrever com base vazia.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -2898,8 +2898,13 @@ Atenciosamente,
             getCollectionDocsMap("entries"),
             getCollectionDocsMap("clients")
           ]);
-          const activeEntryIds = new Set(Array.isArray(data.activeEntryIds) ? data.activeEntryIds : [...entryDocs.keys()]);
-          const activeClientIds = new Set(Array.isArray(data.activeClientIds) ? data.activeClientIds : [...clientDocs.keys()]);
+          // Proteção V25: se o documento principal foi salvo vazio por outro navegador,
+          // mas as subcoleções ainda possuem dados, carregamos todos os documentos das coleções.
+          // Isso evita aparecer 0 clientes/0 lançamentos em outro computador.
+          const rawActiveEntryIds = Array.isArray(data.activeEntryIds) ? data.activeEntryIds : null;
+          const rawActiveClientIds = Array.isArray(data.activeClientIds) ? data.activeClientIds : null;
+          const activeEntryIds = new Set(rawActiveEntryIds && rawActiveEntryIds.length ? rawActiveEntryIds : [...entryDocs.keys()]);
+          const activeClientIds = new Set(rawActiveClientIds && rawActiveClientIds.length ? rawActiveClientIds : [...clientDocs.keys()]);
           cloudEntries = [...entryDocs.entries()].filter(([id]) => activeEntryIds.has(id)).map(([, value]) => value);
           cloudClients = [...clientDocs.entries()].filter(([id]) => activeClientIds.has(id)).map(([, value]) => value);
         } else {
@@ -2957,10 +2962,19 @@ Atenciosamente,
 
         const activeEntryIds = cleanEntries.map(entry => entry.cloudId);
         const activeClientIds = cleanClients.map(client => client.cloudId);
+
+        // Proteção V25: nunca sobrescrever a nuvem com base vazia por abertura em outro navegador/computador.
+        // Para limpar dados, use o botão específico de excluir/limpar com confirmação, não o salvamento automático.
+        if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
+          setCloudStatus("Proteção ativada: base local vazia não foi salva na nuvem. Clique em Carregar nuvem ou Diagnóstico.", "warn");
+          console.warn("Alfa Financeiro V25: bloqueado salvamento vazio", { reason });
+          return;
+        }
+
         const operations = [];
 
         operations.push(batch => batch.set(cloudStateRef(), {
-          version: "V24-Firestore-Sync-Diagnostico",
+          version: "V25-Firestore-Sync-Seguro",
           storageMode: "collections_v22",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
