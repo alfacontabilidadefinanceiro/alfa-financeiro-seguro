@@ -1098,7 +1098,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V10 contas a pagar. Clientes cadastrados, cobranças até 03/2027, extrato mensal, importação de guias/boletos e alerta de vencimentos.</p>
+        <p><span class="status-dot"></span>VERSÃO V13 segura. Cadastro mestre de clientes, importação de clientes por CSV, cobranças até 03/2027, conciliação com extrato e alertas financeiros.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1111,9 +1111,11 @@
         </div>
         <div class="actions" id="topActions">
           <input id="csvImportInput" type="file" accept=".csv,text/csv" hidden />
+          <input id="clientImportInput" type="file" accept=".csv,text/csv" hidden />
           <input id="payablesImportInput" type="file" accept=".csv,text/csv,.txt,text/plain,.pdf,application/pdf" multiple hidden />
           <label class="top-month-control" for="globalMonthFilter"><span>Mês de análise</span><input id="globalMonthFilter" type="month" title="Mês de análise do sistema" /></label>
           <button class="btn btn-secondary" id="importBtn" type="button">Importar CSV</button>
+          <button class="btn btn-secondary" id="importClientsTopBtn" type="button">Importar clientes</button>
           <button class="btn btn-secondary" id="exportBtn" type="button">Exportar CSV</button>
           <button class="btn btn-secondary" id="manualBackupBtn" type="button">Backup</button>
           <button class="btn btn-secondary" id="generateChargesBtn" type="button">Gerar até 03/2027</button>
@@ -1274,7 +1276,8 @@
               <span class="pill" id="clientCount">0 clientes</span>
             </div>
             <div class="row-actions">
-              <span class="pill">Cadastro automático pelo CSV</span>
+              <span class="pill">Cadastro mestre seguro: dados salvos somente neste navegador</span>
+              <button class="btn btn-secondary" id="importClientsBtn" type="button">Importar clientes CSV</button>
               <button class="btn btn-primary" id="newClientBtn" type="button">Novo cliente</button>
             </div>
           </div>
@@ -1494,7 +1497,7 @@
               <strong id="reportCanceled">0</strong>
             </div>
           </div>
-          <div class="hint"><strong>VERSÃO V10 - CONTAS A PAGAR, GUIAS E ALERTAS.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
+          <div class="hint"><strong>VERSÃO V13 - CADASTRO MESTRE DE CLIENTES E IMPORTAÇÃO SEGURA.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
           <div class="bar-list" id="reportList"></div>
           <div class="hint" id="reportDiagnostic">Diagnóstico: aguardando leitura dos lançamentos.</div>
           <section class="panel">
@@ -6055,6 +6058,153 @@ Atenciosamente,
       clients = clients.filter(client => remainingClientKeys.has(client.key || clientKey(client.name, client.document)));
     }
 
+
+    function isClientImport(headers) {
+      return headers.includes("nome_razao_social") ||
+        (headers.includes("cpf_cnpj") && (headers.includes("valor_honorario") || headers.includes("dia_vencimento") || headers.includes("inicio_cobranca")));
+    }
+
+    function parseMonthInput(value, fallback = firstChargeMonth) {
+      const normalized = normalizeCompetenceInput(value);
+      return normalized || fallback;
+    }
+
+    function normalizeClientStatus(value) {
+      const text = normalizeText(value);
+      if (text.includes("inativo") || text.includes("cancelado") || text.includes("suspenso") || text.includes("nao importar")) return "inativo";
+      return "ativo";
+    }
+
+    function normalizeClientTypeFromDocument(documentValue, requestedType = "") {
+      const digits = normalizeDocument(documentValue);
+      const requested = normalizeText(requestedType);
+      if (requested.includes("cpf") || digits.length === 11) return "pf";
+      return "pj";
+    }
+
+    function clientFromImportRecord(record) {
+      const name = getRecordValue(record, ["nome_razao_social", "razao_social", "nome", "cliente"]).trim();
+      const documentValue = getRecordValue(record, ["cpf_cnpj", "cnpj_cpf", "documento", "cnpj", "cpf"]).trim();
+      const amount = parseBrazilianMoney(getRecordValue(record, ["valor_honorario", "honorario", "mensalidade", "valor_mensal", "valor"]));
+      const dueDay = Number(String(getRecordValue(record, ["dia_vencimento", "vencimento_dia", "dia", "vencimento"]) || "").replace(/\D/g, ""));
+      const status = normalizeClientStatus(getRecordValue(record, ["status", "situacao"]));
+      const notes = [
+        getRecordValue(record, ["observacao", "observacoes", "obs"]),
+        getRecordValue(record, ["nome_extrato_1"]) ? `Nome no extrato 1: ${getRecordValue(record, ["nome_extrato_1"])}` : "",
+        getRecordValue(record, ["nome_extrato_2"]) ? `Nome no extrato 2: ${getRecordValue(record, ["nome_extrato_2"])}` : ""
+      ].filter(Boolean).join(" | ");
+      return {
+        id: crypto.randomUUID(),
+        key: clientKey(name, documentValue),
+        type: normalizeClientTypeFromDocument(documentValue, getRecordValue(record, ["tipo_documento", "tipo"])),
+        status,
+        name,
+        tradeName: getRecordValue(record, ["nome_fantasia", "fantasia"]),
+        document: documentValue,
+        stateRegistration: getRecordValue(record, ["inscricao_estadual", "ie"]),
+        cityRegistration: getRecordValue(record, ["inscricao_municipal", "im"]),
+        responsible: getRecordValue(record, ["responsavel", "contato"]),
+        phone: getRecordValue(record, ["whatsapp", "telefone", "celular", "fone"]),
+        whatsappAllowed: "sim",
+        email: getRecordValue(record, ["email", "e_mail"]),
+        address: getRecordValue(record, ["endereco", "logradouro"]),
+        city: getRecordValue(record, ["cidade", "municipio"]),
+        service: getRecordValue(record, ["servico", "categoria"]) || "Honorários contábeis",
+        monthlyFee: Number(amount || 0),
+        dueDay: dueDay >= 1 && dueDay <= 31 ? dueDay : 5,
+        paymentMethod: getRecordValue(record, ["forma_cobranca", "forma_de_cobranca", "forma_pagamento"]) || "Folha de carnê",
+        notes,
+        firstChargeMonth: parseMonthInput(getRecordValue(record, ["inicio_cobranca", "inicio", "competencia_inicial"]), firstChargeMonth),
+        endChargeMonth: parseMonthInput(getRecordValue(record, ["fim_cobranca", "fim", "competencia_final"]), lastChargeMonth),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        source: "manual-client"
+      };
+    }
+
+    function updateOpenChargesForClient(client) {
+      let updated = 0;
+      entries.forEach(entry => {
+        if (entry.type !== "receita") return;
+        if (clientKey(entry.name, entry.document) !== client.key) return;
+        if (entry.status === "pago" || entry.status === "bonificado" || entry.receiptProtocol) return;
+        entry.name = client.name;
+        entry.document = client.document;
+        entry.category = client.service || "Honorários contábeis";
+        entry.method = client.paymentMethod || entry.method || "Folha de carnê";
+        entry.amount = Number(client.monthlyFee || entry.amount || 0);
+        const month = entry.billingMonth || String(entry.date || "").slice(0, 7) || client.firstChargeMonth || firstChargeMonth;
+        entry.date = dateInMonth(`${month}-${String(client.dueDay || 5).padStart(2, "0")}`, month);
+        entry.description = entry.description || `Honorários ${formatMonth(month)}`;
+        updated++;
+      });
+      return updated;
+    }
+
+    function upsertImportedClient(importedClient) {
+      if (!importedClient.name || !importedClient.document || !Number(importedClient.monthlyFee)) return { action: "revisar" };
+      const existing = clients.find(client => client.key === importedClient.key || (normalizeDocument(client.document) && normalizeDocument(client.document) === normalizeDocument(importedClient.document)));
+      const now = new Date().toISOString();
+      if (existing) {
+        const keepId = existing.id;
+        const keepCreated = existing.createdAt || now;
+        Object.assign(existing, {
+          ...existing,
+          ...importedClient,
+          id: keepId,
+          key: importedClient.key,
+          createdAt: keepCreated,
+          updatedAt: now,
+          source: existing.source || "manual-client"
+        });
+        updateOpenChargesForClient(existing);
+        return { action: "atualizado", client: existing };
+      }
+      clients.push(importedClient);
+      return { action: "criado", client: importedClient };
+    }
+
+    function importClientsCsvText(text) {
+      const rows = parseCsvRows(text);
+      if (rows.length < 2) {
+        showToast("O CSV de clientes não tem linhas suficientes para importar.");
+        return;
+      }
+      const headers = rows[0].map(normalizeHeader);
+      let created = 0;
+      let updated = 0;
+      let review = 0;
+      let generated = 0;
+      rows.slice(1).forEach(cells => {
+        const record = {};
+        headers.forEach((header, index) => record[header] = cells[index] || "");
+        const importedClient = clientFromImportRecord(record);
+        const result = upsertImportedClient(importedClient);
+        if (result.action === "criado") created++;
+        if (result.action === "atualizado") updated++;
+        if (result.action === "revisar") review++;
+      });
+      clients = clients
+        .filter(client => client && client.name && client.document)
+        .sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+      clients.forEach(client => generated += ensureMonthlyChargesForClient(client) || 0);
+      saveClients();
+      saveEntries();
+      ensureReportMonthHasData(true);
+      render();
+      showToast(`${created} cliente${created === 1 ? "" : "s"} criado${created === 1 ? "" : "s"}, ${updated} atualizado${updated === 1 ? "" : "s"}, ${generated} cobrança${generated === 1 ? "" : "s"} gerada${generated === 1 ? "" : "s"} até 03/2027.${review ? ` ${review} linha${review === 1 ? "" : "s"} ficou${review === 1 ? "" : "ram"} para revisão.` : ""}`);
+    }
+
+    function handleClientImport(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => importClientsCsvText(String(reader.result || ""));
+      reader.onerror = () => showToast("Não foi possível ler o CSV de clientes.");
+      reader.readAsText(file, "utf-8");
+      event.target.value = "";
+    }
+
     function importCsvText(text) {
       const rows = parseCsvRows(text);
       if (rows.length < 2) {
@@ -6063,6 +6213,9 @@ Atenciosamente,
       }
 
       const headers = rows[0].map(normalizeHeader);
+      if (isClientImport(headers)) {
+        return importClientsCsvText(text);
+      }
       if (isReceiptStatement(headers)) {
         return importReceiptStatementRows(rows, headers);
       }
@@ -6347,7 +6500,10 @@ Atenciosamente,
       toggleBalances();
     });
     document.getElementById("importBtn").addEventListener("click", () => document.getElementById("csvImportInput").click());
+    document.getElementById("importClientsBtn")?.addEventListener("click", () => document.getElementById("clientImportInput").click());
+    document.getElementById("importClientsTopBtn")?.addEventListener("click", () => document.getElementById("clientImportInput").click());
     document.getElementById("csvImportInput").addEventListener("change", handleCsvImport);
+    document.getElementById("clientImportInput")?.addEventListener("change", handleClientImport);
     document.getElementById("payablesImportInput")?.addEventListener("change", handlePayablesImport);
     form.addEventListener("submit", saveForm);
     clientForm.addEventListener("submit", saveClientForm);

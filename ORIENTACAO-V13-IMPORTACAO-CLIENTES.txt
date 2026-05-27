@@ -1,0 +1,10 @@
+VERSAO V13 - IMPORTACAO DE CLIENTES
+
+1. Publique os arquivos do sistema no GitHub Pages, sem subir dados reais.
+2. Entre no site com login autorizado.
+3. Clique em Clientes > Importar clientes CSV.
+4. Selecione apenas o arquivo CLIENTES_IMPORTAR_SITE_ALFA.csv.
+5. O sistema cria/atualiza os clientes e gera as cobrancas ate 03/2027.
+6. Nao envie o CSV de clientes para o GitHub. Ele contem dados reais e deve ser usado somente dentro do sistema.
+
+Campos aceitos: nome_razao_social, nome_fantasia, cpf_cnpj, whatsapp, email, valor_honorario, dia_vencimento, forma_cobranca, inicio_cobranca, fim_cobranca, status, observacao.
