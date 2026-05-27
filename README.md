@@ -64,3 +64,11 @@ Arquivos adicionados:
 - `CHECKLIST-SEGURANCA-PUBLICACAO.txt`
 
 Atenção: o uso com dados reais deve considerar banco seguro, regras de acesso e backup controlado.
+
+## V18 - Sincronização em nuvem
+
+Esta versão usa Firebase Authentication e Cloud Firestore para salvar os dados na nuvem.
+Após login autorizado, clientes, cobranças, pagamentos, despesas, extratos e configurações passam a ser carregados do Firestore.
+
+Para segurança, os dados reais devem ser importados somente dentro do sistema, nunca enviados para o GitHub.
+As regras recomendadas estão no arquivo `FIRESTORE-RULES-ALFA-FINANCEIRO.txt`.

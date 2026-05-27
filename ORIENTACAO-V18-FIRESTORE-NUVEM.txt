@@ -1,0 +1,22 @@
+ALFA FINANCEIRO V18 - FIREBASE / FIRESTORE
+
+Objetivo:
+Salvar os dados do sistema na nuvem para permitir acesso em outros computadores e cidades.
+
+O que esta versão faz:
+1. Mantém login pelo Firebase Authentication.
+2. Salva clientes, lançamentos, despesas, cobranças, configurações do escritório e logs de WhatsApp no Cloud Firestore.
+3. Mantém uma cópia local no navegador apenas como apoio/cache.
+4. Ao entrar no sistema, carrega os dados do Firestore.
+5. Ao importar clientes, baixar boletos pagos, lançar despesas ou reclassificar, sincroniza com o Firestore.
+
+Antes de usar com dados reais:
+1. Ative Authentication no Firebase.
+2. Ative Cloud Firestore.
+3. Em Authentication > Settings > Authorized domains, inclua:
+   alfacontabilidadefinanceiro.github.io
+4. No Firestore, cole as regras do arquivo FIRESTORE-RULES-ALFA-FINANCEIRO.txt.
+5. Publique no GitHub somente os arquivos do sistema, nunca CSV de clientes, extratos, boletos ou planilhas reais.
+
+Atenção:
+A Web API Key do Firebase é configuração pública do app web. A segurança real está nas Firestore Rules e no controle de login/autorização.

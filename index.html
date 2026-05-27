@@ -1098,7 +1098,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V17 segura. Importação separada: clientes, baixa de boletos pagos e extrato/saídas. Não apaga dados já lançados e evita duplicidade por cliente, competência, valor, vencimento e protocolo.</p>
+        <p><span class="status-dot"></span>VERSÃO V18 nuvem. Importação separada: clientes, baixa de boletos pagos e extrato/saídas. Dados sincronizados no Firebase/Firestore para acesso em outros computadores.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -2131,6 +2131,13 @@
       onAuthStateChanged,
       signOut
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAwmzq8a6lFoVwl3XKpPl8hJ_lPv8JFVUA",
@@ -2144,8 +2151,14 @@
 
     const firebaseApp = initializeApp(firebaseConfig);
     const auth = getAuth(firebaseApp);
+    const db = getFirestore(firebaseApp);
     const googleProvider = new GoogleAuthProvider();
     const authorizedEmail = "alfacontabilidade2014@gmail.com";
+    const authorizedEmails = new Set([authorizedEmail]);
+    const cloudDocumentPath = ["alfaFinanceiro", "principal"];
+    let cloudLoaded = false;
+    let cloudSyncTimer = null;
+    let cloudSyncInProgress = false;
 
     const storageKey = "alfaFinanceiroLancamentosV1";
     const clientsStorageKey = "alfaFinanceiroClientesV1";
@@ -2464,10 +2477,12 @@ Atenciosamente,
       const removed = before - entries.length;
       if (removed > 0) console.info(`Alfa Financeiro: ${removed} lançamento(s) duplicado(s) removido(s) antes de salvar.`);
       localStorage.setItem(storageKey, JSON.stringify(entries));
+      scheduleCloudSync("lancamentos");
     }
 
     function saveClients() {
       localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
+      scheduleCloudSync("clientes");
     }
 
 
@@ -2643,6 +2658,7 @@ Atenciosamente,
 
     function saveOfficeProfile() {
       localStorage.setItem(officeProfileKey, JSON.stringify(officeProfile));
+      scheduleCloudSync("escritorio");
     }
 
     function currentOfficeWhatsapp() {
@@ -2712,6 +2728,7 @@ Atenciosamente,
 
     function saveWhatsappSettings() {
       localStorage.setItem(whatsappSettingsKey, JSON.stringify(whatsappSettings));
+      scheduleCloudSync("whatsapp-config");
     }
 
     function loadWhatsappLogs() {
@@ -2725,10 +2742,104 @@ Atenciosamente,
 
     function saveWhatsappLogs() {
       localStorage.setItem(whatsappLogsKey, JSON.stringify(whatsappLogs.slice(0, 300)));
+      scheduleCloudSync("whatsapp-logs");
     }
 
     function normalizeEmail(value) {
       return String(value || "").trim().toLowerCase();
+    }
+
+    function isAuthorizedUser(user) {
+      return Boolean(user?.email && authorizedEmails.has(normalizeEmail(user.email)));
+    }
+
+    function cloudStateRef() {
+      return doc(db, ...cloudDocumentPath);
+    }
+
+    function safeJsonCopy(value) {
+      try {
+        return JSON.parse(JSON.stringify(value ?? null));
+      } catch {
+        return value ?? null;
+      }
+    }
+
+    function persistCloudStateLocally() {
+      localStorage.setItem(storageKey, JSON.stringify(entries));
+      localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
+      localStorage.setItem(officeProfileKey, JSON.stringify(officeProfile));
+      localStorage.setItem(whatsappSettingsKey, JSON.stringify(whatsappSettings));
+      localStorage.setItem(whatsappLogsKey, JSON.stringify((whatsappLogs || []).slice(0, 300)));
+    }
+
+    async function loadCloudState() {
+      if (!isAuthorizedUser(auth.currentUser)) return "sem-usuario";
+      try {
+        const snap = await getDoc(cloudStateRef());
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
+          const cloudClients = Array.isArray(data.clients) ? data.clients : [];
+          const hasCloudData = cloudEntries.length || cloudClients.length || data.officeProfile || data.whatsappSettings;
+          if (hasCloudData) {
+            entries = dedupeEntries(sanitizeEntries(cloudEntries));
+            clients = cloudClients.filter(client => client && client.name && client.document);
+            officeProfile = { ...loadOfficeProfile(), ...(data.officeProfile || {}) };
+            whatsappSettings = { ...loadWhatsappSettings(), ...(data.whatsappSettings || {}) };
+            whatsappLogs = Array.isArray(data.whatsappLogs) ? data.whatsappLogs.slice(0, 300) : whatsappLogs;
+            persistCloudStateLocally();
+            cloudLoaded = true;
+            return "carregado";
+          }
+        }
+        cloudLoaded = true;
+        await syncCloudState("primeira-carga");
+        return "iniciado";
+      } catch (error) {
+        console.error("Erro ao carregar dados do Firestore", error);
+        cloudLoaded = false;
+        showToast(firebaseErrorMessage(error));
+        return "erro";
+      }
+    }
+
+    async function syncCloudState(reason = "salvar") {
+      if (!isAuthorizedUser(auth.currentUser)) return;
+      if (cloudSyncInProgress) return;
+      cloudSyncInProgress = true;
+      try {
+        const payload = {
+          version: "V18-Firestore",
+          updatedAt: serverTimestamp(),
+          updatedBy: normalizeEmail(auth.currentUser.email),
+          syncReason: reason,
+          entries: safeJsonCopy(dedupeEntries(entries)),
+          clients: safeJsonCopy(clients),
+          officeProfile: safeJsonCopy(officeProfile),
+          whatsappSettings: safeJsonCopy(whatsappSettings),
+          whatsappLogs: safeJsonCopy((whatsappLogs || []).slice(0, 300))
+        };
+        await setDoc(cloudStateRef(), payload, { merge: true });
+        cloudLoaded = true;
+        console.info(`Alfa Financeiro: sincronizado no Firestore (${reason}).`);
+      } catch (error) {
+        console.error("Erro ao sincronizar com Firestore", error);
+        showToast(firebaseErrorMessage(error));
+      } finally {
+        cloudSyncInProgress = false;
+      }
+    }
+
+    function scheduleCloudSync(reason = "salvar") {
+      if (!isAuthorizedUser(auth.currentUser)) return;
+      window.clearTimeout(cloudSyncTimer);
+      cloudSyncTimer = window.setTimeout(() => syncCloudState(reason), 900);
+    }
+
+    async function forceCloudSync(reason = "manual") {
+      window.clearTimeout(cloudSyncTimer);
+      await syncCloudState(reason);
     }
 
     function buildBackupData(reason = "automatico") {
@@ -6641,6 +6752,12 @@ Atenciosamente,
       if (code.includes("network-request-failed")) {
         return "Sem conexão com o Firebase. Verifique a internet e tente novamente.";
       }
+      if (code.includes("permission-denied")) {
+        return "Sem permissão no Firestore. Confira as regras do banco de dados e o e-mail autorizado.";
+      }
+      if (code.includes("unavailable")) {
+        return "Firestore indisponível no momento. Tente novamente em alguns instantes.";
+      }
       if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
         return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";
       }
@@ -6652,17 +6769,25 @@ Atenciosamente,
       return `Não foi possível entrar. Código do Firebase: ${code || "erro desconhecido"}.`;
     }
 
-    function showProtectedApp(user) {
+    async function showProtectedApp(user) {
       document.getElementById("userLabel").textContent = user.email || authorizedEmail;
       loginScreen.style.display = "none";
       app.classList.add("visible");
       applyBalanceVisibility();
+      const cloudStatus = await loadCloudState();
       renderOfficeProfile();
+      renderWhatsappSettings();
       const initialView = new URLSearchParams(window.location.search).get("view");
       if (titles[initialView]) setView(initialView);
       autoEnsureFutureMonthlyCharges();
       const backupCreated = runDailyBackup();
-      showToast(backupCreated ? "Bem-vindo. Backup diário gerado automaticamente." : "Bem-vindo ao Alfa Financeiro.");
+      render();
+      const message = cloudStatus === "carregado"
+        ? "Bem-vindo. Dados carregados da nuvem."
+        : cloudStatus === "iniciado"
+          ? "Bem-vindo. Banco em nuvem iniciado."
+          : backupCreated ? "Bem-vindo. Backup diário gerado automaticamente." : "Bem-vindo ao Alfa Financeiro.";
+      showToast(message);
     }
 
     function showLoginScreen(message = "") {
@@ -6677,17 +6802,17 @@ Atenciosamente,
       showLoginScreen("Usuário não autorizado.");
     }
 
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
       if (!user) {
         showLoginScreen();
         return;
       }
-      if (normalizeEmail(user.email) !== authorizedEmail) {
+      if (!isAuthorizedUser(user)) {
         blockUnauthorizedUser();
         return;
       }
       setLoginError();
-      showProtectedApp(user);
+      await showProtectedApp(user);
     });
 
     document.getElementById("loginForm").addEventListener("submit", async event => {
@@ -6695,7 +6820,7 @@ Atenciosamente,
       setLoginError();
       const email = normalizeEmail(document.getElementById("emailInput").value);
       const password = document.getElementById("passwordInput").value;
-      if (email !== authorizedEmail) {
+      if (!authorizedEmails.has(email)) {
         setLoginError("Usuário não autorizado.");
         return;
       }
@@ -6710,7 +6835,7 @@ Atenciosamente,
       setLoginError();
       try {
         const result = await signInWithPopup(auth, googleProvider);
-        if (normalizeEmail(result.user?.email) !== authorizedEmail) {
+        if (!isAuthorizedUser(result.user)) {
           await blockUnauthorizedUser();
         }
       } catch (error) {
