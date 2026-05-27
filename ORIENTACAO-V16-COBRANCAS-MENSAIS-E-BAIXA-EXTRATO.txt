@@ -1,0 +1,21 @@
+VERSÃO V16 - COBRANÇAS MENSAIS COM VENCIMENTO POR CLIENTE
+
+Objetivo:
+- Gerar automaticamente as parcelas mensais de cada cliente de 05/2026 até 03/2027.
+- Usar o dia de vencimento cadastrado em cada cliente para cada mês.
+- Se o cliente não tiver dia de vencimento, usar dia 15.
+- Evitar duplicidade por cliente + competência.
+- Permitir importar o extrato mensal para baixar as parcelas pagas.
+- Apontar no painel inicial clientes/parcelas em aberto, vencidas, vencendo hoje e vencendo nos próximos 7 dias.
+
+Rotina correta:
+1. Publicar a V16 no GitHub Pages.
+2. Importar clientes pelo menu Clientes > Importar clientes CSV.
+3. Conferir se cada cliente tem honorário mensal e dia de vencimento.
+4. Clicar em Gerar cobranças até 03/2027.
+5. Importar o extrato bancário mensal.
+6. Conferir parcelas baixadas automaticamente e revisar recebimentos não identificados.
+
+Segurança:
+- Não publicar CSV de clientes, extratos, PDFs, boletos ou planilhas reais no GitHub.
+- Usar arquivos reais apenas dentro do site, pela tela de importação.

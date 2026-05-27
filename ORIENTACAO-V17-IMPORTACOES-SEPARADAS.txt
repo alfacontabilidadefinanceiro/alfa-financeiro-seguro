@@ -1,0 +1,24 @@
+ALFA FINANCEIRO - V17 IMPORTAÇÕES SEPARADAS
+
+Nesta versão, as importações foram separadas para evitar duplicidade, exclusão acidental e mistura de arquivos:
+
+1. Importar clientes CSV
+   - Use somente o arquivo de cadastro de clientes.
+   - Cria clientes novos e atualiza clientes já existentes pelo CNPJ/CPF.
+   - Não apaga lançamentos já existentes.
+   - Ao importar, gera/atualiza cobranças mensais de 05/2026 até 03/2027.
+
+2. Baixar boletos pagos
+   - Use o arquivo de lançamento mensal, com colunas como Número da Cobrança, Nome, Documento, Data de Vencimento, Valor, Valor Pago e Pago Em.
+   - Baixa a parcela mensal correspondente pelo cliente/documento, competência, valor e número da cobrança.
+   - Se a parcela já estiver paga, apenas preserva e marca como já baixada.
+   - Se a parcela ainda não existir, cria o lançamento sem duplicar.
+
+3. Importar extrato/saídas
+   - Use somente o extrato bancário mensal, com Tipo, Protocolo, Data e Valor.
+   - Baixa recebimentos identificados, registra taxas bancárias e coloca saídas sem identificação como Saídas a classificar.
+
+SEGURANÇA:
+- Não publique CSV de clientes, extratos, boletos, guias ou planilhas reais no GitHub.
+- Publique no GitHub somente os arquivos do sistema extraídos do ZIP.
+- Os dados importados ficam no navegador/localStorage até migração para banco seguro.

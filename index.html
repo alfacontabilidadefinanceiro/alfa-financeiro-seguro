@@ -1081,7 +1081,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V10 financeiro</span>
+          <span>Controle interno • V17 importações separadas</span>
         </div>
       </div>
 
@@ -1098,7 +1098,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V14 segura. Cadastro mestre de clientes, honorário mensal corrigido na lista, importação de clientes por CSV, cobranças até 03/2027, conciliação com extrato e alertas financeiros.</p>
+        <p><span class="status-dot"></span>VERSÃO V17 segura. Importação separada: clientes, baixa de boletos pagos e extrato/saídas. Não apaga dados já lançados e evita duplicidade por cliente, competência, valor, vencimento e protocolo.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1111,14 +1111,16 @@
         </div>
         <div class="actions" id="topActions">
           <input id="csvImportInput" type="file" accept=".csv,text/csv" hidden />
+          <input id="monthlyPaymentsImportInput" type="file" accept=".csv,text/csv" hidden />
           <input id="clientImportInput" type="file" accept=".csv,text/csv" hidden />
           <input id="payablesImportInput" type="file" accept=".csv,text/csv,.txt,text/plain,.pdf,application/pdf" multiple hidden />
           <label class="top-month-control" for="globalMonthFilter"><span>Mês de análise</span><input id="globalMonthFilter" type="month" title="Mês de análise do sistema" /></label>
-          <button class="btn btn-secondary" id="importBtn" type="button">Importar CSV</button>
           <button class="btn btn-secondary" id="importClientsTopBtn" type="button">Importar clientes</button>
+          <button class="btn btn-secondary" id="importMonthlyPaymentsBtn" type="button">Baixar boletos pagos</button>
+          <button class="btn btn-secondary" id="importBtn" type="button">Importar extrato/saídas</button>
           <button class="btn btn-secondary" id="exportBtn" type="button">Exportar CSV</button>
           <button class="btn btn-secondary" id="manualBackupBtn" type="button">Backup</button>
-          <button class="btn btn-secondary" id="generateChargesBtn" type="button">Gerar até 03/2027</button>
+          <button class="btn btn-secondary" id="generateChargesBtn" type="button">Gerar 05/2026 a 03/2027</button>
           <button class="btn btn-ghost" id="clearEntriesBtn" type="button">Excluir lançamentos</button>
           <button class="btn btn-primary" id="newEntryBtn" type="button">Novo lançamento</button>
           <button class="btn btn-ghost" id="logoutBtn" type="button">Sair</button>
@@ -1157,6 +1159,41 @@
       </section>
 
       <section class="view active" id="dashboard">
+        <section class="panel receivable-alert-panel" id="receivableAlertPanel">
+          <div class="panel-head">
+            <div>
+              <h2>Alertas de parcelas em aberto</h2>
+              <span class="pill" id="receivableAlertCount">0 pendências</span>
+            </div>
+            <div class="row-actions">
+              <button class="btn btn-secondary" id="openReceivablesBtn" type="button">Abrir contas a receber</button>
+              <button class="btn btn-primary" id="generateDashboardChargesBtn" type="button">Gerar cobranças até 03/2027</button>
+            </div>
+          </div>
+          <div class="insight-strip" aria-label="Alertas de parcelas em aberto">
+            <div class="insight"><span>Vencidas</span><strong id="receivableOverdueTotal">R$ 0,00</strong></div>
+            <div class="insight"><span>Vencem hoje</span><strong id="receivableTodayTotal">R$ 0,00</strong></div>
+            <div class="insight"><span>Próximos 7 dias</span><strong id="receivableNext7Total">R$ 0,00</strong></div>
+            <div class="insight"><span>Clientes com aberto</span><strong id="receivableClientOpenCount">0</strong></div>
+          </div>
+          <div class="hint">O sistema gera uma parcela por cliente, por competência, de 05/2026 até 03/2027. Cada parcela usa o dia de vencimento do cadastro do cliente; se faltar, usa dia 15.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Competência</th>
+                  <th>Vencimento</th>
+                  <th>Cliente</th>
+                  <th>Documento</th>
+                  <th>Valor</th>
+                  <th>Situação</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="receivableAlertRows"></tbody>
+            </table>
+          </div>
+        </section>
         <section class="panel due-alert-panel" id="dueAlertPanel">
           <div class="panel-head">
             <div>
@@ -1281,6 +1318,7 @@
               <button class="btn btn-primary" id="newClientBtn" type="button">Novo cliente</button>
             </div>
           </div>
+          <div class="hint"><strong>Importações separadas:</strong> use este botão somente para cadastro/atualização de clientes. Para boletos pagos, use “Baixar boletos pagos”. Para extrato bancário, use “Importar extrato/saídas”. Assim o sistema não apaga lançamentos anteriores.</div>
           <div class="table-wrap sticky-client-table">
             <table>
               <thead>
@@ -1320,6 +1358,7 @@
                 <option value="three">Vencendo em até 3 dias</option>
               </select>
               <button class="btn btn-secondary" id="batchWhatsappBtn" type="button">Gerar cobranças em lote</button>
+              <button class="btn btn-primary" id="importMonthlyPaymentsReceberBtn" type="button">Baixar boletos pagos</button>
             </div>
           </div>
           <div class="hint" id="batchWhatsappPanel" hidden></div>
@@ -1497,7 +1536,7 @@
               <strong id="reportCanceled">0</strong>
             </div>
           </div>
-          <div class="hint"><strong>VERSÃO V14 - HONORÁRIO MENSAL CORRIGIDO NA LISTA DE CLIENTES.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
+          <div class="hint"><strong>VERSÃO V16 - COBRANÇAS MENSAIS COM VENCIMENTO POR CLIENTE.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
           <div class="bar-list" id="reportList"></div>
           <div class="hint" id="reportDiagnostic">Diagnóstico: aguardando leitura dos lançamentos.</div>
           <section class="panel">
@@ -1692,14 +1731,14 @@
             <div>
               <h2>Previsão de recebimentos até 03/2027</h2>
               <span class="pill paid">Recorrência de honorários</span>
-              <span class="pill" id="forecastPeriodLabel">04/2026 a 03/2027</span>
+              <span class="pill" id="forecastPeriodLabel">05/2026 a 03/2027</span>
             </div>
             <div class="row-actions">
-              <button class="btn btn-primary" id="generateUntil032027Btn" type="button">Gerar cobranças até 03/2027</button>
+              <button class="btn btn-primary" id="generateUntil032027Btn" type="button">Gerar cobranças de 05/2026 até 03/2027</button>
               <button class="btn btn-secondary" id="openForecastReportBtn" type="button">Abrir relatório</button>
             </div>
           </div>
-          <div class="hint"><strong>Rotina recomendada:</strong> cadastre os clientes com valor mensal e vencimento, gere as cobranças até 03/2027, importe o CSV do banco e acompanhe mensalmente o previsto, recebido, aberto, vencido e percentual de recebimento.</div>
+          <div class="hint"><strong>Rotina recomendada:</strong> importe/cadastre os clientes com valor mensal e vencimento, gere as cobranças desde 05/2026 até 03/2027, importe o extrato mensal do banco e acompanhe as baixas automáticas, pendências e parcelas em aberto.</div>
           <div class="insight-strip" aria-label="Resumo da previsão">
             <div class="insight"><span>Previsto até 03/2027</span><strong id="forecastTotalExpected">R$ 0,00</strong></div>
             <div class="insight"><span>Recebido</span><strong id="forecastTotalReceived">R$ 0,00</strong></div>
@@ -2117,7 +2156,7 @@
     const lastBackupDateKey = "alfaFinanceiroUltimoBackupV1";
     const balanceVisibilityKey = "alfaFinanceiroOcultarSaldosV1";
     const officeWhatsAppNumber = "5563984500300";
-    const firstChargeMonth = "2026-04";
+    const firstChargeMonth = "2026-05";
     const lastChargeMonth = "2027-03";
     const loginScreen = document.getElementById("loginScreen");
     const app = document.getElementById("app");
@@ -3303,6 +3342,55 @@ Atenciosamente,
       if (days === 0) return "Vence hoje";
       if (days <= 7) return `Vence em ${days} dia${days === 1 ? "" : "s"}`;
       return "A vencer";
+    }
+
+    function receivableAlertEntries(daysForward = 7) {
+      return entries
+        .filter(entry => entry.type === "receita" && isOpenEntry(entry))
+        .filter(entry => daysBetweenISO(entry.date) <= daysForward)
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+    }
+
+    function receivableSituation(entry) {
+      const days = daysBetweenISO(entry.date);
+      if (days < 0) return `Vencida há ${Math.abs(days)} dia${Math.abs(days) === 1 ? "" : "s"}`;
+      if (days === 0) return "Vence hoje";
+      if (days <= 7) return `Vence em ${days} dia${days === 1 ? "" : "s"}`;
+      return "A vencer";
+    }
+
+    function renderReceivableAlerts() {
+      const rows = receivableAlertEntries(7);
+      const overdue = rows.filter(entry => daysBetweenISO(entry.date) < 0);
+      const today = rows.filter(entry => daysBetweenISO(entry.date) === 0);
+      const next7 = rows.filter(entry => daysBetweenISO(entry.date) > 0 && daysBetweenISO(entry.date) <= 7);
+      const openClients = new Set(entries.filter(entry => entry.type === "receita" && isOpenEntry(entry)).map(entry => clientKey(entry.name, entry.document)));
+      const countEl = document.getElementById("receivableAlertCount");
+      if (!countEl) return;
+      countEl.textContent = `${rows.length} parcela${rows.length === 1 ? "" : "s"}`;
+      document.getElementById("receivableOverdueTotal").innerHTML = moneySpan(sumEntries(overdue));
+      document.getElementById("receivableTodayTotal").innerHTML = moneySpan(sumEntries(today));
+      document.getElementById("receivableNext7Total").innerHTML = moneySpan(sumEntries(next7));
+      document.getElementById("receivableClientOpenCount").textContent = String(openClients.size);
+      const tbody = document.getElementById("receivableAlertRows");
+      if (tbody) {
+        tbody.innerHTML = rows.length ? rows.slice(0, 12).map(entry => `
+          <tr>
+            <td>${formatMonth(entry.billingMonth || String(entry.date || "").slice(0, 7))}</td>
+            <td>${formatDate(entry.date)}</td>
+            <td>${escapeHTML(entry.name || "Cliente não identificado")}</td>
+            <td>${escapeHTML(entry.document || "-")}</td>
+            <td class="money-in">${moneySpan(entry.amount || 0)}</td>
+            <td>${receivableSituation(entry)}</td>
+            <td>
+              <div class="row-actions">
+                ${paymentControl(entry)}
+                <button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">WhatsApp</button>
+                <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
+              </div>
+            </td>
+          </tr>`).join("") : `<tr><td colspan="7"><div class="empty">Nenhuma parcela vencida, vencendo hoje ou nos próximos 7 dias.</div></td></tr>`;
+      }
     }
 
     function renderDueAlerts() {
@@ -4855,7 +4943,7 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V14. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V16. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
 </body>
 </html>`;
@@ -5004,6 +5092,7 @@ Atenciosamente,
     function render() {
       renderKpis();
       renderDashboard();
+      renderReceivableAlerts();
       renderDueAlerts();
       renderRows("entryRows", filteredEntries(), "entryCount");
       renderClients();
@@ -5108,7 +5197,7 @@ Atenciosamente,
       document.getElementById("clientCity").value = client?.city || "";
       document.getElementById("clientService").value = client?.service || "Honorários contábeis";
       document.getElementById("clientMonthlyFee").value = client?.monthlyFee || "";
-      document.getElementById("clientDueDay").value = client?.dueDay || 5;
+      document.getElementById("clientDueDay").value = client?.dueDay || 15;
       document.getElementById("clientPaymentMethod").value = client?.paymentMethod || "Pix";
       document.getElementById("clientNotes").value = client?.notes || "";
       updateClientTypeLabels();
@@ -5138,33 +5227,80 @@ Atenciosamente,
       });
     }
 
-    function chargeEndMonth() {
-      return lastChargeMonth;
+    function compareMonths(a, b) {
+      const left = normalizeMonthInput(a) || firstChargeMonth;
+      const right = normalizeMonthInput(b) || firstChargeMonth;
+      return left.localeCompare(right);
+    }
+
+    function maxMonth(a, b) {
+      const left = normalizeMonthInput(a) || firstChargeMonth;
+      const right = normalizeMonthInput(b) || firstChargeMonth;
+      return compareMonths(left, right) >= 0 ? left : right;
+    }
+
+    function minMonth(a, b) {
+      const left = normalizeMonthInput(a) || lastChargeMonth;
+      const right = normalizeMonthInput(b) || lastChargeMonth;
+      return compareMonths(left, right) <= 0 ? left : right;
+    }
+
+    function chargeEndMonth(client = null) {
+      return minMonth(client?.endChargeMonth || lastChargeMonth, lastChargeMonth);
+    }
+
+    function chargeStartMonth(client = null) {
+      return maxMonth(client?.firstChargeMonth || firstChargeMonth, firstChargeMonth);
+    }
+
+    function dueDateForClientMonth(client, month) {
+      const dueDay = Number(client?.dueDay || 15);
+      return dateInMonth(`${month}-${String(dueDay >= 1 && dueDay <= 31 ? dueDay : 15).padStart(2, "0")}`, month);
     }
 
     function ensureMonthlyChargesForClient(client) {
       if (client.status !== "ativo" || !Number(client.monthlyFee)) return 0;
       let created = 0;
-      const months = monthSequence(client.firstChargeMonth || firstChargeMonth, chargeEndMonth());
+      const start = chargeStartMonth(client);
+      const end = chargeEndMonth(client);
+      if (compareMonths(start, end) > 0) return 0;
+      const months = monthSequence(start, end);
       months.forEach(month => {
-        const exists = entries.some(entry =>
+        const existing = entries.find(entry =>
           entry.type === "receita" &&
           clientKey(entry.name, entry.document) === client.key &&
-          (entry.billingMonth || entry.date?.slice(0, 7)) === month
+          (entry.billingMonth || entry.date?.slice(0, 7)) === month &&
+          entry.status !== "cancelado"
         );
-        if (exists) return;
+        if (existing) {
+          existing.billingMonth = month;
+          existing.dueDay = Number(client.dueDay || 15);
+          existing.recurringParentId = existing.recurringParentId || client.id;
+          existing.sourceId = existing.sourceId || client.id;
+          if (isOpenEntry(existing) && !existing.receiptProtocol) {
+            existing.date = dueDateForClientMonth(client, month);
+            existing.amount = Number(client.monthlyFee || existing.amount || 0);
+            existing.name = client.name;
+            existing.document = client.document;
+            existing.category = client.service || "Honorários contábeis";
+            existing.method = client.paymentMethod || existing.method || "Folha de carnê";
+            existing.description = `Honorários ${formatMonth(month)}`;
+          }
+          return;
+        }
         entries.push({
           id: `cliente-${client.id}-${month}`,
           type: "receita",
           status: "aberto",
-          date: dateInMonth(`${month}-${String(client.dueDay || 5).padStart(2, "0")}`, month),
+          date: dueDateForClientMonth(client, month),
+          dueDay: Number(client.dueDay || 15),
           amount: Number(client.monthlyFee || 0),
           paidAmount: 0,
           paidAt: "",
           name: client.name,
           document: client.document,
           category: client.service || "Honorários contábeis",
-          method: client.paymentMethod || "Pix",
+          method: client.paymentMethod || "Folha de carnê",
           description: `Honorários ${formatMonth(month)}`,
           source: "cadastro-cliente",
           sourceId: client.id,
@@ -5737,16 +5873,35 @@ Atenciosamente,
       return hits / Math.max(aTokens.size, bTokens.size);
     }
 
-    function findReceiptCandidates(receiptName) {
+    function clientAliasesForMatch(client) {
+      const aliases = [client?.name, client?.tradeName, client?.document];
+      const notes = String(client?.notes || "");
+      notes.split("|").forEach(part => {
+        const cleaned = part.replace(/Nome no extrato\s*\d*\s*:/i, "").trim();
+        if (cleaned) aliases.push(cleaned);
+      });
+      return aliases.filter(Boolean);
+    }
+
+    function bestClientAliasScore(receiptName, entry) {
       const normalizedReceipt = normalizeMatchText(receiptName);
+      const client = clients.find(item => item.key === clientKey(entry.name, entry.document) || normalizeDocument(item.document) === normalizeDocument(entry.document));
+      const aliases = [entry.name, entry.document, ...(client ? clientAliasesForMatch(client) : [])];
+      let best = 0;
+      aliases.forEach(alias => {
+        const normalizedAlias = normalizeMatchText(alias);
+        if (!normalizedAlias || !normalizedReceipt) return;
+        let score = tokenScore(normalizedReceipt, normalizedAlias);
+        if (normalizedAlias.includes(normalizedReceipt) || normalizedReceipt.includes(normalizedAlias)) score = Math.max(score, 0.92);
+        best = Math.max(best, score);
+      });
+      return best;
+    }
+
+    function findReceiptCandidates(receiptName) {
       return entries
         .filter(entry => entry.type === "receita" && entry.status !== "cancelado")
-        .map(entry => {
-          const normalizedEntry = normalizeMatchText(entry.name);
-          let score = tokenScore(normalizedReceipt, normalizedEntry);
-          if (normalizedEntry.includes(normalizedReceipt) || normalizedReceipt.includes(normalizedEntry)) score = Math.max(score, 0.92);
-          return { entry, score };
-        })
+        .map(entry => ({ entry, score: bestClientAliasScore(receiptName, entry) }))
         .filter(item => item.score >= 0.45)
         .sort((a, b) => b.score - a.score);
     }
@@ -6079,6 +6234,14 @@ Atenciosamente,
         (headers.includes("cpf_cnpj") && (headers.includes("valor_honorario") || headers.includes("dia_vencimento") || headers.includes("inicio_cobranca")));
     }
 
+    function isMonthlyBillingImport(headers) {
+      const names = headers.join("|");
+      return (headers.includes("numero_da_cobranca") || headers.includes("numero_cobranca") || headers.includes("cobranca")) &&
+        (headers.includes("data_de_vencimento") || headers.includes("data_vencimento") || headers.includes("vencimento")) &&
+        (headers.includes("nome") || headers.includes("cliente") || headers.includes("razao_social")) &&
+        (headers.includes("valor_pago_r") || headers.includes("valor_pago") || headers.includes("pago_em") || headers.includes("status"));
+    }
+
     function parseMonthInput(value, fallback = firstChargeMonth) {
       const normalized = normalizeCompetenceInput(value);
       return normalized || fallback;
@@ -6126,7 +6289,7 @@ Atenciosamente,
         city: getRecordValue(record, ["cidade", "municipio"]),
         service: getRecordValue(record, ["servico", "categoria"]) || "Honorários contábeis",
         monthlyFee: Number(amount || 0),
-        dueDay: dueDay >= 1 && dueDay <= 31 ? dueDay : 5,
+        dueDay: dueDay >= 1 && dueDay <= 31 ? dueDay : 15,
         paymentMethod: getRecordValue(record, ["forma_cobranca", "forma_de_cobranca", "forma_pagamento"]) || "Folha de carnê",
         notes,
         firstChargeMonth: parseMonthInput(getRecordValue(record, ["inicio_cobranca", "inicio", "competencia_inicial"]), firstChargeMonth),
@@ -6149,8 +6312,10 @@ Atenciosamente,
         entry.method = client.paymentMethod || entry.method || "Folha de carnê";
         entry.amount = Number(client.monthlyFee || entry.amount || 0);
         const month = entry.billingMonth || String(entry.date || "").slice(0, 7) || client.firstChargeMonth || firstChargeMonth;
-        entry.date = dateInMonth(`${month}-${String(client.dueDay || 5).padStart(2, "0")}`, month);
-        entry.description = entry.description || `Honorários ${formatMonth(month)}`;
+        entry.billingMonth = month;
+        entry.dueDay = Number(client.dueDay || 15);
+        entry.date = dueDateForClientMonth(client, month);
+        entry.description = `Honorários ${formatMonth(month)}`;
         updated++;
       });
       return updated;
@@ -6207,7 +6372,7 @@ Atenciosamente,
       saveEntries();
       ensureReportMonthHasData(true);
       render();
-      showToast(`${created} cliente${created === 1 ? "" : "s"} criado${created === 1 ? "" : "s"}, ${updated} atualizado${updated === 1 ? "" : "s"}, ${generated} cobrança${generated === 1 ? "" : "s"} gerada${generated === 1 ? "" : "s"} até 03/2027.${review ? ` ${review} linha${review === 1 ? "" : "s"} ficou${review === 1 ? "" : "ram"} para revisão.` : ""}`);
+      showToast(`${created} cliente${created === 1 ? "" : "s"} criado${created === 1 ? "" : "s"}, ${updated} atualizado${updated === 1 ? "" : "s"}, ${generated} cobrança${generated === 1 ? "" : "s"} gerada${generated === 1 ? "" : "s"} de 05/2026 até 03/2027.${review ? ` ${review} linha${review === 1 ? "" : "s"} ficou${review === 1 ? "" : "ram"} para revisão.` : ""}`);
     }
 
     function handleClientImport(event) {
@@ -6220,120 +6385,234 @@ Atenciosamente,
       event.target.value = "";
     }
 
-    function importCsvText(text) {
+
+    function monthlyBillingStatusFromRecord(record) {
+      const statusText = normalizeText(getRecordValue(record, ["status", "situacao"]));
+      if (statusText.includes("cancel")) return "cancelado";
+      if (statusText.includes("bonific")) return "bonificado";
+      if (statusText.includes("pago") || getRecordValue(record, ["pago_em", "data_de_pagamento", "pagamento"])) return "pago";
+      return "aberto";
+    }
+
+    function monthlyBillingEntryFromRecord(record) {
+      const sourceId = getRecordValue(record, ["numero_da_cobranca", "numero_cobranca", "cobranca", "id", "codigo"]);
+      const documentValue = getRecordValue(record, ["documento", "cpf_cnpj", "cnpj_cpf", "cnpj", "cpf"]);
+      const name = getRecordValue(record, ["nome", "cliente", "razao_social", "nome_razao_social"]) || "Cliente sem nome";
+      const dueDate = parseOptionalBrazilianDate(getRecordValue(record, ["data_de_vencimento", "data_vencimento", "vencimento"]));
+      const paidAt = parseOptionalBrazilianDate(getRecordValue(record, ["pago_em", "data_de_pagamento", "pagamento"]));
+      const originalAmount = parseBrazilianMoney(getRecordValue(record, ["valor_r", "valor", "valor_original"]));
+      const rawPaidAmount = parseBrazilianMoney(getRecordValue(record, ["valor_pago_r", "valor_pago", "pago"]));
+      const status = monthlyBillingStatusFromRecord(record);
+      const paidAmount = status === "pago" ? Number(rawPaidAmount || originalAmount || 0) : 0;
+      const billingMonth = String(dueDate || paidAt || selectedMonth || firstChargeMonth).slice(0, 7);
+      return normalizeEntryForRuntime({
+        id: crypto.randomUUID(),
+        source: "lancamento-mensal",
+        sourceId,
+        type: "receita",
+        status,
+        date: dueDate || dateInMonth(`${billingMonth}-15`, billingMonth),
+        billingMonth,
+        dueDay: Number(String(dueDate || "").slice(-2)) || 15,
+        paidAt: paidAt || (status === "pago" ? dueDate : ""),
+        amount: Number(originalAmount || paidAmount || 0),
+        paidAmount,
+        name,
+        document: documentValue,
+        category: importedRevenueCategory(record),
+        method: getRecordValue(record, ["forma_de_cobranca", "forma_cobranca", "forma_pagamento"]) || "Folha de carnê",
+        description: [
+          sourceId ? `Cobrança ${sourceId}` : "Lançamento mensal importado",
+          billingMonth ? `competência ${formatMonth(billingMonth)}` : "",
+          getRecordValue(record, ["data_de_emissao", "data_emissao"]) ? `emissão ${getRecordValue(record, ["data_de_emissao", "data_emissao"])}` : "",
+          getRecordValue(record, ["status"]) ? `status original: ${getRecordValue(record, ["status"])}` : "",
+          paidAt ? `pago em ${formatDate(paidAt)}` : ""
+        ].filter(Boolean).join(" - "),
+        classificationStatus: status === "pago" ? "Baixado pelo lançamento mensal" : "Importado do lançamento mensal"
+      });
+    }
+
+    function samePersonForMonthlyImport(a, b) {
+      const docA = normalizeDocument(a?.document);
+      const docB = normalizeDocument(b?.document);
+      if (docA && docB && docA === docB) return true;
+      const keyA = clientKey(a?.name || "", a?.document || "");
+      const keyB = clientKey(b?.name || "", b?.document || "");
+      if (keyA && keyA === keyB) return true;
+      const nameA = normalizeMatchText(a?.name || "");
+      const nameB = normalizeMatchText(b?.name || "");
+      return Boolean(nameA && nameB && (nameA.includes(nameB) || nameB.includes(nameA) || tokenScore(nameA, nameB) >= 0.72));
+    }
+
+    function findMonthlyBillingMatch(incoming) {
+      const sourceId = String(incoming.sourceId || "").trim();
+      if (sourceId) {
+        const bySource = entries.find(entry => entry.type === "receita" && [entry.sourceId, entry.receiptProtocol, entry.bankChargeRef].some(value => String(value || "").trim() === sourceId));
+        if (bySource) return bySource;
+      }
+      const month = entryCompetence(incoming);
+      const candidates = entries.filter(entry =>
+        entry.type === "receita" &&
+        entry.status !== "cancelado" &&
+        entryCompetence(entry) === month &&
+        samePersonForMonthlyImport(incoming, entry)
+      );
+      if (!candidates.length) return null;
+      const amount = Number(incoming.amount || incoming.paidAmount || 0);
+      const exactOpen = candidates.find(entry => isOpenEntry(entry) && Math.abs(Number(entry.amount || 0) - amount) <= 0.01);
+      if (exactOpen) return exactOpen;
+      const closeOpen = candidates.find(entry => isOpenEntry(entry) && Math.abs(Number(entry.amount || 0) - amount) <= Math.max(3, amount * 0.03));
+      if (closeOpen) return closeOpen;
+      const exactClosed = candidates.find(entry => Math.abs(Number(entry.amount || entry.paidAmount || 0) - amount) <= Math.max(3, amount * 0.03));
+      return exactClosed || candidates[0];
+    }
+
+    function mergeMonthlyBillingCharge(target, incoming) {
+      if (!target || !incoming) return "ignorado";
+      const wasPaid = target.status === "pago" || target.status === "bonificado";
+      const incomingPaid = incoming.status === "pago" || incoming.status === "bonificado";
+      const incomingOpen = incoming.status === "aberto";
+      target.billingMonth = incoming.billingMonth || target.billingMonth || entryCompetence(target);
+      target.dueDay = Number(incoming.dueDay || target.dueDay || 15);
+      if (!wasPaid) {
+        target.date = incoming.date || target.date;
+        target.amount = Number(incoming.amount || target.amount || 0);
+        target.name = incoming.name || target.name;
+        target.document = incoming.document || target.document;
+        target.category = incoming.category || target.category || "Honorários contábeis";
+        target.method = incoming.method || target.method || "Folha de carnê";
+        target.description = incoming.description || target.description;
+      }
+      if (incoming.sourceId && !target.sourceId) target.sourceId = incoming.sourceId;
+      if (incoming.sourceId && !target.bankChargeRef) target.bankChargeRef = incoming.sourceId;
+      if (incomingPaid) {
+        if (!wasPaid) {
+          target.status = incoming.status;
+          target.paidAt = incoming.paidAt || incoming.date || target.paidAt || "";
+          target.paidAmount = Number(incoming.paidAmount || incoming.amount || target.amount || 0);
+          target.receiptProtocol = target.receiptProtocol || incoming.sourceId || target.receiptProtocol || "";
+          target.classificationStatus = "Baixado pelo lançamento mensal";
+          return "baixado";
+        }
+        if (!target.receiptProtocol && incoming.sourceId) target.receiptProtocol = incoming.sourceId;
+        if (!target.paidAt && incoming.paidAt) target.paidAt = incoming.paidAt;
+        if (!target.paidAmount && incoming.paidAmount) target.paidAmount = incoming.paidAmount;
+        target.classificationStatus = target.classificationStatus || "Pagamento já constava baixado";
+        return "ja_baixado";
+      }
+      if (incomingOpen && !wasPaid) {
+        target.status = target.status === "cancelado" ? target.status : "aberto";
+        target.classificationStatus = target.classificationStatus || "Atualizado pelo lançamento mensal";
+        return "atualizado";
+      }
+      if (incoming.status === "cancelado" && !wasPaid) {
+        target.status = "cancelado";
+        target.classificationStatus = "Cancelado pelo lançamento mensal";
+        return "cancelado";
+      }
+      return "preservado";
+    }
+
+    function importMonthlyPaymentsCsvText(text) {
       const rows = parseCsvRows(text);
       if (rows.length < 2) {
-        showToast("O CSV não tem linhas suficientes para importar.");
+        showToast("O CSV de lançamento mensal não tem linhas suficientes para importar.");
         return;
       }
-
       const headers = rows[0].map(normalizeHeader);
       if (isClientImport(headers)) {
-        return importClientsCsvText(text);
-      }
-      if (isReceiptStatement(headers)) {
-        return importReceiptStatementRows(rows, headers);
-      }
-      const incomingSourceIds = new Set();
-      const preservedClosures = new Map(entries
-        .filter(entry => entry.type === "receita" && (entry.status === "pago" || entry.status === "bonificado") && (entry.receiptProtocol || entry.method === "Dinheiro" || entry.method === "Bonificação"))
-        .map(entry => [recurringEntryKey(entry), {
-          status: entry.status,
-          paidAt: entry.paidAt,
-          paidAmount: Number(entry.paidAmount || 0),
-          method: entry.method,
-          receiptProtocol: entry.receiptProtocol,
-          receiptDescription: entry.receiptDescription
-        }]));
-      const baseImported = rows.slice(1).map(cells => {
-        const record = {};
-        headers.forEach((header, index) => record[header] = cells[index] || "");
-        const rawStatus = (record.status || "").toLowerCase();
-        const paid = rawStatus.includes("pago");
-        const canceled = rawStatus.includes("cancelado");
-        const originalAmount = parseBrazilianMoney(getRecordValue(record, ["valor_r", "valor"]));
-        const rawPaidAmount = parseBrazilianMoney(getRecordValue(record, ["valor_pago_r", "valor_pago"]));
-        const paidAmount = paid && !rawPaidAmount ? originalAmount : rawPaidAmount;
-        const sourceId = getRecordValue(record, ["numero_da_cobranca", "numero_cobranca", "cobranca"]);
-        if (sourceId) incomingSourceIds.add(sourceId);
-        const documentValue = getRecordValue(record, ["documento", "cnpj", "cpf"]);
-        const originalDueDate = getRecordValue(record, ["data_de_vencimento", "data_vencimento", "vencimento"]);
-        const originalPaidDate = getRecordValue(record, ["pago_em", "data_de_pagamento", "pagamento"]);
-        return {
-          id: crypto.randomUUID(),
-          source: "csv",
-          sourceId,
-          type: "receita",
-          status: canceled ? "cancelado" : paid ? "pago" : "aberto",
-          date: parseBrazilianDate(originalDueDate),
-          paidAt: parseOptionalBrazilianDate(originalPaidDate),
-          amount: originalAmount,
-          paidAmount,
-          name: record.nome || "Cliente sem nome",
-          document: documentValue,
-          category: importedRevenueCategory(record),
-          method: getRecordValue(record, ["forma_de_cobranca", "forma_cobranca"]) || "CSV",
-          description: [
-            sourceId ? `Cobrança ${sourceId}` : "Honorário importado",
-            getRecordValue(record, ["data_de_emissao", "data_emissao"]) ? `emissão ${getRecordValue(record, ["data_de_emissao", "data_emissao"])}` : "",
-            record.status ? `status original: ${record.status}` : "",
-            originalPaidDate ? `pago em ${originalPaidDate}` : "",
-            paidAmount && originalAmount && paidAmount !== originalAmount ? `valor pago R$ ${String(paidAmount).replace(".", ",")}` : ""
-          ].filter(Boolean).join(" - ")
-        };
-      });
-
-      const allImported = sanitizeEntries(baseImported);
-      allImported.forEach(entry => {
-        const preserved = preservedClosures.get(recurringEntryKey(entry));
-        if (!preserved) return;
-        entry.status = preserved.status;
-        entry.paidAt = preserved.paidAt;
-        entry.paidAmount = preserved.paidAmount;
-        entry.method = preserved.method;
-        entry.receiptProtocol = preserved.receiptProtocol;
-        entry.receiptDescription = preserved.receiptDescription;
-      });
-
-      entries = cleanupDemoEntries(entries).filter(entry => {
-        if (entry.source === "csv" || entry.source === "planilha-oficial" || entry.source === "recorrencia-oficial") return false;
-        if (entry.sourceId && incomingSourceIds.has(entry.sourceId)) return false;
-        if (entry.recurringParentId && incomingSourceIds.has(entry.recurringParentId)) return false;
-        return true;
-      });
-      clients = [];
-      syncClientsFromEntries();
-
-      const existingKeys = new Set(entries.map(entryImportKey));
-      const imported = allImported.filter(entry => {
-        const key = entryImportKey(entry);
-        const duplicate = findDuplicateEntry(entry, entries);
-        if (existingKeys.has(key) || duplicate) {
-          if (duplicate) mergeDuplicateEntry(duplicate.entry, entry);
-          return false;
-        }
-        existingKeys.add(key);
-        return true;
-      });
-
-      if (!imported.length) {
-        saveEntries();
-        saveClients();
-        ensureReportMonthHasData(true);
-        render();
-        showToast("A planilha já estava atualizada no sistema.");
+        showToast("Este é um CSV de clientes. Use o botão ‘Importar clientes CSV’. Nenhum dado foi alterado.");
         return;
       }
-
-      entries = [...imported, ...entries];
-      imported.forEach(upsertClientFromEntry);
-      ensureMonthlyChargesForAllClients(false);
+      if (isReceiptStatement(headers)) {
+        showToast("Este parece ser extrato bancário. Use o botão ‘Importar extrato/saídas’. Nenhum dado foi alterado.");
+        return;
+      }
+      if (!isMonthlyBillingImport(headers)) {
+        showToast("Modelo não reconhecido para baixa de boletos. Use CSV com Número da Cobrança, Nome, Documento, Data de Vencimento, Valor e Pago Em.");
+        return;
+      }
+      let baixados = 0;
+      let jaBaixados = 0;
+      let criadosPagos = 0;
+      let criadosAbertos = 0;
+      let atualizados = 0;
+      let cancelados = 0;
+      let revisao = 0;
+      let duplicados = 0;
+      const touchedClients = [];
+      rows.slice(1).forEach(cells => {
+        const record = {};
+        headers.forEach((header, index) => record[header] = cells[index] || "");
+        const incoming = monthlyBillingEntryFromRecord(record);
+        if (!incoming.name || !incoming.date || !Number(incoming.amount || incoming.paidAmount || 0)) {
+          revisao++;
+          return;
+        }
+        const match = findMonthlyBillingMatch(incoming);
+        if (match) {
+          const action = mergeMonthlyBillingCharge(match, incoming);
+          if (action === "baixado") baixados++;
+          else if (action === "ja_baixado") jaBaixados++;
+          else if (action === "atualizado") atualizados++;
+          else if (action === "cancelado") cancelados++;
+          else duplicados++;
+          touchedClients.push(match);
+          return;
+        }
+        const added = addEntryIfNotDuplicate(incoming, { append: true });
+        if (added.inserted) {
+          if (incoming.status === "pago" || incoming.status === "bonificado") criadosPagos++;
+          else criadosAbertos++;
+          touchedClients.push(added.entry);
+        } else {
+          const action = mergeMonthlyBillingCharge(added.duplicate, incoming);
+          if (action === "baixado") baixados++;
+          else if (action === "ja_baixado") jaBaixados++;
+          else duplicados++;
+          touchedClients.push(added.duplicate);
+        }
+      });
+      touchedClients.forEach(upsertClientFromEntry);
+      clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
       saveClients();
       saveEntries();
       ensureReportMonthHasData(true);
       render();
-      const ignored = allImported.length - imported.length;
-      showToast(`${imported.length} cobrança${imported.length === 1 ? "" : "s"} importada${imported.length === 1 ? "" : "s"} do CSV.${ignored ? ` ${ignored} duplicada${ignored === 1 ? "" : "s"} ignorada${ignored === 1 ? "" : "s"}.` : ""}`);
+      showToast(`${baixados} parcela${baixados === 1 ? "" : "s"} baixada${baixados === 1 ? "" : "s"}; ${jaBaixados} já constava${jaBaixados === 1 ? "" : "m"} paga${jaBaixados === 1 ? "" : "s"}; ${criadosPagos} pagamento${criadosPagos === 1 ? "" : "s"} lançado${criadosPagos === 1 ? "" : "s"} sem duplicar; ${criadosAbertos} cobrança${criadosAbertos === 1 ? "" : "s"} em aberto criada${criadosAbertos === 1 ? "" : "s"}.${atualizados ? ` ${atualizados} cobrança${atualizados === 1 ? "" : "s"} atualizada${atualizados === 1 ? "" : "s"}.` : ""}${cancelados ? ` ${cancelados} cancelada${cancelados === 1 ? "" : "s"}.` : ""}${duplicados ? ` ${duplicados} duplicidade${duplicados === 1 ? "" : "s"}/preservada${duplicados === 1 ? "" : "s"}.` : ""}${revisao ? ` ${revisao} linha${revisao === 1 ? "" : "s"} para revisão.` : ""}`);
+    }
+
+    function importStatementCsvText(text) {
+      const rows = parseCsvRows(text);
+      if (rows.length < 2) {
+        showToast("O CSV de extrato não tem linhas suficientes para importar.");
+        return;
+      }
+      const headers = rows[0].map(normalizeHeader);
+      if (isClientImport(headers)) {
+        showToast("Este é um CSV de clientes. Use o botão ‘Importar clientes CSV’. Nenhum dado foi alterado.");
+        return;
+      }
+      if (isMonthlyBillingImport(headers)) {
+        showToast("Este é um lançamento mensal/boletos pagos. Use o botão ‘Baixar boletos pagos’. Nenhum dado foi alterado.");
+        return;
+      }
+      if (isReceiptStatement(headers)) return importReceiptStatementRows(rows, headers);
+      showToast("Modelo de extrato não reconhecido. Use o CSV do extrato mensal com colunas Tipo, Protocolo, Data e Valor.");
+    }
+
+    function handleMonthlyPaymentsImport(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => importMonthlyPaymentsCsvText(String(reader.result || ""));
+      reader.onerror = () => showToast("Não foi possível ler o CSV de lançamento mensal.");
+      reader.readAsText(file, "utf-8");
+      event.target.value = "";
+    }
+
+    function importCsvText(text) {
+      return importStatementCsvText(text);
     }
 
     function handleCsvImport(event) {
@@ -6454,6 +6733,8 @@ Atenciosamente,
     document.getElementById("newEntryBtn").addEventListener("click", () => openModal());
     document.getElementById("newPayableBtn")?.addEventListener("click", () => { openModal(); setExpenseDefaultsOnModal(); });
     document.getElementById("openPayablesBtn")?.addEventListener("click", () => setView("pagar"));
+    document.getElementById("openReceivablesBtn")?.addEventListener("click", () => setView("receber"));
+    document.getElementById("generateDashboardChargesBtn")?.addEventListener("click", () => ensureMonthlyChargesForAllClients(true));
     document.getElementById("importPayablesBtn")?.addEventListener("click", () => document.getElementById("payablesImportInput").click());
     document.getElementById("importPayablesDashboardBtn")?.addEventListener("click", () => document.getElementById("payablesImportInput").click());
     document.getElementById("downloadPayablesTemplateBtn")?.addEventListener("click", downloadPayablesTemplateCsv);
@@ -6485,7 +6766,7 @@ Atenciosamente,
     document.getElementById("generateUntil032027Btn")?.addEventListener("click", () => {
       const created = ensureMonthlyChargesForAllClients(true);
       renderForecast();
-      if (!created) showToast("Cobranças até 03/2027 já estavam atualizadas.");
+      if (!created) showToast("Cobranças de 05/2026 até 03/2027 já estavam atualizadas.");
     });
     document.getElementById("openForecastReportBtn")?.addEventListener("click", () => {
       document.getElementById("reportModelSelect").value = "previsao";
@@ -6515,9 +6796,12 @@ Atenciosamente,
       toggleBalances();
     });
     document.getElementById("importBtn").addEventListener("click", () => document.getElementById("csvImportInput").click());
+    document.getElementById("importMonthlyPaymentsBtn")?.addEventListener("click", () => document.getElementById("monthlyPaymentsImportInput").click());
+    document.getElementById("importMonthlyPaymentsReceberBtn")?.addEventListener("click", () => document.getElementById("monthlyPaymentsImportInput").click());
     document.getElementById("importClientsBtn")?.addEventListener("click", () => document.getElementById("clientImportInput").click());
     document.getElementById("importClientsTopBtn")?.addEventListener("click", () => document.getElementById("clientImportInput").click());
     document.getElementById("csvImportInput").addEventListener("change", handleCsvImport);
+    document.getElementById("monthlyPaymentsImportInput")?.addEventListener("change", handleMonthlyPaymentsImport);
     document.getElementById("clientImportInput")?.addEventListener("change", handleClientImport);
     document.getElementById("payablesImportInput")?.addEventListener("change", handlePayablesImport);
     form.addEventListener("submit", saveForm);

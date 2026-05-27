@@ -1,0 +1,20 @@
+ALFA FINANCEIRO V15 - CLIENTES DESDE 05/2026
+
+Objetivo:
+- Importar a base mestre de clientes com honorário mensal e vencimento.
+- Gerar parcelas mensais de 05/2026 até 03/2027.
+- Manter os clientes gravados no navegador/localStorage do sistema.
+- Permitir importar extrato bancário mensal para baixar automaticamente as parcelas pagas.
+
+Rotina correta:
+1. Publicar a V15 no GitHub Pages, sem dados reais.
+2. Acessar o site.
+3. Clientes > Importar clientes CSV.
+4. Importar o arquivo CLIENTES_IMPORTAR_SITE_ALFA_DESDE_052026.csv diretamente no site.
+5. Gerar cobranças de 05/2026 até 03/2027.
+6. Importar o extrato bancário mensal.
+7. Conferir pendências, recebimentos não identificados e cobranças ainda em aberto.
+
+Segurança:
+- Não subir CSV de clientes, extratos, PDFs, boletos ou backups no GitHub.
+- A base importada deve permanecer somente dentro do uso do sistema.
