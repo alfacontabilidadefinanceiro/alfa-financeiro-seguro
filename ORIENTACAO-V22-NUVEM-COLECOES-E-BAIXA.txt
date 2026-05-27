@@ -1,0 +1,27 @@
+VERSÃO V22 - NUVEM POR COLEÇÕES E BAIXA AUTOMÁTICA
+
+Esta versão muda a gravação da nuvem para coleções do Firestore, evitando salvar todos os dados em um único documento.
+
+Principais ajustes:
+1. Carrega os dados da nuvem automaticamente após login.
+2. Salva clientes e lançamentos em coleções separadas:
+   alfaFinanceiro/principal/clients
+   alfaFinanceiro/principal/entries
+3. Mantém um documento principal com os IDs ativos e configurações.
+4. Evita perda de dados ao abrir em outro computador.
+5. Mantém botões separados:
+   - Importar clientes CSV
+   - Baixar boletos pagos
+   - Importar extrato/saídas
+6. Evita duplicar cliente e cobrança mensal.
+7. Tenta baixar boletos pagos pelo número da cobrança, CNPJ/CPF, competência, vencimento, nome e valor.
+
+Após publicar:
+1. Entrar com e-mail e senha.
+2. Importar clientes.
+3. Gerar cobranças de 05/2026 até 03/2027.
+4. Importar lançamento mensal no botão Baixar boletos pagos.
+5. Aguardar status: Salvo automático.
+6. Abrir em outro computador e conferir se a nuvem carregou.
+
+Não envie arquivos CSV, PDF, XLS, extratos ou boletos reais para o GitHub.

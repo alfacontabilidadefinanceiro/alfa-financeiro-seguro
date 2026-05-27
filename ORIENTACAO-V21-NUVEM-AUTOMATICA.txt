@@ -1,0 +1,8 @@
+VERSÃO V21 - NUVEM AUTOMÁTICA
+
+1. O sistema carrega os dados da nuvem automaticamente após o login.
+2. O sistema salva automaticamente na nuvem sempre que importar clientes, baixar boletos, lançar despesas ou alterar cadastros.
+3. Os botões Salvar nuvem e Carregar nuvem foram removidos da tela principal.
+4. O indicador no topo mostra o status: carregando, salvando, salvo ou erro.
+5. Se aparecer erro de nuvem, conferir Firestore, regras e e-mail autorizado.
+6. Para segurança, não publicar CSV, XLS, PDF, ZIP, RAR, extratos ou dados reais no GitHub.

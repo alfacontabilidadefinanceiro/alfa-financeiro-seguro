@@ -76,3 +76,9 @@ As regras recomendadas estão no arquivo `FIRESTORE-RULES-ALFA-FINANCEIRO.txt`.
 
 ## V19 - Nuvem obrigatória
 Esta versão tem botões Salvar nuvem e Carregar nuvem para confirmar sincronização no Firestore.
+
+
+## V20 - Senha obrigatória
+
+Esta versão exige login por e-mail e senha em toda abertura do sistema. A sessão não fica gravada no navegador para entrada automática.
+

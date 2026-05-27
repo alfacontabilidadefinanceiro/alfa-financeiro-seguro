@@ -1,0 +1,15 @@
+ORIENTAÇÃO V20 - SENHA OBRIGATÓRIA
+
+Esta versão foi ajustada para exigir login por e-mail e senha sempre que o sistema for aberto.
+
+O Firebase Authentication normalmente mantém a sessão salva no navegador. Por segurança, a V20 usa persistência em memória e limpa a sessão anterior ao carregar a página.
+
+Resultado esperado:
+1. Ao colar o link em uma aba nova, deve aparecer a tela de login.
+2. Ao atualizar a página, deve pedir login novamente.
+3. O botão de Google foi desativado/ocultado.
+4. O acesso continua restrito ao e-mail autorizado configurado no sistema.
+
+Publicação:
+- Publique apenas os arquivos extraídos.
+- Não envie CSV de clientes, extratos, boletos, PDFs, planilhas ou backups reais ao GitHub.

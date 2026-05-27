@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="alfa-financeiro-version" content="2026-05-27-v19-firestore-nuvem-obrigatoria" />
+  <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alfa Financeiro V19 | Nuvem obrigatória</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1048,6 +1048,25 @@
       #printableReport th { position: static; background: #f3f4f6; }
       .sensitive-money { visibility: visible; }
     }
+
+    .cloud-status {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:38px;
+      padding:0 14px;
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,.30);
+      background:rgba(31,41,55,.72);
+      color:#e5e7eb;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.02em;
+      white-space:nowrap;
+    }
+    .cloud-status.ok { border-color:rgba(34,197,94,.45); background:rgba(22,101,52,.20); color:#86efac; }
+    .cloud-status.warn { border-color:rgba(245,158,11,.45); background:rgba(120,53,15,.20); color:#fde68a; }
+    .cloud-status.err { border-color:rgba(239,68,68,.55); background:rgba(127,29,29,.26); color:#fecaca; }
   </style>
 </head>
 <body>
@@ -1056,7 +1075,7 @@
       <div class="mark login-logo"><img src="alfa-logo.png" alt="Alfa Contabilidade" /></div>
       <div>
         <h1>Alfa Financeiro</h1>
-        <p>Acesso interno para acompanhar contas a pagar, contas a receber, fluxo de caixa e status dos lançamentos.</p>
+        <p>Acesso interno para acompanhar contas a pagar, contas a receber, fluxo de caixa e status dos lançamentos. Por segurança, o login será exigido sempre por e-mail e senha.</p>
       </div>
       <div class="field">
         <label for="emailInput">E-mail</label>
@@ -1068,10 +1087,10 @@
       </div>
       <div class="login-actions">
         <button class="btn btn-primary" id="emailLoginBtn" type="submit">Entrar</button>
-        <button class="btn btn-ghost" id="googleLoginBtn" type="button">Entrar com Google</button>
+        <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V19 NUVEM - Dados devem sincronizar no Firebase/Firestore para acesso em outros computadores.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V22 - Nuvem automática por coleções e baixa automática de boletos.</div>
     </form>
   </section>
 
@@ -1081,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V19 nuvem</span>
+          <span>Controle interno • V22 nuvem por coleções</span>
         </div>
       </div>
 
@@ -1098,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V19 nuvem. Dados salvos no Firebase/Firestore para acesso em outros computadores. Use “Salvar nuvem” após importações.</p>
+        <p><span class="status-dot"></span>VERSÃO V22. Login por senha, Firestore por coleções e baixa automática de boletos pagos.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1115,9 +1134,7 @@
           <input id="clientImportInput" type="file" accept=".csv,text/csv" hidden />
           <input id="payablesImportInput" type="file" accept=".csv,text/csv,.txt,text/plain,.pdf,application/pdf" multiple hidden />
           <label class="top-month-control" for="globalMonthFilter"><span>Mês de análise</span><input id="globalMonthFilter" type="month" title="Mês de análise do sistema" /></label>
-          <span class="cloud-status warn" id="cloudStatusBadge">Nuvem aguardando</span>
-          <button class="btn btn-secondary" id="cloudSyncNowBtn" type="button" title="Gravar agora no Firebase/Firestore">Salvar nuvem</button>
-          <button class="btn btn-secondary" id="cloudLoadNowBtn" type="button" title="Recarregar dados do Firebase/Firestore">Carregar nuvem</button>
+          <span class="cloud-status warn" id="cloudStatusBadge" title="Sincronização automática com Firebase/Firestore">Nuvem automática aguardando</span>
           <button class="btn btn-secondary" id="importClientsTopBtn" type="button">Importar clientes</button>
           <button class="btn btn-secondary" id="importMonthlyPaymentsBtn" type="button">Baixar boletos pagos</button>
           <button class="btn btn-secondary" id="importBtn" type="button">Importar extrato/saídas</button>
@@ -2132,6 +2149,8 @@
       signInWithPopup,
       signInWithEmailAndPassword,
       onAuthStateChanged,
+      setPersistence,
+      inMemoryPersistence,
       signOut
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import {
@@ -2139,6 +2158,9 @@
       doc,
       getDoc,
       setDoc,
+      collection,
+      getDocs,
+      writeBatch,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -2162,6 +2184,10 @@
     let cloudLoaded = false;
     let cloudSyncTimer = null;
     let cloudSyncInProgress = false;
+    let cloudPendingReason = "";
+    let cloudLastSavedAt = "";
+    let cloudLastLoadedAt = "";
+    const cloudTimeoutMs = 12000;
 
     const storageKey = "alfaFinanceiroLancamentosV1";
     const clientsStorageKey = "alfaFinanceiroClientesV1";
@@ -2772,12 +2798,78 @@ Atenciosamente,
       return doc(db, ...cloudDocumentPath);
     }
 
+    function cloudCollectionRef(name) {
+      return collection(db, ...cloudDocumentPath, name);
+    }
+
+    function safeFirestoreId(value, fallback = "item") {
+      const base = String(value || fallback)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 140);
+      return base || `${fallback}_${crypto.randomUUID()}`;
+    }
+
+    function clientCloudId(client) {
+      const docDigits = normalizeDocument(client?.document || "");
+      if (docDigits) return `doc_${docDigits}`;
+      return safeFirestoreId(client?.key || client?.name || client?.id, "cliente");
+    }
+
+    function entryCloudId(entry) {
+      const protocol = duplicateProtocol(entry);
+      if (protocol) return `protocolo_${safeFirestoreId(protocol, "protocolo")}`;
+      const type = entry?.type || "lancamento";
+      const docDigits = normalizeDocument(entry?.document || "");
+      const person = docDigits || safeFirestoreId(entry?.name || entry?.bankCounterparty || "sem_nome", "pessoa");
+      const month = entryCompetence(entry) || String(entry?.date || entry?.paidAt || "sem_mes").slice(0, 7);
+      const cents = amountToCents(entry?.amount || entry?.paidAmount || 0);
+      const due = String(entry?.date || "sem_data").slice(0, 10);
+      return safeFirestoreId(`${type}_${person}_${month}_${due}_${cents}`, "lancamento");
+    }
+
+    async function commitBatchOperations(operations, chunkSize = 430) {
+      for (let i = 0; i < operations.length; i += chunkSize) {
+        const batch = writeBatch(db);
+        operations.slice(i, i + chunkSize).forEach(operation => operation(batch));
+        await withTimeout(batch.commit(), cloudTimeoutMs, "Tempo esgotado ao salvar lote na nuvem.");
+      }
+    }
+
+    async function getCollectionDocsMap(name) {
+      const snap = await withTimeout(getDocs(cloudCollectionRef(name)), cloudTimeoutMs, `Tempo esgotado ao carregar ${name}.`);
+      const map = new Map();
+      snap.forEach(documentSnapshot => map.set(documentSnapshot.id, documentSnapshot.data() || {}));
+      return map;
+    }
+
     function safeJsonCopy(value) {
       try {
         return JSON.parse(JSON.stringify(value ?? null));
       } catch {
         return value ?? null;
       }
+    }
+
+    function nowTimeText() {
+      const date = new Date();
+      return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function withTimeout(promise, ms, timeoutMessage) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error(timeoutMessage || "tempo-esgotado")), ms);
+      });
+      return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer));
+    }
+
+    function updateCloudSummaryStatus(prefix = "Nuvem automática") {
+      const detail = cloudLastSavedAt ? ` • salvo ${cloudLastSavedAt}` : "";
+      setCloudStatus(`${prefix}: ${cloudSummaryText()}${detail}`, "ok");
     }
 
     function persistCloudStateLocally() {
@@ -2790,34 +2882,57 @@ Atenciosamente,
 
     async function loadCloudState() {
       if (!isAuthorizedUser(auth.currentUser)) return "sem-usuario";
-      setCloudStatus("Carregando nuvem...", "warn");
+      setCloudStatus("Carregando dados da nuvem...", "warn");
       try {
-        const snap = await getDoc(cloudStateRef());
-        if (snap.exists()) {
-          const data = snap.data() || {};
-          const cloudEntries = Array.isArray(data.entries) ? data.entries : [];
-          const cloudClients = Array.isArray(data.clients) ? data.clients : [];
-          const hasCloudData = cloudEntries.length || cloudClients.length || data.officeProfile || data.whatsappSettings;
-          if (hasCloudData) {
-            entries = dedupeEntries(sanitizeEntries(cloudEntries));
-            clients = cloudClients.filter(client => client && client.name && client.document);
-            officeProfile = { ...loadOfficeProfile(), ...(data.officeProfile || {}) };
-            whatsappSettings = { ...loadWhatsappSettings(), ...(data.whatsappSettings || {}) };
-            whatsappLogs = Array.isArray(data.whatsappLogs) ? data.whatsappLogs.slice(0, 300) : whatsappLogs;
-            persistCloudStateLocally();
-            cloudLoaded = true;
-            setCloudStatus(`Nuvem carregada: ${cloudSummaryText()}`, "ok");
-            return "carregado";
-          }
+        const snap = await withTimeout(getDoc(cloudStateRef()), cloudTimeoutMs, "Tempo esgotado ao carregar a nuvem.");
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        let cloudEntries = [];
+        let cloudClients = [];
+
+        const useCollections = data.storageMode === "collections_v22" || Array.isArray(data.activeEntryIds) || Array.isArray(data.activeClientIds);
+        if (useCollections) {
+          const [entryDocs, clientDocs] = await Promise.all([
+            getCollectionDocsMap("entries"),
+            getCollectionDocsMap("clients")
+          ]);
+          const activeEntryIds = new Set(Array.isArray(data.activeEntryIds) ? data.activeEntryIds : [...entryDocs.keys()]);
+          const activeClientIds = new Set(Array.isArray(data.activeClientIds) ? data.activeClientIds : [...clientDocs.keys()]);
+          cloudEntries = [...entryDocs.entries()].filter(([id]) => activeEntryIds.has(id)).map(([, value]) => value);
+          cloudClients = [...clientDocs.entries()].filter(([id]) => activeClientIds.has(id)).map(([, value]) => value);
+        } else {
+          // Compatibilidade com versões antigas que salvavam tudo em um único documento.
+          cloudEntries = Array.isArray(data.entries) ? data.entries : [];
+          cloudClients = Array.isArray(data.clients) ? data.clients : [];
         }
+
+        const hasCloudData = cloudEntries.length || cloudClients.length || data.officeProfile || data.whatsappSettings;
+        if (hasCloudData) {
+          entries = dedupeEntries(sanitizeEntries(cloudEntries));
+          clients = cloudClients.filter(client => client && client.name && client.document);
+          officeProfile = { ...loadOfficeProfile(), ...(data.officeProfile || {}) };
+          whatsappSettings = { ...loadWhatsappSettings(), ...(data.whatsappSettings || {}) };
+          whatsappLogs = Array.isArray(data.whatsappLogs) ? data.whatsappLogs.slice(0, 300) : whatsappLogs;
+          persistCloudStateLocally();
+          cloudLoaded = true;
+          cloudLastLoadedAt = nowTimeText();
+          setCloudStatus(`Nuvem carregada ${cloudLastLoadedAt}: ${cloudSummaryText()}`, "ok");
+          return "carregado";
+        }
+
         cloudLoaded = true;
-        await syncCloudState("primeira-carga");
-        setCloudStatus(`Nuvem iniciada: ${cloudSummaryText()}`, "ok");
-        return "iniciado";
+        cloudLastLoadedAt = nowTimeText();
+        const hasLocalData = entries.length || clients.length;
+        if (hasLocalData) {
+          setCloudStatus("Nuvem vazia. Enviando base local automaticamente...", "warn");
+          await syncCloudState("primeira-carga-automatica");
+          return "iniciado";
+        }
+        setCloudStatus("Nuvem vazia. Importe clientes para iniciar.", "warn");
+        return "vazio";
       } catch (error) {
         console.error("Erro ao carregar dados do Firestore", error);
         cloudLoaded = false;
-        setCloudStatus("Erro na nuvem", "err");
+        setCloudStatus(firebaseErrorMessage(error), "err");
         showToast(firebaseErrorMessage(error));
         return "erro";
       }
@@ -2825,43 +2940,96 @@ Atenciosamente,
 
     async function syncCloudState(reason = "salvar") {
       if (!isAuthorizedUser(auth.currentUser)) return;
-      if (cloudSyncInProgress) return;
+      if (cloudSyncInProgress) {
+        cloudPendingReason = reason || cloudPendingReason || "pendente";
+        return;
+      }
       cloudSyncInProgress = true;
-      setCloudStatus("Salvando nuvem...", "warn");
+      setCloudStatus("Salvando automaticamente na nuvem...", "warn");
       try {
-        const payload = {
-          version: "V18-Firestore",
+        const cleanEntries = dedupeEntries(entries).map(entry => ({ ...entry, cloudId: entry.cloudId || entryCloudId(entry) }));
+        const cleanClients = clients.map(client => ({ ...client, cloudId: client.cloudId || clientCloudId(client) }));
+        entries = cleanEntries;
+        clients = cleanClients;
+
+        const activeEntryIds = cleanEntries.map(entry => entry.cloudId);
+        const activeClientIds = cleanClients.map(client => client.cloudId);
+        const operations = [];
+
+        operations.push(batch => batch.set(cloudStateRef(), {
+          version: "V22-Firestore-Colecoes",
+          storageMode: "collections_v22",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
           syncReason: reason,
-          entries: safeJsonCopy(dedupeEntries(entries)),
-          clients: safeJsonCopy(clients),
+          activeEntryIds,
+          activeClientIds,
           officeProfile: safeJsonCopy(officeProfile),
           whatsappSettings: safeJsonCopy(whatsappSettings),
-          whatsappLogs: safeJsonCopy((whatsappLogs || []).slice(0, 300))
-        };
-        await setDoc(cloudStateRef(), payload, { merge: true });
+          whatsappLogs: safeJsonCopy((whatsappLogs || []).slice(0, 300)),
+          totalEntries: activeEntryIds.length,
+          totalClients: activeClientIds.length
+        }, { merge: true }));
+
+        cleanClients.forEach(client => {
+          operations.push(batch => batch.set(doc(db, ...cloudDocumentPath, "clients", client.cloudId), safeJsonCopy(client), { merge: true }));
+        });
+        cleanEntries.forEach(entry => {
+          operations.push(batch => batch.set(doc(db, ...cloudDocumentPath, "entries", entry.cloudId), safeJsonCopy(entry), { merge: true }));
+        });
+
+        await commitBatchOperations(operations);
+        localStorage.setItem(storageKey, JSON.stringify(entries));
+        localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
         cloudLoaded = true;
-        setCloudStatus(`Salvo na nuvem: ${cloudSummaryText()}`, "ok");
-        console.info(`Alfa Financeiro: sincronizado no Firestore (${reason}).`);
+        cloudLastSavedAt = nowTimeText();
+        updateCloudSummaryStatus("Salvo automático");
+        console.info(`Alfa Financeiro: sincronizado no Firestore por coleções (${reason}).`);
       } catch (error) {
         console.error("Erro ao sincronizar com Firestore", error);
-        setCloudStatus("Erro ao salvar nuvem", "err");
+        setCloudStatus(firebaseErrorMessage(error), "err");
         showToast(firebaseErrorMessage(error));
       } finally {
         cloudSyncInProgress = false;
+        if (cloudPendingReason) {
+          const pendingReason = cloudPendingReason;
+          cloudPendingReason = "";
+          scheduleCloudSync(pendingReason);
+        }
       }
     }
 
     function scheduleCloudSync(reason = "salvar") {
       if (!isAuthorizedUser(auth.currentUser)) return;
+      cloudPendingReason = reason || cloudPendingReason || "alteracao";
+      setCloudStatus("Alteração detectada. Salvamento automático pendente...", "warn");
       window.clearTimeout(cloudSyncTimer);
-      cloudSyncTimer = window.setTimeout(() => syncCloudState(reason), 900);
+      cloudSyncTimer = window.setTimeout(() => {
+        const pendingReason = cloudPendingReason || reason || "salvar";
+        cloudPendingReason = "";
+        syncCloudState(pendingReason);
+      }, 900);
     }
 
     async function forceCloudSync(reason = "manual") {
       window.clearTimeout(cloudSyncTimer);
+      cloudPendingReason = "";
       await syncCloudState(reason);
+    }
+
+    function startAutomaticCloudWatch() {
+      window.addEventListener("online", () => {
+        setCloudStatus("Internet voltou. Sincronizando automaticamente...", "warn");
+        scheduleCloudSync("reconexao");
+      });
+      window.addEventListener("offline", () => {
+        setCloudStatus("Sem internet. Dados ficam neste navegador até reconectar.", "err");
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && isAuthorizedUser(auth.currentUser)) {
+          scheduleCloudSync("retorno-aba");
+        }
+      });
     }
 
     function buildBackupData(reason = "automatico") {
@@ -5049,6 +5217,25 @@ Atenciosamente,
       body { padding: 12px; background: #f9fafb; }
       .sheet { background: #fff; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
     }
+
+    .cloud-status {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:38px;
+      padding:0 14px;
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,.30);
+      background:rgba(31,41,55,.72);
+      color:#e5e7eb;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.02em;
+      white-space:nowrap;
+    }
+    .cloud-status.ok { border-color:rgba(34,197,94,.45); background:rgba(22,101,52,.20); color:#86efac; }
+    .cloud-status.warn { border-color:rgba(245,158,11,.45); background:rgba(120,53,15,.20); color:#fde68a; }
+    .cloud-status.err { border-color:rgba(239,68,68,.55); background:rgba(127,29,29,.26); color:#fecaca; }
   </style>
 </head>
 <body>
@@ -5076,7 +5263,7 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V16. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V22. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
 </body>
 </html>`;
@@ -6777,6 +6964,12 @@ Atenciosamente,
       if (code.includes("permission-denied")) {
         return "Sem permissão no Firestore. Confira as regras do banco de dados e o e-mail autorizado.";
       }
+      if (code.includes("resource-exhausted")) {
+        return "Limite do Firestore atingido. A V22 salva por coleções para evitar documento grande; tente novamente.";
+      }
+      if (String(error?.message || "").toLowerCase().includes("exceeds") || String(error?.message || "").toLowerCase().includes("1048487")) {
+        return "Arquivo de dados muito grande para um único documento. A V22 salva por coleções; publique a versão atualizada e tente novamente.";
+      }
       if (code.includes("unavailable")) {
         return "Firestore indisponível no momento. Tente novamente em alguns instantes.";
       }
@@ -6796,20 +6989,30 @@ Atenciosamente,
       loginScreen.style.display = "none";
       app.classList.add("visible");
       applyBalanceVisibility();
-      const cloudStatus = await loadCloudState();
+      setCloudStatus("Entrou. Carregando nuvem automaticamente...", "warn");
+
       renderOfficeProfile();
       renderWhatsappSettings();
       const initialView = new URLSearchParams(window.location.search).get("view");
       if (titles[initialView]) setView(initialView);
+      render();
+
+      const cloudStatus = await loadCloudState();
+      renderOfficeProfile();
+      renderWhatsappSettings();
       autoEnsureFutureMonthlyCharges();
       const backupCreated = runDailyBackup();
       render();
-      const message = cloudStatus === "carregado"
-        ? "Bem-vindo. Dados carregados da nuvem."
-        : cloudStatus === "iniciado"
-          ? "Bem-vindo. Banco em nuvem iniciado."
-          : backupCreated ? "Bem-vindo. Backup diário gerado automaticamente." : "Bem-vindo ao Alfa Financeiro.";
-      showToast(message);
+
+      if (cloudStatus === "carregado") {
+        showToast("Dados carregados automaticamente da nuvem.");
+      } else if (cloudStatus === "iniciado") {
+        showToast("Banco em nuvem iniciado e salvo automaticamente.");
+      } else if (backupCreated) {
+        showToast("Backup diário gerado automaticamente. Verifique a nuvem se necessário.");
+      } else {
+        showToast("Sistema aberto. A nuvem será sincronizada automaticamente quando disponível.");
+      }
     }
 
     function showLoginScreen(message = "") {
@@ -6824,18 +7027,30 @@ Atenciosamente,
       showLoginScreen("Usuário não autorizado.");
     }
 
-    onAuthStateChanged(auth, async user => {
-      if (!user) {
-        showLoginScreen();
-        return;
+    async function startAuthenticationFlow() {
+      try {
+        await setPersistence(auth, inMemoryPersistence);
+        await signOut(auth).catch(() => {});
+      } catch (error) {
+        console.warn("Não foi possível limpar a sessão anterior do Firebase.", error);
       }
-      if (!isAuthorizedUser(user)) {
-        blockUnauthorizedUser();
-        return;
-      }
-      setLoginError();
-      await showProtectedApp(user);
-    });
+
+      onAuthStateChanged(auth, async user => {
+        if (!user) {
+          showLoginScreen();
+          return;
+        }
+        if (!isAuthorizedUser(user)) {
+          blockUnauthorizedUser();
+          return;
+        }
+        setLoginError();
+        await showProtectedApp(user);
+      });
+    }
+
+    startAutomaticCloudWatch();
+    startAuthenticationFlow();
 
     document.getElementById("loginForm").addEventListener("submit", async event => {
       event.preventDefault();
@@ -6853,16 +7068,8 @@ Atenciosamente,
       }
     });
 
-    document.getElementById("googleLoginBtn").addEventListener("click", async () => {
-      setLoginError();
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        if (!isAuthorizedUser(result.user)) {
-          await blockUnauthorizedUser();
-        }
-      } catch (error) {
-        setLoginError(firebaseErrorMessage(error));
-      }
+    document.getElementById("googleLoginBtn")?.addEventListener("click", () => {
+      setLoginError("Login com Google desativado. Use e-mail e senha para acessar.");
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
