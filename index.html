@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-26-profissional-v5-relatorios-totais-whatsapp-escritorio" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V9 | Conciliação inteligente do extrato</title>
+  <title>Alfa Financeiro V14 | Honorário mensal corrigido</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1098,7 +1098,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V13 segura. Cadastro mestre de clientes, importação de clientes por CSV, cobranças até 03/2027, conciliação com extrato e alertas financeiros.</p>
+        <p><span class="status-dot"></span>VERSÃO V14 segura. Cadastro mestre de clientes, honorário mensal corrigido na lista, importação de clientes por CSV, cobranças até 03/2027, conciliação com extrato e alertas financeiros.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1497,7 +1497,7 @@
               <strong id="reportCanceled">0</strong>
             </div>
           </div>
-          <div class="hint"><strong>VERSÃO V13 - CADASTRO MESTRE DE CLIENTES E IMPORTAÇÃO SEGURA.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
+          <div class="hint"><strong>VERSÃO V14 - HONORÁRIO MENSAL CORRIGIDO NA LISTA DE CLIENTES.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
           <div class="bar-list" id="reportList"></div>
           <div class="hint" id="reportDiagnostic">Diagnóstico: aguardando leitura dos lançamentos.</div>
           <section class="panel">
@@ -3793,6 +3793,19 @@ Atenciosamente,
       return { related, monthEntries, open, paid, nextDue, lastPaid, honorarioAmount, receivedAmount, openAmount, hasLate, lateMonths, lateAmount };
     }
 
+    function clientMonthlyFeeValue(client, summary = null) {
+      const fromCadastro = Number(client?.monthlyFee || 0);
+      if (fromCadastro > 0) return fromCadastro;
+      const fromSummary = Number(summary?.honorarioAmount || 0);
+      return fromSummary > 0 ? fromSummary : 0;
+    }
+
+    function clientMonthExpectedValue(client, summary = null) {
+      const fromMonthEntries = Number(summary?.honorarioAmount || 0);
+      if (fromMonthEntries > 0) return fromMonthEntries;
+      return clientMonthlyFeeValue(client, summary);
+    }
+
     function matchesClientQuickFilter(summary) {
       if (clientQuickFilter === "vencidos") return summary.lateMonths.length > 0 || summary.hasLate;
       if (clientQuickFilter === "pendentes") return summary.openAmount > 0;
@@ -3814,13 +3827,15 @@ Atenciosamente,
         .map(client => ({ client, summary: getClientSummary(client) }))
         .filter(item => matchesClientQuickFilter(item.summary));
       const rows = visibleClients.map(({ client, summary }) => {
+        const monthlyFeeValue = clientMonthlyFeeValue(client, summary);
+        const expectedMonthValue = clientMonthExpectedValue(client, summary);
       const status = !summary.monthEntries.length
-          ? `<span class="pill">Sem cobrança</span>`
+          ? monthlyFeeValue > 0 ? `<span class="pill open">Gerar cobrança</span>` : `<span class="pill">Sem cobrança</span>`
           : summary.monthEntries.every(entry => entry.status === "bonificado" || entry.status === "cancelado")
             ? `<span class="pill bonus">Bonificado</span>`
           : summary.lateMonths.length
             ? `<span class="pill late">Atraso anterior</span>`
-            : summary.receivedAmount >= summary.honorarioAmount && summary.honorarioAmount > 0
+            : summary.receivedAmount >= expectedMonthValue && expectedMonthValue > 0
             ? `<span class="pill paid">Em dia</span>`
             : summary.hasLate
               ? `<span class="pill late">Vencido</span>`
@@ -3835,7 +3850,7 @@ Atenciosamente,
             <td>${escapeHTML(client.document || "-")}</td>
             <td>${escapeHTML([client.phone, client.email].filter(Boolean).join(" / ") || "-")}</td>
             <td>${formatMonth(client.firstChargeMonth || firstChargeMonth)}</td>
-            <td class="money-in">${moneySpan(summary.honorarioAmount)}</td>
+            <td class="money-in">${moneySpan(monthlyFeeValue)}</td>
             <td class="money-in">${moneySpan(summary.receivedAmount)}</td>
             <td class="${summary.openAmount > 0 ? "money-out" : "money-in"}">${moneySpan(summary.openAmount)}</td>
             <td>${summary.nextDue ? formatDate(summary.nextDue) : "-"}</td>
@@ -3917,7 +3932,7 @@ Atenciosamente,
       `).join("");
       const diagnostic = document.getElementById("reportDiagnostic");
       if (diagnostic) {
-        diagnostic.innerHTML = `<strong>Diagnóstico V12:</strong> ${entries.length} lançamento(s) salvos; mês selecionado ${formatMonth(month)}; ${competenceScoped.length} lançamento(s) na competência; ${paidInCashMonth.length} recebido(s)/pago(s) no caixa do mês. Modelo atual: ${escapeHTML(document.getElementById("reportModelSelect")?.selectedOptions?.[0]?.textContent || "Resumo gerencial")}.`;
+        diagnostic.innerHTML = `<strong>Diagnóstico V14:</strong> ${entries.length} lançamento(s) salvos; mês selecionado ${formatMonth(month)}; ${competenceScoped.length} lançamento(s) na competência; ${paidInCashMonth.length} recebido(s)/pago(s) no caixa do mês. Modelo atual: ${escapeHTML(document.getElementById("reportModelSelect")?.selectedOptions?.[0]?.textContent || "Resumo gerencial")}.`;
       }
       renderCustomReport();
       renderLateDetailedReport();
@@ -4823,7 +4838,7 @@ Atenciosamente,
         <p class="subtitle">${escapeHTML(report.orientation || "Relatório financeiro interno.")}</p>
       </div>
       <div class="meta">
-        <strong>Alfa Financeiro V7</strong><br>
+        <strong>Alfa Financeiro V14</strong><br>
         Gerado em ${escapeHTML(generatedAt)}<br>
         ${escapeHTML(totalRows)} registro${totalRows === 1 ? "" : "s"}
       </div>
@@ -4840,7 +4855,7 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V9. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V14. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
 </body>
 </html>`;

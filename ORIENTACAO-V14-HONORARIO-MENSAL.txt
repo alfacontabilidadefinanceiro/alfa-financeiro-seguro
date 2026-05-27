@@ -1,0 +1,16 @@
+VERSÃO V14 - CORREÇÃO DO HONORÁRIO MENSAL NA LISTA DE CLIENTES
+
+Correção principal:
+- A coluna de clientes agora mostra o valor cadastrado no campo Honorário mensal.
+- Antes a lista buscava o total de lançamentos da competência selecionada; quando o mês ainda não tinha cobrança gerada ou estava fora do mês selecionado, aparecia R$ 0,00 mesmo com honorário no cadastro.
+- O cadastro interno do cliente não foi alterado; apenas a exibição da lista foi corrigida.
+
+Como usar:
+1. Publique esta versão no GitHub Pages.
+2. Abra o site e aperte Ctrl + F5.
+3. Na tela Clientes, confira a coluna Honorário mensal.
+4. Se quiser criar as parcelas, use o botão de gerar cobranças até 03/2027.
+
+Segurança:
+- Não publique planilhas, extratos, PDFs, boletos ou arquivos reais de clientes no GitHub.
+- A importação da base de clientes deve ser feita somente dentro do sistema, no navegador.
