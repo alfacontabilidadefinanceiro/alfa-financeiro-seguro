@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V26 | Nuvem rápida e segura</title>
+  <title>Alfa Financeiro V27 | Firestore estável</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1090,7 +1090,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V26 - Nuvem rápida, salvamento híbrido e proteção contra salvar vazio.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V27 - Firestore estável, salvamento principal rápido e long polling.</div>
     </form>
   </section>
 
@@ -1100,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V26 nuvem rápida</span>
+          <span>Controle interno • V27 nuvem estável</span>
         </div>
       </div>
 
@@ -1117,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V26. Firestore em nuvem com carregamento rápido, recuperação automática e proteção contra sobrescrever com base vazia.</p>
+        <p><span class="status-dot"></span>VERSÃO V27. Firestore em nuvem com conexão estável, salvamento principal rápido e proteção contra sobrescrever com base vazia.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -2157,7 +2157,9 @@
       signOut
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import {
-      getFirestore,
+      initializeFirestore,
+      persistentLocalCache,
+      persistentMultipleTabManager,
       doc,
       getDoc,
       setDoc,
@@ -2179,7 +2181,14 @@
 
     const firebaseApp = initializeApp(firebaseConfig);
     const auth = getAuth(firebaseApp);
-    const db = getFirestore(firebaseApp);
+    // V27: inicialização explícita do Firestore com long polling.
+    // Isso evita travamento/timeout em algumas redes, provedores, antivírus e proxies,
+    // problema comum quando o WebChannel padrão do Firebase fica bloqueado.
+    const db = initializeFirestore(firebaseApp, {
+      experimentalAutoDetectLongPolling: true,
+      useFetchStreams: false,
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
     const googleProvider = new GoogleAuthProvider();
     const authorizedEmail = "alfacontabilidade2014@gmail.com";
     const authorizedEmails = new Set([authorizedEmail]);
@@ -2190,7 +2199,9 @@
     let cloudPendingReason = "";
     let cloudLastSavedAt = "";
     let cloudLastLoadedAt = "";
-    const cloudTimeoutMs = 180000;
+    let cloudReadyForWrites = false;
+    let cloudCollectionsSyncInProgress = false;
+    const cloudTimeoutMs = 240000;
 
     const storageKey = "alfaFinanceiroLancamentosV1";
     const clientsStorageKey = "alfaFinanceiroClientesV1";
@@ -2920,7 +2931,7 @@ Atenciosamente,
           cloudEntries = Array.isArray(data.entries) ? data.entries : [];
           cloudClients = Array.isArray(data.clients) ? data.clients : [];
         } else {
-          const useCollections = data.storageMode === "collections_v22" || data.storageMode === "hybrid_v26" || Array.isArray(data.activeEntryIds) || Array.isArray(data.activeClientIds);
+          const useCollections = data.storageMode === "collections_v22" || data.storageMode === "hybrid_v26" || data.storageMode === "hybrid_v27" || data.storageMode === "collections_v27" || Array.isArray(data.activeEntryIds) || Array.isArray(data.activeClientIds);
           if (useCollections) {
             const [entryDocs, clientDocs] = await Promise.all([
               getCollectionDocsMap("entries"),
@@ -2950,12 +2961,14 @@ Atenciosamente,
           whatsappLogs = Array.isArray(data.whatsappLogs) ? data.whatsappLogs.slice(0, 300) : whatsappLogs;
           persistCloudStateLocally();
           cloudLoaded = true;
+          cloudReadyForWrites = true;
           cloudLastLoadedAt = nowTimeText();
           setCloudStatus(`Nuvem carregada ${cloudLastLoadedAt}: ${cloudSummaryText()}`, "ok");
           return "carregado";
         }
 
         cloudLoaded = true;
+        cloudReadyForWrites = true;
         cloudLastLoadedAt = nowTimeText();
         const hasLocalData = entries.length || clients.length;
         if (hasLocalData) {
@@ -2981,7 +2994,7 @@ Atenciosamente,
         return;
       }
       cloudSyncInProgress = true;
-      setCloudStatus("Salvando automaticamente na nuvem...", "warn");
+      setCloudStatus("Salvando dados principais na nuvem...", "warn");
       try {
         const cleanEntries = dedupeEntries(entries).map(entry => ({ ...entry, cloudId: entry.cloudId || entryCloudId(entry) }));
         const cleanClients = clients.map(client => ({ ...client, cloudId: client.cloudId || clientCloudId(client) }));
@@ -2991,21 +3004,18 @@ Atenciosamente,
         const activeEntryIds = cleanEntries.map(entry => entry.cloudId);
         const activeClientIds = cleanClients.map(client => client.cloudId);
 
-        // Proteção V26: nunca sobrescrever a nuvem com base vazia por abertura em outro navegador/computador.
-        // Para limpar dados, use o botão específico de excluir/limpar com confirmação, não o salvamento automático.
+        // Proteção V27: jamais sobrescrever a nuvem com uma base zerada por abertura em outro computador.
         if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
-          setCloudStatus("Proteção ativada: base local vazia não foi salva na nuvem. Clique em Carregar nuvem ou Diagnóstico.", "warn");
-          console.warn("Alfa Financeiro V26: bloqueado salvamento vazio", { reason });
+          setCloudStatus("Proteção ativada: base local vazia não foi salva. Clique em Carregar nuvem.", "warn");
+          console.warn("Alfa Financeiro V27: bloqueado salvamento vazio", { reason });
           return;
         }
 
-        const operations = [];
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
-
-        operations.push(batch => batch.set(cloudStateRef(), {
-          version: "V26-Firestore-Hibrido-Rapido",
-          storageMode: usingCompactPayload ? "hybrid_v26" : "collections_v22",
+        const statePayload = {
+          version: "V27-Firestore-Estavel",
+          storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
           syncReason: reason,
@@ -3019,24 +3029,24 @@ Atenciosamente,
           totalEntries: activeEntryIds.length,
           totalClients: activeClientIds.length,
           compactPayload: usingCompactPayload
-        }, { merge: true }));
+        };
 
-        cleanClients.forEach(client => {
-          operations.push(batch => batch.set(doc(db, ...cloudDocumentPath, "clients", client.cloudId), safeJsonCopy(client), { merge: true }));
-        });
-        cleanEntries.forEach(entry => {
-          operations.push(batch => batch.set(doc(db, ...cloudDocumentPath, "entries", entry.cloudId), safeJsonCopy(entry), { merge: true }));
-        });
+        // Salva primeiro o documento principal. Esse é o que outro computador lê rapidamente.
+        await withTimeout(setDoc(cloudStateRef(), statePayload, { merge: false }), cloudTimeoutMs, "Tempo esgotado ao salvar documento principal na nuvem.");
 
-        await commitBatchOperations(operations);
         localStorage.setItem(storageKey, JSON.stringify(entries));
         localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
         cloudLoaded = true;
+        cloudReadyForWrites = true;
         cloudLastSavedAt = nowTimeText();
-        updateCloudSummaryStatus("Salvo automático");
-        console.info(`Alfa Financeiro: sincronizado no Firestore V26 (${reason}).`);
+        updateCloudSummaryStatus("Salvo na nuvem");
+        console.info(`Alfa Financeiro: documento principal sincronizado no Firestore V27 (${reason}).`);
+
+        // Depois salva as coleções como espelho/recuperação. Não bloqueia a operação principal.
+        // Se a internet oscilar, o documento principal já fica disponível para outros computadores.
+        syncCloudCollectionsInBackground(cleanClients, cleanEntries, reason);
       } catch (error) {
-        console.error("Erro ao sincronizar com Firestore", error);
+        console.error("Erro ao sincronizar documento principal com Firestore", error);
         setCloudStatus(firebaseErrorMessage(error), "err");
         showToast(firebaseErrorMessage(error));
       } finally {
@@ -3049,8 +3059,35 @@ Atenciosamente,
       }
     }
 
+    async function syncCloudCollectionsInBackground(cleanClients, cleanEntries, reason = "espelho") {
+      if (cloudCollectionsSyncInProgress || !isAuthorizedUser(auth.currentUser)) return;
+      cloudCollectionsSyncInProgress = true;
+      try {
+        const operations = [];
+        cleanClients.forEach(client => {
+          operations.push(batch => batch.set(doc(db, ...cloudDocumentPath, "clients", client.cloudId), safeJsonCopy(client), { merge: true }));
+        });
+        cleanEntries.forEach(entry => {
+          operations.push(batch => batch.set(doc(db, ...cloudDocumentPath, "entries", entry.cloudId), safeJsonCopy(entry), { merge: true }));
+        });
+        await commitBatchOperations(operations, 100);
+        cloudLastSavedAt = nowTimeText();
+        updateCloudSummaryStatus("Salvo completo");
+        console.info(`Alfa Financeiro: coleções sincronizadas em segundo plano V27 (${reason}).`);
+      } catch (error) {
+        console.warn("Documento principal foi salvo, mas o espelho por coleções falhou.", error);
+        setCloudStatus(`Documento principal salvo. Espelho em coleções pendente: ${firebaseErrorMessage(error)}`, "warn");
+      } finally {
+        cloudCollectionsSyncInProgress = false;
+      }
+    }
+
     function scheduleCloudSync(reason = "salvar") {
       if (!isAuthorizedUser(auth.currentUser)) return;
+      if (!cloudReadyForWrites && reason !== "primeira-carga-automatica") {
+        setCloudStatus("Aguardando carregar a nuvem antes de salvar alterações.", "warn");
+        return;
+      }
       cloudPendingReason = reason || cloudPendingReason || "alteracao";
       setCloudStatus("Alteração detectada. Salvamento automático pendente...", "warn");
       window.clearTimeout(cloudSyncTimer);
@@ -3064,6 +3101,7 @@ Atenciosamente,
     async function forceCloudSync(reason = "manual") {
       window.clearTimeout(cloudSyncTimer);
       cloudPendingReason = "";
+      cloudReadyForWrites = true;
       await syncCloudState(reason);
     }
 
@@ -7035,7 +7073,7 @@ Atenciosamente,
         return "Limite do Firestore atingido. Aguarde alguns minutos e tente novamente.";
       }
       if (String(error?.message || "").toLowerCase().includes("exceeds") || String(error?.message || "").toLowerCase().includes("1048487")) {
-        return "Base muito grande para salvar em um único documento. Esta versão salva por coleções; publique novamente a V26 e tente outra vez.";
+        return "Base muito grande para salvar em um único documento. Esta versão salva por documento principal e coleções; publique novamente a V27 e tente outra vez.";
       }
       if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
         return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";

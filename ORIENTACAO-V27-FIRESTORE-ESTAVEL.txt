@@ -1,0 +1,20 @@
+ALFA FINANCEIRO V27 - FIRESTORE ESTAVEL
+
+Correcoes principais:
+1. Firestore inicializado com long polling automatico para evitar timeout em redes/provedores que bloqueiam o canal padrao do Firebase.
+2. Salvamento principal rapido: grava primeiro o documento principal alfaFinanceiro/principal.
+3. Espelho por colecoes fica em segundo plano: clients e entries.
+4. Protecao contra computador vazio sobrescrever a nuvem.
+5. Carregamento de outro computador deve puxar primeiro o documento principal.
+
+Como testar:
+1. Publicar somente arquivos extraidos no GitHub Pages.
+2. Abrir no computador principal e fazer login.
+3. Clicar em Carregar nuvem.
+4. Se os dados aparecem, clicar em Salvar nuvem.
+5. Aguardar mensagem Salvo na nuvem ou Salvo completo.
+6. No outro computador, abrir em aba anonima, login, Ctrl+F5, Carregar nuvem.
+
+No Firebase:
+Cloud Firestore > Dados deve ter documento alfaFinanceiro/principal.
+As subcolecoes clients e entries servem como espelho/recuperacao.
