@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V31 | Serviços e Cobranças</title>
+  <title>Alfa Financeiro V32 | Serviços e Cobranças</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2563,12 +2563,76 @@ Atenciosamente,
       return revenue.length !== officialExpanded.length || missingDocuments > 0 || Math.round(total * 100) !== Math.round(officialTotal * 100) || expenseCount < expenses.length || hasBrokenText || hasOldOfficialSource;
     }
 
+    function normalizeClientForRuntime(client = {}) {
+      const name = String(client.name || client.nome_razao_social || client.razao_social || client.nome || client.cliente || client.tradeName || "").trim();
+      const documentValue = String(client.document || client.cpf_cnpj || client.cnpj_cpf || client.documento || client.cnpj || client.cpf || "").trim();
+      const monthlyFee = parseNumericAmount(client.monthlyFee ?? client.valor_honorario ?? client.honorario ?? client.mensalidade ?? client.valor_mensal ?? client.valor ?? 0);
+      const dueRaw = client.dueDay ?? client.dia_vencimento ?? client.vencimento_dia ?? client.dia ?? client.vencimento ?? 15;
+      const dueDay = Number(String(dueRaw || "15").replace(/\D/g, ""));
+      const service = client.service || client.servico || client.category || client.categoria || "Honorários contábeis";
+      const key = client.key || clientKey(name, documentValue);
+      return {
+        ...client,
+        id: client.id || client.clientId || client.cloudId || crypto.randomUUID(),
+        cloudId: client.cloudId || clientCloudId({ ...client, name, document: documentValue, key }),
+        key,
+        type: client.type || normalizeClientTypeFromDocument(documentValue, client.tipo_documento || client.tipo || ""),
+        status: normalizeClientStatus(client.status || client.situacao || "ativo"),
+        name,
+        tradeName: client.tradeName || client.nome_fantasia || client.fantasia || "",
+        document: documentValue,
+        stateRegistration: client.stateRegistration || client.inscricao_estadual || client.ie || "",
+        cityRegistration: client.cityRegistration || client.inscricao_municipal || client.im || "",
+        responsible: client.responsible || client.responsavel || client.contato || "",
+        phone: client.phone || client.whatsapp || client.telefone || client.celular || client.fone || "",
+        whatsappAllowed: client.whatsappAllowed || client.whatsapp_autorizado || "sim",
+        email: client.email || client.e_mail || "",
+        address: client.address || client.endereco || client.logradouro || "",
+        city: client.city || client.cidade || client.municipio || "",
+        service,
+        monthlyFee: Number(monthlyFee || 0),
+        dueDay: dueDay >= 1 && dueDay <= 31 ? dueDay : 15,
+        paymentMethod: client.paymentMethod || client.forma_cobranca || client.forma_de_cobranca || client.forma_pagamento || "Folha de carnê",
+        notes: client.notes || client.observacao || client.observacoes || client.obs || "",
+        firstChargeMonth: parseMonthInput(client.firstChargeMonth || client.inicio_cobranca || client.inicio || client.competencia_inicial, firstChargeMonth),
+        endChargeMonth: parseMonthInput(client.endChargeMonth || client.fim_cobranca || client.fim || client.competencia_final, lastChargeMonth),
+        createdAt: client.createdAt || new Date().toISOString(),
+        updatedAt: client.updatedAt || new Date().toISOString(),
+        source: client.source || "manual-client"
+      };
+    }
+
+    function sanitizeClients(list) {
+      const byKey = new Map();
+      (Array.isArray(list) ? list : []).forEach(raw => {
+        const client = normalizeClientForRuntime(raw || {});
+        if (!client.name || !client.document) return;
+        const key = client.key || clientKey(client.name, client.document);
+        const previous = byKey.get(key);
+        if (!previous) {
+          byKey.set(key, client);
+          return;
+        }
+        byKey.set(key, {
+          ...previous,
+          ...client,
+          id: previous.id || client.id,
+          createdAt: previous.createdAt || client.createdAt,
+          monthlyFee: Number(client.monthlyFee || previous.monthlyFee || 0),
+          dueDay: Number(client.dueDay || previous.dueDay || 15),
+          firstChargeMonth: earliestMonth(previous.firstChargeMonth, client.firstChargeMonth),
+          endChargeMonth: client.endChargeMonth || previous.endChargeMonth || lastChargeMonth
+        });
+      });
+      return [...byKey.values()].sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+    }
+
     function loadClients() {
       const saved = localStorage.getItem(clientsStorageKey);
       if (!saved) return [];
       try {
         const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) ? parsed : [];
+        return sanitizeClients(parsed);
       } catch {
         return [];
       }
@@ -3027,7 +3091,7 @@ Atenciosamente,
 
         if (hasCloudData) {
           entries = dedupeEntries(sanitizeEntries(cloudEntries));
-          clients = cloudClients.filter(client => client && client.name && client.document);
+          clients = sanitizeClients(cloudClients);
           officeProfile = { ...loadOfficeProfile(), ...(data.officeProfile || {}) };
           whatsappSettings = { ...loadWhatsappSettings(), ...(data.whatsappSettings || {}) };
           whatsappLogs = Array.isArray(data.whatsappLogs) ? data.whatsappLogs.slice(0, 300) : whatsappLogs;
@@ -3069,7 +3133,7 @@ Atenciosamente,
       setCloudStatus("Salvando dados principais na nuvem...", "warn");
       try {
         const cleanEntries = dedupeEntries(entries).map(entry => ({ ...entry, cloudId: entry.cloudId || entryCloudId(entry) }));
-        const cleanClients = clients.map(client => ({ ...client, cloudId: client.cloudId || clientCloudId(client) }));
+        const cleanClients = sanitizeClients(clients).map(client => ({ ...client, cloudId: client.cloudId || clientCloudId(client) }));
         entries = cleanEntries;
         clients = cleanClients;
 
@@ -3079,14 +3143,14 @@ Atenciosamente,
         // Proteção V27: jamais sobrescrever a nuvem com uma base zerada por abertura em outro computador.
         if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
           setCloudStatus("Proteção ativada: base local vazia não foi salva. Clique em Carregar nuvem.", "warn");
-          console.warn("Alfa Financeiro V31: bloqueado salvamento vazio", { reason });
+          console.warn("Alfa Financeiro V32: bloqueado salvamento vazio", { reason });
           return;
         }
 
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
         const statePayload = {
-          version: "V31-Conferencia-Mensalidades-Servicos",
+          version: "V32-Clientes-Mestre-Nuvem-Corrigida",
           storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -3376,21 +3440,52 @@ Atenciosamente,
         });
     }
 
-    function syncClientsFromEntries() {
-      const previousClients = clients;
-      clients = [];
+    function syncClientsFromEntries(options = {}) {
+      // V32: cliente cadastrado é base mestre. Esta rotina nunca zera a lista de clientes.
+      // Ela apenas complementa clientes ausentes a partir de lançamentos de receita.
+      const byKey = new Map();
+      sanitizeClients(clients).forEach(client => byKey.set(client.key || clientKey(client.name, client.document), client));
+      let added = 0;
       entries.forEach(entry => {
-        const existing = previousClients.find(item => item.key === clientKey(entry.name, entry.document));
-        const client = upsertClientFromEntry(entry);
-        if (client && existing) {
-          const detectedFirstMonth = client.firstChargeMonth;
-          Object.assign(client, { ...existing, key: client.key, updatedAt: client.updatedAt });
-          client.firstChargeMonth = earliestMonth(detectedFirstMonth, existing.firstChargeMonth);
+        if (!entry || entry.type !== "receita" || !entry.name) return;
+        const key = clientKey(entry.name, entry.document);
+        const existing = byKey.get(key);
+        const entryMonth = entry.billingMonth || String(entry.date || firstChargeMonth).slice(0, 7);
+        if (existing) {
+          if (!existing.monthlyFee && Number(entry.amount)) existing.monthlyFee = Number(entry.amount || 0);
+          if (!existing.dueDay) existing.dueDay = Number(String(entry.date || "").slice(-2)) || 15;
+          if (!existing.service) existing.service = entry.category || "Honorários contábeis";
+          if (!existing.paymentMethod) existing.paymentMethod = entry.method || "Pix";
+          existing.firstChargeMonth = earliestMonth(existing.firstChargeMonth, entryMonth || firstChargeMonth);
+          existing.updatedAt = existing.updatedAt || new Date().toISOString();
+          return;
         }
+        const now = new Date().toISOString();
+        byKey.set(key, normalizeClientForRuntime({
+          id: crypto.randomUUID(),
+          key,
+          name: entry.name,
+          type: normalizeDocument(entry.document).length === 11 ? "pf" : "pj",
+          document: entry.document || "",
+          service: entry.category || "Honorários contábeis",
+          monthlyFee: Number(entry.amount || 0),
+          dueDay: Number(String(entry.date || "").slice(-2)) || 15,
+          paymentMethod: entry.method || "Pix",
+          status: "ativo",
+          firstChargeMonth: entryMonth || firstChargeMonth,
+          endChargeMonth: lastChargeMonth,
+          createdAt: now,
+          updatedAt: now,
+          source: "gerado-por-lancamento"
+        }));
+        added++;
       });
-      preserveManualClients(previousClients);
-      clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
-      saveClients();
+      clients = sanitizeClients([...byKey.values()]);
+      if (options.persist && added) {
+        localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
+        scheduleCloudSync("clientes-complementados");
+      }
+      return added;
     }
 
     function formatMoney(value) {
@@ -5427,7 +5522,7 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V31. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V32. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
 </body>
 </html>`;
@@ -7395,7 +7490,7 @@ Atenciosamente,
         const compactEntries = chosen.compactEntries;
         if ((chosen.clients || []).length || (chosen.entries || []).length) {
           entries = dedupeEntries(sanitizeEntries(chosen.entries || []));
-          clients = (chosen.clients || []).filter(client => client && client.name && client.document);
+          clients = sanitizeClients(chosen.clients || []);
           officeProfile = { ...loadOfficeProfile(), ...(state.officeProfile || {}) };
           whatsappSettings = { ...loadWhatsappSettings(), ...(state.whatsappSettings || {}) };
           whatsappLogs = Array.isArray(state.whatsappLogs) ? state.whatsappLogs.slice(0, 300) : whatsappLogs;
@@ -7407,7 +7502,7 @@ Atenciosamente,
           renderWhatsappSettings();
           render();
         }
-        const msg = `Firestore OK. E-mail: ${auth.currentUser.email}. Documento principal: ${stateSnap.exists() ? "existe" : "não existe"}. Compacto: ${compactClients} cliente(s) e ${compactEntries} lançamento(s). Coleções: ${clientsMap.size} cliente(s) e ${entriesMap.size} lançamento(s). Tela carregada pela fonte: ${chosen.source}.`;
+        const msg = `Firestore OK. E-mail: ${auth.currentUser.email}. Documento principal: ${stateSnap.exists() ? "existe" : "não existe"}. Compacto: ${compactClients} cliente(s) e ${compactEntries} lançamento(s). Coleções: ${clientsMap.size} cliente(s) e ${entriesMap.size} lançamento(s). Tela carregada pela fonte: ${chosen.source}. Tela agora: ${clients.length} cliente(s) e ${entries.length} lançamento(s).`;
         setCloudStatus(msg, "ok");
         showToast(msg);
         console.info("Diagnóstico Alfa Financeiro", { state, clientes: clientsMap.size, lancamentos: entriesMap.size, carregado: chosen });

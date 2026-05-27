@@ -1,0 +1,21 @@
+ALFA FINANCEIRO V32 - CORREÇÃO DO CADASTRO MESTRE DE CLIENTES
+
+Problema corrigido:
+O sistema encontrava clientes no Firestore pelo diagnóstico, mas a tela de Clientes podia ficar zerada porque uma rotina antiga recriava o cadastro de clientes a partir dos lançamentos. Quando os lançamentos não carregavam primeiro, a tela podia apagar visualmente os clientes carregados da nuvem.
+
+Correção técnica:
+- Clientes agora são tratados como cadastro mestre.
+- A renderização não zera mais a lista de clientes.
+- A sincronização por lançamentos apenas complementa clientes ausentes, sem excluir os clientes importados.
+- O carregamento da nuvem normaliza os campos dos clientes vindos do documento principal ou das coleções.
+- O diagnóstico passa a informar também quantos clientes e lançamentos ficaram carregados na tela.
+
+Rotina recomendada:
+1. Publicar a V32 no GitHub Pages.
+2. Abrir o sistema e fazer login.
+3. Clicar em Carregar nuvem.
+4. Clicar em Diagnóstico.
+5. Conferir se a tela mostra 77 clientes.
+6. Somente depois clicar em Salvar nuvem.
+
+Não publique CSV, extratos, boletos, PDFs, planilhas ou backups reais no GitHub.
