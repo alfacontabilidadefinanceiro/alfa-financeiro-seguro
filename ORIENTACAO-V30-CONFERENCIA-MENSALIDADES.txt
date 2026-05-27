@@ -1,0 +1,27 @@
+ALFA FINANCEIRO V30 - CONFERENCIA MENSAL DE COBRANCAS
+
+Objetivo da V30:
+- Garantir que cada cliente ativo com honorario mensal tenha uma mensalidade em cada competencia de 05/2026 ate 03/2027.
+- Evitar que o modulo A RECEBER mostre quantidade menor que a base de clientes ativos por falta de parcelas geradas.
+- Permitir que o mesmo cliente tenha outros servicos no mesmo mes sem serem tratados como duplicidade.
+
+Como funciona:
+1. Cada cliente ativo com honorario mensal gera uma cobranca mensal.
+2. A chave da mensalidade e: cliente + competencia + servico mensal principal.
+3. O sistema permite servicos extras no mesmo mes, como Programa SGR, Imposto de Renda, Contratos e Alteracao Contratual.
+4. O sistema nao duplica mensalidade ja existente.
+5. Se faltar mensalidade no mes selecionado, a V30 cria automaticamente a parcela faltante.
+6. O botao CONFERIR MENSALIDADES informa quantos clientes deveriam ter cobranca, quantas mensalidades existem e quantas faltam.
+
+Rotina recomendada:
+1. Publique a V30.
+2. Abra o sistema e clique em CARREGAR NUVEM.
+3. Selecione a competencia desejada, por exemplo 06/2026 ou 07/2026.
+4. Clique em CONFERIR MENSALIDADES.
+5. Se ainda houver falta, clique em GERAR 05/2026 A 03/2027.
+6. Clique em SALVAR NUVEM.
+7. Confira o modulo A RECEBER.
+
+Seguranca:
+- Nao enviar CSV de clientes, extratos, boletos ou backups para o GitHub.
+- Dados reais devem entrar somente pelo sistema e ficar no Firebase/Firestore.

@@ -1,0 +1,22 @@
+ALFA FINANCEIRO V28 - CONFERÊNCIA DE MENSALIDADES
+
+Correção aplicada:
+- Inclusão do botão "Conferir mensalidades".
+- Geração reforçada de parcelas mensais de 05/2026 até 03/2027.
+- Cada cliente ativo com honorário mensal terá uma parcela por competência.
+- A parcela usa o dia de vencimento do cadastro do cliente.
+- Cliente sem vencimento usa dia 15.
+- O sistema não duplica cobrança já existente para o mesmo cliente e competência.
+- Parcelas já pagas não são alteradas.
+- Parcelas abertas podem ser corrigidas se o honorário, vencimento ou nome do cliente forem atualizados.
+
+Uso recomendado:
+1. Abrir o sistema.
+2. Clicar em "Carregar nuvem".
+3. Clicar em "Conferir mensalidades".
+4. Se aparecer faltando, clicar em "Gerar 05/2026 a 03/2027".
+5. Clicar em "Salvar nuvem".
+6. Conferir novamente.
+
+Segurança:
+Não enviar CSV, planilhas, extratos ou dados reais para o GitHub.

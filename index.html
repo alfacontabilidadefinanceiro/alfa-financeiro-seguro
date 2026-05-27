@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V27 | Firestore estável</title>
+  <title>Alfa Financeiro V30 | Serviços e Cobranças</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1090,7 +1090,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V27 - Firestore estável, salvamento principal rápido e long polling.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V30 - Firestore estável, serviços por cobrança e conferência mensal automática.</div>
     </form>
   </section>
 
@@ -1100,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V27 nuvem estável</span>
+          <span>Controle interno • V30 mensalidades</span>
         </div>
       </div>
 
@@ -1117,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V27. Firestore em nuvem com conexão estável, salvamento principal rápido e proteção contra sobrescrever com base vazia.</p>
+        <p><span class="status-dot"></span>VERSÃO V30. Confere mensalidade de todos os clientes ativos por competência, permite serviços extras e evita duplicidade por cliente, competência e serviço.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1144,6 +1144,7 @@
           <button class="btn btn-secondary" id="exportBtn" type="button">Exportar CSV</button>
           <button class="btn btn-secondary" id="manualBackupBtn" type="button">Backup</button>
           <button class="btn btn-secondary" id="generateChargesBtn" type="button">Gerar 05/2026 a 03/2027</button>
+          <button class="btn btn-secondary" id="auditChargesBtn" type="button">Conferir mensalidades</button>
           <button class="btn btn-ghost" id="clearEntriesBtn" type="button">Excluir lançamentos</button>
           <button class="btn btn-primary" id="newEntryBtn" type="button">Novo lançamento</button>
           <button class="btn btn-ghost" id="logoutBtn" type="button">Sair</button>
@@ -1190,6 +1191,7 @@
             </div>
             <div class="row-actions">
               <button class="btn btn-secondary" id="openReceivablesBtn" type="button">Abrir contas a receber</button>
+              <button class="btn btn-secondary" id="auditDashboardChargesBtn" type="button">Conferir mensalidades</button>
               <button class="btn btn-primary" id="generateDashboardChargesBtn" type="button">Gerar cobranças até 03/2027</button>
             </div>
           </div>
@@ -1559,7 +1561,7 @@
               <strong id="reportCanceled">0</strong>
             </div>
           </div>
-          <div class="hint"><strong>VERSÃO V16 - COBRANÇAS MENSAIS COM VENCIMENTO POR CLIENTE.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
+          <div class="hint"><strong>VERSÃO V30 - CONFERÊNCIA MENSAL POR CLIENTE, COMPETÊNCIA E SERVIÇO.</strong> Conferência automática: o relatório separa <strong>competência</strong> (mês da cobrança/despesa) de <strong>caixa</strong> (mês em que entrou ou saiu dinheiro). Isso evita relatório zerado ou valor duplicado quando uma cobrança de um mês é paga em outro. Se aparecer “Importados / Pagos no CSV”, o GitHub ainda está na versão antiga. O PDF agora é gerado em uma página limpa, sem cortes e sem valores soltos.</div>
           <div class="bar-list" id="reportList"></div>
           <div class="hint" id="reportDiagnostic">Diagnóstico: aguardando leitura dos lançamentos.</div>
           <section class="panel">
@@ -1757,6 +1759,7 @@
               <span class="pill" id="forecastPeriodLabel">05/2026 a 03/2027</span>
             </div>
             <div class="row-actions">
+              <button class="btn btn-secondary" id="auditForecastChargesBtn" type="button">Conferir mensalidades</button>
               <button class="btn btn-primary" id="generateUntil032027Btn" type="button">Gerar cobranças de 05/2026 até 03/2027</button>
               <button class="btn btn-secondary" id="openForecastReportBtn" type="button">Abrir relatório</button>
             </div>
@@ -1905,10 +1908,11 @@
           <div class="office-card-list">
             <div class="office-card"><strong>1. Cadastro primeiro</strong><span>Cliente ativo deve ter CNPJ/CPF, valor mensal, vencimento, telefone, e-mail e forma de pagamento. Sem isso o relatório fica incompleto.</span></div>
             <div class="office-card"><strong>2. Importação bancária</strong><span>Importe CSV de cobranças e extrato. O sistema baixa por valor, data, nome e protocolo, e joga o que sobrar para revisão.</span></div>
-            <div class="office-card"><strong>3. Relatório por competência</strong><span>Use para saber quanto cada mês gerou de honorários, inadimplência e receitas avulsas.</span></div>
-            <div class="office-card"><strong>4. Relatório de caixa</strong><span>Use para saber quanto entrou ou saiu efetivamente no banco no mês selecionado.</span></div>
-            <div class="office-card"><strong>5. Cobrança por WhatsApp</strong><span>O sistema abre a mensagem pronta. Quando faltar telefone, envia para o número do escritório para revisão interna.</span></div>
-            <div class="office-card"><strong>6. Segurança</strong><span>Não publique dados reais no GitHub. Para uso definitivo, migrar banco de dados para Firestore com regras de acesso.</span></div>
+            <div class="office-card"><strong>3. Cobranças por serviço</strong><span>O mesmo cliente pode ter honorários contábeis, Programa SGR, IRPF, contratos, alteração contratual e outros serviços na mesma competência sem duplicar indevidamente.</span></div>
+            <div class="office-card"><strong>4. Relatório por competência</strong><span>Use para saber quanto cada mês gerou de honorários, inadimplência e receitas avulsas.</span></div>
+            <div class="office-card"><strong>5. Relatório de caixa</strong><span>Use para saber quanto entrou ou saiu efetivamente no banco no mês selecionado.</span></div>
+            <div class="office-card"><strong>6. Cobrança por WhatsApp</strong><span>O sistema abre a mensagem pronta. Quando faltar telefone, envia para o número do escritório para revisão interna.</span></div>
+            <div class="office-card"><strong>7. Segurança</strong><span>Não publique dados reais no GitHub. Para uso definitivo, migrar banco de dados para Firestore com regras de acesso.</span></div>
           </div>
         </section>
       </section>
@@ -1956,10 +1960,18 @@
           <input id="entryDocument" type="text" placeholder="Documento do cliente" />
         </div>
         <div class="field">
-          <label for="entryCategory">Categoria</label>
-          <input id="entryCategory" type="text" list="categoryOptions" placeholder="Ex.: Honorários" required />
+          <label for="entryCategory">Categoria / tipo de cobrança</label>
+          <input id="entryCategory" type="text" list="categoryOptions" placeholder="Ex.: Honorários contábeis, Programa SGR, IRPF, contrato" required />
           <datalist id="categoryOptions">
             <option value="Honorários contábeis"></option>
+            <option value="Programa SGR"></option>
+            <option value="Declaração de imposto de renda"></option>
+            <option value="Declaração de imposto de renda pessoa física"></option>
+            <option value="Declaração de imposto de renda pessoa jurídica"></option>
+            <option value="Declaração ITR"></option>
+            <option value="Contratos"></option>
+            <option value="Elaboração de contrato"></option>
+            <option value="Alteração contratual"></option>
             <option value="Abertura de empresa"></option>
             <option value="Declaração de imposto de renda"></option>
             <option value="Alteração contratual"></option>
@@ -1999,7 +2011,7 @@
             <option value="Sistemas"></option>
             <option value="Administrativo"></option>
           </datalist>
-          <small class="muted">Use o campo acima ou o seletor abaixo para reclassificar rapidamente uma despesa.</small>
+          <small class="muted">Para receitas, este campo diferencia honorários, Programa SGR, IRPF, contrato, alteração e outros serviços do mesmo cliente. Para despesas, use o seletor abaixo para reclassificar rapidamente.</small>
         </div>
         <div class="field">
           <label for="quickExpenseCategory">Reclassificar despesa</label>
@@ -2105,8 +2117,18 @@
           <input id="clientCity" type="text" />
         </div>
         <div class="field">
-          <label for="clientService">Serviço contratado</label>
-          <input id="clientService" type="text" value="Honorários contábeis" />
+          <label for="clientService">Serviço mensal principal</label>
+          <input id="clientService" type="text" list="serviceOptions" value="Honorários contábeis" />
+          <datalist id="serviceOptions">
+            <option value="Honorários contábeis"></option>
+            <option value="Programa SGR"></option>
+            <option value="Assessoria fiscal"></option>
+            <option value="Assessoria contábil"></option>
+            <option value="Assessoria departamento pessoal"></option>
+            <option value="Consultoria tributária mensal"></option>
+            <option value="Outros serviços mensais"></option>
+          </datalist>
+          <small class="muted">Use aqui o serviço recorrente principal. Serviços avulsos como IR, contratos e alterações podem ser lançados em Novo lançamento sem apagar a mensalidade.</small>
         </div>
         <div class="field">
           <label for="clientMonthlyFee">Honorário mensal</label>
@@ -2266,6 +2288,43 @@
       "Cheque"
     ];
 
+    const revenueServiceOptions = [
+      "Honorários contábeis",
+      "Programa SGR",
+      "Declaração de imposto de renda",
+      "Declaração de imposto de renda pessoa física",
+      "Declaração de imposto de renda pessoa jurídica",
+      "Declaração ITR",
+      "Contratos",
+      "Elaboração de contrato",
+      "Alteração contratual",
+      "Abertura de empresa",
+      "Encerramento de empresa",
+      "Transformação empresarial",
+      "Regularização de pendência",
+      "Parcelamento de débitos",
+      "Consultoria contábil",
+      "Consultoria fiscal",
+      "Consultoria tributária",
+      "Planejamento tributário",
+      "Perícia contábil",
+      "Auditoria",
+      "Certificado digital",
+      "Serviços rurais",
+      "Livro caixa produtor rural",
+      "Outras receitas do escritório"
+    ];
+
+    const recurringServiceOptions = [
+      "Honorários contábeis",
+      "Programa SGR",
+      "Assessoria fiscal",
+      "Assessoria contábil",
+      "Assessoria departamento pessoal",
+      "Consultoria tributária mensal",
+      "Outros serviços mensais"
+    ];
+
     const expenseCategoryOptions = [
       "Água e saneamento",
       "Energia elétrica",
@@ -2395,7 +2454,8 @@ Atenciosamente,
         paidAmount,
         name: entry.name || entry.nome || entry.cliente || "Sem identificação",
         document: entry.document || entry.documento || entry.cnpj || entry.cpf || "",
-        category: entry.category || entry.categoria || (normalizedType === "despesa" ? "Despesas a classificar" : "Honorários contábeis"),
+        category: entry.category || entry.categoria || entry.servico || (normalizedType === "despesa" ? "Despesas a classificar" : "Honorários contábeis"),
+        serviceType: entry.serviceType || entry.tipo_servico || entry.tipo_cobranca || (normalizedType === "receita" ? (entry.recurringParentId ? "mensalidade" : "servico") : "despesa"),
         method: entry.method || entry.forma || entry.forma_de_cobranca || entry.forma_cobranca || "Pix",
         description: entry.description || entry.descricao || entry.historico || "",
         billingMonth: normalizeMonthInput(entry.billingMonth || entry.competencia || String(date).slice(0, 7))
@@ -2581,8 +2641,11 @@ Atenciosamente,
       const samePaidDate = String(incoming.paidAt || "").slice(0, 10) && String(incoming.paidAt || "").slice(0, 10) === String(existing.paidAt || "").slice(0, 10);
 
       if (incoming.type === "receita") {
-        if (samePerson && sameCompetence) return "mesmo cliente, valor e competência";
-        if (samePerson && samePaidDate) return "mesmo recebimento já baixado";
+        const categoryIncoming = serviceKey(incoming.category || incoming.service || "Honorários contábeis");
+        const categoryExisting = serviceKey(existing.category || existing.service || "Honorários contábeis");
+        const sameRevenueService = categoryIncoming === categoryExisting;
+        if (samePerson && sameCompetence && sameRevenueService) return "mesmo cliente, valor, competência e tipo de cobrança";
+        if (samePerson && samePaidDate && sameRevenueService) return "mesmo recebimento já baixado";
       }
 
       if (incoming.type === "despesa") {
@@ -3007,14 +3070,14 @@ Atenciosamente,
         // Proteção V27: jamais sobrescrever a nuvem com uma base zerada por abertura em outro computador.
         if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
           setCloudStatus("Proteção ativada: base local vazia não foi salva. Clique em Carregar nuvem.", "warn");
-          console.warn("Alfa Financeiro V27: bloqueado salvamento vazio", { reason });
+          console.warn("Alfa Financeiro V30: bloqueado salvamento vazio", { reason });
           return;
         }
 
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
         const statePayload = {
-          version: "V27-Firestore-Estavel",
+          version: "V30-Conferencia-Mensalidades-Servicos",
           storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -3040,7 +3103,7 @@ Atenciosamente,
         cloudReadyForWrites = true;
         cloudLastSavedAt = nowTimeText();
         updateCloudSummaryStatus("Salvo na nuvem");
-        console.info(`Alfa Financeiro: documento principal sincronizado no Firestore V27 (${reason}).`);
+        console.info(`Alfa Financeiro: documento principal sincronizado no Firestore V30 (${reason}).`);
 
         // Depois salva as coleções como espelho/recuperação. Não bloqueia a operação principal.
         // Se a internet oscilar, o documento principal já fica disponível para outros computadores.
@@ -3073,7 +3136,7 @@ Atenciosamente,
         await commitBatchOperations(operations, 100);
         cloudLastSavedAt = nowTimeText();
         updateCloudSummaryStatus("Salvo completo");
-        console.info(`Alfa Financeiro: coleções sincronizadas em segundo plano V27 (${reason}).`);
+        console.info(`Alfa Financeiro: coleções sincronizadas em segundo plano V30 (${reason}).`);
       } catch (error) {
         console.warn("Documento principal foi salvo, mas o espelho por coleções falhou.", error);
         setCloudStatus(`Documento principal salvo. Espelho em coleções pendente: ${firebaseErrorMessage(error)}`, "warn");
@@ -3439,6 +3502,8 @@ Atenciosamente,
     function setSelectedMonth(month, forceDataMonth = false) {
       const selected = forceDataMonth ? defaultMonthWithData() : normalizeMonthInput(month) || defaultMonthWithData();
       syncMonthInputs(selected);
+      const created = ensureMonthlyChargesForMonth(selected, true);
+      if (created) showToast(`${created} mensalidade(s) faltante(s) criada(s) automaticamente para ${formatMonth(selected)}.`);
       render();
     }
 
@@ -5353,7 +5418,7 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V22. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V30. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
 </body>
 </html>`;
@@ -5500,6 +5565,7 @@ Atenciosamente,
     }
 
     function render() {
+      ensureMonthlyChargesForMonth(selectedMonth(), true);
       renderKpis();
       renderDashboard();
       renderReceivableAlerts();
@@ -5668,74 +5734,183 @@ Atenciosamente,
       return dateInMonth(`${month}-${String(dueDay >= 1 && dueDay <= 31 ? dueDay : 15).padStart(2, "0")}`, month);
     }
 
-    function ensureMonthlyChargesForClient(client) {
-      if (client.status !== "ativo" || !Number(client.monthlyFee)) return 0;
-      let created = 0;
+    function chargeMonthsForClient(client) {
       const start = chargeStartMonth(client);
       const end = chargeEndMonth(client);
-      if (compareMonths(start, end) > 0) return 0;
-      const months = monthSequence(start, end);
-      months.forEach(month => {
-        const existing = entries.find(entry =>
-          entry.type === "receita" &&
-          clientKey(entry.name, entry.document) === client.key &&
-          (entry.billingMonth || entry.date?.slice(0, 7)) === month &&
-          entry.status !== "cancelado"
-        );
+      if (compareMonths(start, end) > 0) return [];
+      return monthSequence(start, end);
+    }
+
+    function monthlyChargeClientMatch(entry, client, month) {
+      if (!entry || !client) return false;
+      if (entry.type !== "receita") return false;
+      if (entry.status === "cancelado") return false;
+      const entryMonth = entry.billingMonth || String(entry.date || "").slice(0, 7);
+      if (entryMonth !== month) return false;
+
+      const expectedServiceKey = serviceKey(client.service || "Honorários contábeis");
+      const entryServiceKey = serviceKey(entry.category || entry.service || "Honorários contábeis");
+      const isRecurringCharge = entry.serviceType === "mensalidade" || entry.recurringParentId || entry.source === "cadastro-cliente";
+      if (!isRecurringCharge && entryServiceKey !== expectedServiceKey) return false;
+      if (isRecurringCharge && entryServiceKey !== expectedServiceKey && !(expectedServiceKey === "honorarios-contabeis" && entryServiceKey === "honorarios-contabeis")) return false;
+
+      const entryDoc = normalizeDocument(entry.document || "");
+      const clientDoc = normalizeDocument(client.document || "");
+      if (entryDoc && clientDoc && entryDoc === clientDoc) return true;
+      if (entry.recurringParentId && client.id && entry.recurringParentId === client.id) return true;
+      if (entry.sourceId && client.id && entry.sourceId === client.id) return true;
+      if (entry.clientId && client.id && entry.clientId === client.id) return true;
+      if (entry.key && client.key && entry.key === client.key) return true;
+      if (clientKey(entry.name, entry.document) === client.key) return true;
+
+      const entryName = normalizeMatchText(entry.name || entry.bankCounterparty || "");
+      const clientName = normalizeMatchText(client.name || client.tradeName || "");
+      if (!entryName || !clientName) return false;
+      if (entryName === clientName || entryName.includes(clientName) || clientName.includes(entryName)) return true;
+      return tokenScore(entryName, clientName) >= 0.92;
+    }
+
+    function findMonthlyChargeForClient(client, month) {
+      const matches = entries.filter(entry => monthlyChargeClientMatch(entry, client, month));
+      if (!matches.length) return null;
+      const open = matches.find(entry => isOpenEntry(entry));
+      if (open) return open;
+      const paid = matches.find(entry => entry.status === "pago" || entry.status === "bonificado");
+      return paid || matches[0];
+    }
+
+    function normalizeMonthlyCharge(existing, client, month) {
+      if (!existing || !client) return false;
+      let changed = false;
+      const dueDay = Number(client.dueDay || 15);
+      const dueDate = dueDateForClientMonth(client, month);
+
+      if (existing.billingMonth !== month) { existing.billingMonth = month; changed = true; }
+      if (Number(existing.dueDay || 0) !== dueDay) { existing.dueDay = dueDay; changed = true; }
+      if (!existing.recurringParentId) { existing.recurringParentId = client.id; changed = true; }
+      if (!existing.sourceId) { existing.sourceId = client.id; changed = true; }
+      if (!existing.source) { existing.source = "cadastro-cliente"; changed = true; }
+
+      // Não altera parcelas já pagas/bonificadas, para preservar histórico de baixa.
+      if (isOpenEntry(existing) && !existing.receiptProtocol) {
+        if (existing.date !== dueDate) { existing.date = dueDate; changed = true; }
+        if (amountToCents(existing.amount) !== amountToCents(client.monthlyFee)) { existing.amount = Number(client.monthlyFee || 0); changed = true; }
+        if (existing.name !== client.name) { existing.name = client.name; changed = true; }
+        if (existing.document !== client.document) { existing.document = client.document; changed = true; }
+        const category = client.service || "Honorários contábeis";
+        if (existing.category !== category) { existing.category = category; changed = true; }
+        if (existing.serviceType !== "mensalidade") { existing.serviceType = "mensalidade"; changed = true; }
+        const method = client.paymentMethod || existing.method || "Folha de carnê";
+        if (existing.method !== method) { existing.method = method; changed = true; }
+        const description = `${category} ${formatMonth(month)}`;
+        if (existing.description !== description) { existing.description = description; changed = true; }
+      }
+      return changed;
+    }
+
+    function newMonthlyChargeForClient(client, month) {
+      const service = client.service || "Honorários contábeis";
+      const serviceSlug = normalizeText(service).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "servico";
+      return {
+        id: `cliente-${client.id}-${serviceSlug}-${month}`,
+        type: "receita",
+        status: "aberto",
+        date: dueDateForClientMonth(client, month),
+        dueDay: Number(client.dueDay || 15),
+        amount: Number(client.monthlyFee || 0),
+        paidAmount: 0,
+        paidAt: "",
+        name: client.name,
+        document: client.document,
+        category: service,
+        serviceType: "mensalidade",
+        method: client.paymentMethod || "Folha de carnê",
+        description: `${service} ${formatMonth(month)}`,
+        source: "cadastro-cliente",
+        sourceId: client.id,
+        recurringParentId: client.id,
+        billingMonth: month
+      };
+    }
+
+    function ensureMonthlyChargesForClient(client) {
+      if (!client || client.status !== "ativo" || !Number(client.monthlyFee)) return 0;
+      let created = 0;
+      let changed = 0;
+      chargeMonthsForClient(client).forEach(month => {
+        const existing = findMonthlyChargeForClient(client, month);
         if (existing) {
-          existing.billingMonth = month;
-          existing.dueDay = Number(client.dueDay || 15);
-          existing.recurringParentId = existing.recurringParentId || client.id;
-          existing.sourceId = existing.sourceId || client.id;
-          if (isOpenEntry(existing) && !existing.receiptProtocol) {
-            existing.date = dueDateForClientMonth(client, month);
-            existing.amount = Number(client.monthlyFee || existing.amount || 0);
-            existing.name = client.name;
-            existing.document = client.document;
-            existing.category = client.service || "Honorários contábeis";
-            existing.method = client.paymentMethod || existing.method || "Folha de carnê";
-            existing.description = `Honorários ${formatMonth(month)}`;
-          }
+          if (normalizeMonthlyCharge(existing, client, month)) changed++;
           return;
         }
-        entries.push({
-          id: `cliente-${client.id}-${month}`,
-          type: "receita",
-          status: "aberto",
-          date: dueDateForClientMonth(client, month),
-          dueDay: Number(client.dueDay || 15),
-          amount: Number(client.monthlyFee || 0),
-          paidAmount: 0,
-          paidAt: "",
-          name: client.name,
-          document: client.document,
-          category: client.service || "Honorários contábeis",
-          method: client.paymentMethod || "Folha de carnê",
-          description: `Honorários ${formatMonth(month)}`,
-          source: "cadastro-cliente",
-          sourceId: client.id,
-          recurringParentId: client.id,
-          billingMonth: month
-        });
+        entries.push(newMonthlyChargeForClient(client, month));
         created++;
       });
-      return created;
+      return created + changed;
+    }
+
+    function activeBillableClientsForMonth(month) {
+      return clients.filter(client => {
+        if (!client || client.status !== "ativo" || !Number(client.monthlyFee)) return false;
+        return compareMonths(chargeStartMonth(client), month) <= 0 && compareMonths(chargeEndMonth(client), month) >= 0;
+      });
+    }
+
+    function monthlyChargeAudit(month = selectedMonth()) {
+      const auditMonth = normalizeMonthInput(typeof month === "function" ? month() : month) || selectedMonth() || firstChargeMonth;
+      const expectedClients = activeBillableClientsForMonth(auditMonth);
+      const missingClients = expectedClients.filter(client => !findMonthlyChargeForClient(client, auditMonth));
+      const existingMonthlyCharges = expectedClients
+        .map(client => findMonthlyChargeForClient(client, auditMonth))
+        .filter(Boolean);
+      const existingCharges = entries.filter(entry => entry.type === "receita" && entry.status !== "cancelado" && (entry.billingMonth || String(entry.date || "").slice(0, 7)) === auditMonth);
+      return {
+        month: auditMonth,
+        expected: expectedClients.length,
+        existing: existingMonthlyCharges.length,
+        existingTotal: existingCharges.length,
+        missing: missingClients.length,
+        missingClients
+      };
+    }
+
+    function ensureMonthlyChargesForMonth(month = selectedMonth(), saveWhenChanged = false) {
+      const audit = monthlyChargeAudit(month);
+      if (!audit.missing) return 0;
+      audit.missingClients.forEach(client => entries.push(newMonthlyChargeForClient(client, audit.month)));
+      entries = dedupeEntries(entries);
+      if (saveWhenChanged) saveEntries();
+      return audit.missing;
+    }
+
+    function showMonthlyChargeAudit(month = selectedMonth()) {
+      const audit = monthlyChargeAudit(month);
+      const missingNames = audit.missingClients.slice(0, 8).map(client => client.name).join(", ");
+      const detail = audit.missing ? ` Faltando: ${audit.missing}${missingNames ? ` (${missingNames}${audit.missing > 8 ? "..." : ""})` : ""}.` : " Nenhuma mensalidade faltando.";
+      const message = `Competência ${formatMonth(audit.month)}: ${audit.expected} cliente(s) esperado(s), ${audit.existing} mensalidade(s) existente(s) para clientes ativos${audit.existingTotal !== audit.existing ? ` (${audit.existingTotal} receita(s) no total do mês, incluindo serviços extras)` : ""}.${detail}`;
+      showToast(message);
+      console.info("Conferência de mensalidades", audit);
+      return audit;
     }
 
     function ensureMonthlyChargesForAllClients(showMessage = false) {
-      let created = 0;
+      const beforeAudit = monthlyChargeAudit(selectedMonth());
+      let touched = 0;
       clients.forEach(client => {
-        created += ensureMonthlyChargesForClient(client) || 0;
+        touched += ensureMonthlyChargesForClient(client) || 0;
       });
-      if (created) {
-        saveEntries();
-        saveClients();
-        ensureReportMonthHasData(false);
-      }
+      entries = dedupeEntries(entries);
+      saveEntries();
+      saveClients();
+      ensureReportMonthHasData(false);
+      render();
+      const afterAudit = monthlyChargeAudit(selectedMonth());
       if (showMessage) {
-        showToast(created ? `${created} mensalidade${created === 1 ? "" : "s"} gerada${created === 1 ? "" : "s"} automaticamente.` : "As mensalidades já estavam atualizadas.");
+        const createdText = touched ? `${touched} ajuste(s)/mensalidade(s) criado(s) ou corrigido(s).` : "Nenhuma nova mensalidade foi necessária.";
+        showToast(`${createdText} Competência ${formatMonth(afterAudit.month)}: ${afterAudit.expected} cliente(s) esperado(s), ${afterAudit.existing} mensalidade(s) encontrada(s), ${afterAudit.missing} faltando.`);
+        console.info("Geração/conferência de mensalidades", { antes: beforeAudit, depois: afterAudit, ajustes: touched });
       }
-      return created;
+      return touched;
     }
 
     function autoEnsureFutureMonthlyCharges() {
@@ -5783,7 +5958,7 @@ Atenciosamente,
         city: document.getElementById("clientCity").value.trim(),
         service: document.getElementById("clientService").value.trim() || "Honorários contábeis",
         monthlyFee: Number(document.getElementById("clientMonthlyFee").value || 0),
-        dueDay: Number(document.getElementById("clientDueDay").value || 5),
+        dueDay: Number(document.getElementById("clientDueDay").value || 15),
         paymentMethod: document.getElementById("clientPaymentMethod").value,
         notes: document.getElementById("clientNotes").value.trim(),
         firstChargeMonth: existing?.firstChargeMonth || firstChargeMonth,
@@ -5864,6 +6039,7 @@ Atenciosamente,
         name: document.getElementById("entryName").value.trim(),
         document: document.getElementById("entryDocument").value.trim(),
         category: document.getElementById("entryCategory").value.trim(),
+        serviceType: document.getElementById("entryType").value === "receita" ? "servico" : "despesa",
         method: document.getElementById("entryMethod").value,
         description: document.getElementById("entryDescription").value.trim()
       };
@@ -6725,7 +6901,7 @@ Atenciosamente,
         entry.billingMonth = month;
         entry.dueDay = Number(client.dueDay || 15);
         entry.date = dueDateForClientMonth(client, month);
-        entry.description = `Honorários ${formatMonth(month)}`;
+        entry.description = `${entry.category || client.service || "Honorários contábeis"} ${formatMonth(month)}`;
         updated++;
       });
       return updated;
@@ -7073,7 +7249,7 @@ Atenciosamente,
         return "Limite do Firestore atingido. Aguarde alguns minutos e tente novamente.";
       }
       if (String(error?.message || "").toLowerCase().includes("exceeds") || String(error?.message || "").toLowerCase().includes("1048487")) {
-        return "Base muito grande para salvar em um único documento. Esta versão salva por documento principal e coleções; publique novamente a V27 e tente outra vez.";
+        return "Base muito grande para salvar em um único documento. Esta versão salva por documento principal e coleções; publique novamente a V30 e tente outra vez.";
       }
       if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
         return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";
@@ -7231,6 +7407,7 @@ Atenciosamente,
     document.getElementById("openPayablesBtn")?.addEventListener("click", () => setView("pagar"));
     document.getElementById("openReceivablesBtn")?.addEventListener("click", () => setView("receber"));
     document.getElementById("generateDashboardChargesBtn")?.addEventListener("click", () => ensureMonthlyChargesForAllClients(true));
+    document.getElementById("auditDashboardChargesBtn")?.addEventListener("click", () => showMonthlyChargeAudit(selectedMonth()));
     document.getElementById("importPayablesBtn")?.addEventListener("click", () => document.getElementById("payablesImportInput").click());
     document.getElementById("importPayablesDashboardBtn")?.addEventListener("click", () => document.getElementById("payablesImportInput").click());
     document.getElementById("downloadPayablesTemplateBtn")?.addEventListener("click", downloadPayablesTemplateCsv);
@@ -7259,11 +7436,13 @@ Atenciosamente,
       showToast("Backup manual gerado.");
     });
     document.getElementById("generateChargesBtn").addEventListener("click", () => ensureMonthlyChargesForAllClients(true));
+    document.getElementById("auditChargesBtn")?.addEventListener("click", () => showMonthlyChargeAudit(selectedMonth()));
     document.getElementById("generateUntil032027Btn")?.addEventListener("click", () => {
       const created = ensureMonthlyChargesForAllClients(true);
       renderForecast();
       if (!created) showToast("Cobranças de 05/2026 até 03/2027 já estavam atualizadas.");
     });
+    document.getElementById("auditForecastChargesBtn")?.addEventListener("click", () => showMonthlyChargeAudit(selectedMonth()));
     document.getElementById("openForecastReportBtn")?.addEventListener("click", () => {
       document.getElementById("reportModelSelect").value = "previsao";
       setView("relatorios");

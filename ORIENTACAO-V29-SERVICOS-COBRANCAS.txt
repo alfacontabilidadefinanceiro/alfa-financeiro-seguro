@@ -1,0 +1,25 @@
+ALFA FINANCEIRO - V29 SERVIÇOS E COBRANÇAS
+
+Objetivo da versão:
+- Permitir mais de um tipo de cobrança para o mesmo cliente na mesma competência.
+- Separar honorários contábeis, Programa SGR, declaração de imposto de renda, contratos, alteração contratual e outros serviços contábeis.
+- Evitar duplicidade somente quando for o mesmo cliente, mesmo valor, mesma competência e mesmo tipo de cobrança.
+
+Regras principais:
+1. Honorários contábeis continuam como cobrança mensal recorrente do cadastro do cliente.
+2. Programa SGR pode ser usado como serviço mensal principal ou como cobrança avulsa.
+3. IRPF, contratos, alteração contratual, abertura, encerramento, regularização e consultorias entram como receitas avulsas pelo botão Novo lançamento.
+4. O sistema permite o mesmo cliente ter mais de uma cobrança no mesmo mês, desde que a categoria/tipo de cobrança seja diferente.
+5. O sistema continua bloqueando duplicidade quando repetir cliente + competência + valor + tipo de cobrança.
+
+Exemplo correto:
+Cliente X - 06/2026 - Honorários contábeis - R$ 300,00
+Cliente X - 06/2026 - Programa SGR - R$ 150,00
+Cliente X - 06/2026 - Alteração contratual - R$ 600,00
+
+Esses três lançamentos podem coexistir sem apagar um ao outro.
+
+Segurança:
+- Não publicar CSV, extrato, lista de clientes, boletos, PDFs ou backups no GitHub.
+- Publicar somente arquivos limpos do sistema.
+- Dados reais entram somente pelo sistema e ficam no Firebase/Firestore.
