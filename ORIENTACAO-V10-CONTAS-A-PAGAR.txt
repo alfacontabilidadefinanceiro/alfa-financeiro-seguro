@@ -1,0 +1,18 @@
+VERSÃO V10 - CONTAS A PAGAR, GUIAS E ALERTAS
+
+Melhorias incluídas:
+1. Categorias fixas para despesas do escritório: água, energia, gás, telefones/internet, funcionários/salários, INSS, FGTS, sistemas, consultorias, aluguel, tarifas bancárias e tributos.
+2. Importação de contas a pagar por CSV, TXT e PDF.
+3. Guias/boletos importados entram como despesas em aberto.
+4. Quando o PDF não permitir extração segura, o lançamento fica marcado como REVISAR DADOS EXTRAÍDOS.
+5. Painel de alertas ao abrir o sistema: vencidas, vencem hoje e próximas 7 dias.
+6. Modelo CSV de contas a pagar disponível no botão "Modelo CSV despesas".
+
+Rotina ideal:
+- Cadastre clientes e gere cobranças até 03/2027.
+- Cadastre despesas fixas ou importe guias/boletos.
+- Abra o sistema e confira alertas de vencimento.
+- Importe extrato mensal para conciliar pagamentos e baixas.
+- Revise somente itens em "Despesas a classificar" ou "REVISAR".
+
+Atenção: PDF escaneado/imagem pode não extrair vencimento e valor automaticamente. Nesses casos, edite o lançamento antes de pagar.

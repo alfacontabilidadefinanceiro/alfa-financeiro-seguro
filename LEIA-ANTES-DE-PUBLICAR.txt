@@ -1,0 +1,11 @@
+LEIA ANTES DE PUBLICAR - ALFA FINANCEIRO
+
+1. Publique somente os arquivos desta pasta.
+2. Nao envie arquivos da pasta C:\AlfaFinanceiro_PRIVADO_NAO_PUBLICAR.
+3. Esta pasta nao contem dados reais de clientes.
+4. Os dados financeiros devem ser importados dentro do sistema, depois do login.
+5. O acesso fica restrito pelo Firebase Authentication ao e-mail autorizado.
+6. Se trocar de repositorio no GitHub Pages, adicione o dominio no Firebase Authentication.
+
+Dominio atual esperado:
+https://alfacontabilidadefinanceiro.github.io/alfa-financeiro-seguro/

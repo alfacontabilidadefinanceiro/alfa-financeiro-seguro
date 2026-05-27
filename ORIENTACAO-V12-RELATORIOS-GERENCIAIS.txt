@@ -1,0 +1,17 @@
+ALFA FINANCEIRO V12 - RELATÓRIOS GERENCIAIS
+
+Novos relatórios incluídos:
+1. DRE gerencial do mês: receitas, despesas por categoria e resultado previsto.
+2. Fluxo de caixa diário: entradas, saídas e saldo por dia.
+3. Despesas por categoria: total e peso sobre receita.
+4. Ranking de fornecedores/despesas: maior saída por fornecedor/favorecido.
+5. Despesas reclassificadas: auditoria do que já foi classificado.
+6. Pendências gerenciais: recebimentos sem cliente, despesas a classificar e contas a pagar.
+
+Rotina sugerida:
+- Importar clientes;
+- Gerar cobranças;
+- Importar extrato;
+- Reclassificar saídas;
+- Conferir Pendências gerenciais;
+- Fechar DRE gerencial e Fluxo de caixa diário.

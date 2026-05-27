@@ -1,0 +1,23 @@
+ALFA FINANCEIRO V6 - COBRANÇAS ATÉ 03/2027
+
+Principais ajustes:
+1. Geração de mensalidades limitada até 03/2027.
+2. Correção da data das mensalidades geradas automaticamente, respeitando o dia de vencimento do cliente.
+3. Novo módulo "Previsão 03/2027".
+4. Painel com previsto, recebido, em aberto, vencido e percentual recebido por mês.
+5. Agenda de cobrança por prioridade: vencido, vence hoje, vence em até 7 dias e a vencer.
+6. Relatório de clientes sem telefone.
+7. Modelos de relatório adicionados: Previsão até 03/2027, Agenda de cobrança e Clientes sem telefone.
+8. Botão de WhatsApp mantém fallback: se o cliente não tiver telefone, abre mensagem no WhatsApp do escritório para atualização cadastral.
+
+Uso recomendado:
+1. Cadastre o escritório e informe o WhatsApp principal.
+2. Cadastre ou confira os clientes, valor mensal e dia de vencimento.
+3. Clique em "Gerar cobranças até 03/2027".
+4. Importe mensalmente o CSV do banco.
+5. Acompanhe o módulo "Previsão 03/2027".
+6. Use "Agenda de cobrança" para cobrar vencidos e vencimentos próximos.
+7. Atualize os clientes listados em "Clientes sem telefone".
+
+Importante:
+Não publique dados reais, CSVs bancários, planilhas ou backups dentro do GitHub público. Use o GitHub apenas para o sistema limpo.

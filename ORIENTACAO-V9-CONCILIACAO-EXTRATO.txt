@@ -1,0 +1,17 @@
+ALFA FINANCEIRO V9 - CONCILIAÇÃO INTELIGENTE DO EXTRATO
+
+O que esta versão faz:
+1. Importa extrato mensal com entradas, saídas, Pix, tarifas e pagamento por código de barras.
+2. Ignora linhas de Saldo Diário, pois não são movimentações.
+3. Recebimento de cobrança tenta vincular ao cliente/cobrança existente.
+4. Se a cobrança já estava importada como paga, o sistema apenas anexa protocolo e histórico do extrato, evitando duplicidade.
+5. Taxas de cobrança/boletos/Bolix viram despesa classificada como Taxas de cobrança bancária, mantendo cliente/ref. no histórico.
+6. Pix enviados e saídas sem destino seguro ficam como saída a classificar, com histórico completo do extrato.
+7. Novo relatório: Conciliação do extrato.
+8. Novo relatório: Taxas bancárias / cobrança.
+
+Rotina recomendada:
+- Primeiro importe o CSV de cobranças/honorários.
+- Depois importe o CSV do extrato mensal.
+- Confira o relatório Conciliação do extrato.
+- Revise somente as linhas marcadas como REVISAR.

@@ -1,0 +1,4 @@
+﻿fornecedor;cnpj_cpf;categoria;descricao;vencimento;valor;forma;status;observacao
+Energisa;;Energia elétrica;Conta de energia do escritório;10/06/2026;350,00;Boleto;aberto;
+BRK/Saneatins;;Água e saneamento;Conta de água do escritório;15/06/2026;120,00;Boleto;aberto;
+Domínio Sistemas;;Sistema contábil;Mensalidade do sistema contábil;20/06/2026;788,50;Boleto;aberto;

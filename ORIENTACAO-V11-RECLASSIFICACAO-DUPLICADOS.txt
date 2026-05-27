@@ -1,0 +1,19 @@
+ALFA FINANCEIRO V11 - RECLASSIFICAÇÃO E BLOQUEIO DE DUPLICIDADES
+
+1. A tela de lançamento agora tem o campo "Reclassificar despesa".
+2. As linhas de despesa também mostram o botão "Reclassificar".
+3. O sistema tenta bloquear duplicidade por:
+   - mesma origem/protocolo;
+   - mesmo cliente/fornecedor;
+   - mesmo valor;
+   - mesma competência;
+   - mesmo vencimento ou pagamento.
+4. Ao importar extrato, guias ou CSV, movimentos repetidos são ignorados.
+5. Quando uma duplicidade tiver informação de pagamento, o sistema tenta preservar a baixa em vez de lançar novamente.
+
+Rotina recomendada:
+- Primeiro importe a base de clientes;
+- Gere as cobranças;
+- Importe o extrato mensal;
+- Revise apenas "Recebimentos não identificados" e "Saídas a classificar";
+- Reclassifique despesas pelo botão "Reclassificar".

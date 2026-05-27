@@ -1,0 +1,20 @@
+CHECKLIST FINAL - ALFA FINANCEIRO
+
+1. Publicar somente os arquivos desta pasta.
+2. Não publicar o arquivo .RAR original.
+3. Não publicar arquivos de clientes, planilhas, extratos, boletos, backups ou CSV com dados reais.
+4. Conferir se o GitHub Pages está apontando para a branch main e pasta /root.
+5. Abrir o link após publicar:
+   https://alfacontabilidadefinanceiro.github.io/alfa-financeiro-seguro/
+6. Testar login por e-mail/senha e login pelo Google.
+7. No Firebase Authentication, conferir se o domínio autorizado está cadastrado:
+   alfacontabilidadefinanceiro.github.io
+8. Conferir se somente o e-mail autorizado consegue entrar:
+   alfacontabilidade2014@gmail.com
+9. Testar em aba anônima: sem login não deve acessar o sistema.
+10. Fazer um teste com dados fictícios antes de lançar qualquer informação real.
+11. Gerar backup após teste e conferir se o arquivo baixa corretamente.
+12. Se for usar com dados reais, avaliar migração para banco protegido e regras de segurança.
+
+OBSERVAÇÃO IMPORTANTE:
+O Firebase Authentication protege o acesso visual ao sistema, mas os dados salvos atualmente ficam no navegador/localStorage. Para controle financeiro real do escritório, use com cautela e mantenha backup separado.

@@ -1,0 +1,15 @@
+VERSÃO V8 - EXTRATO MENSAL COMPLETO
+
+Novidades:
+1. Novo modelo de relatório: Extrato mensal - todas as transações.
+2. O relatório lista entradas e saídas do mês pelo critério de caixa.
+3. Linhas de Saldo Diário importadas do banco são ignoradas, porque não são transações.
+4. O relatório separa Entrada, Saída e Valor líquido.
+5. Tarifas, Pix enviados e pagamentos via código de barras entram como despesas.
+6. Recebimentos de cobrança, Pix recebidos e entradas não identificadas entram como receitas.
+
+Uso recomendado:
+- Importe o CSV do banco.
+- Escolha o mês do relatório.
+- Selecione "Extrato mensal - todas as transações".
+- Gere o PDF ou Excel para conferência mensal.

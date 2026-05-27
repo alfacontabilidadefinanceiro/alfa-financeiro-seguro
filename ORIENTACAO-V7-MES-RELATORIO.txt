@@ -1,0 +1,12 @@
+ALFA FINANCEIRO - V7 MÊS DO RELATÓRIO
+
+O sistema agora possui seleção de mês mais visível:
+
+1. Mês de análise no topo do sistema.
+2. Mês do relatório dentro da tela Relatórios.
+3. Botões Mês anterior, Próximo mês, Mês atual e Mês com dados.
+
+Atenção:
+- No modelo Recebidos no mês, o mês selecionado é mês de caixa.
+- Nos modelos Honorários, Receitas avulsas, Inadimplência do mês e Resumo gerencial, o mês selecionado é competência.
+- A impressão/PDF leva o mês selecionado no cabeçalho.

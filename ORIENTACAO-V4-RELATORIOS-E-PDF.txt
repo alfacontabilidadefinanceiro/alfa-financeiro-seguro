@@ -1,0 +1,27 @@
+ALFA FINANCEIRO - VERSÃO V4
+Relatórios e PDF corrigidos
+
+O que foi ajustado:
+1. Botão "PDF corrigido / Imprimir" agora abre uma página limpa para impressão.
+2. O relatório não depende mais da impressão da tela principal do sistema.
+3. Corrigida quebra de páginas no PDF.
+4. Corrigidos valores soltos em páginas separadas.
+5. Relatório de inadimplência agora tem duas opções:
+   - Inadimplência do mês: filtra pela competência selecionada.
+   - Inadimplência geral: mostra todos os meses importados.
+6. O PDF sai em A4 paisagem quando o relatório tiver muitas colunas.
+7. O PDF tem cabeçalho, data de geração, competência e quantidade de registros.
+
+Como testar:
+1. Extraia o ZIP.
+2. Abra o arquivo index.html.
+3. Importe o CSV de cobranças.
+4. Vá em Relatórios.
+5. Escolha a competência.
+6. Selecione o modelo do relatório.
+7. Clique em "PDF corrigido / Imprimir".
+
+Se o navegador bloquear a janela de impressão, o sistema baixa um arquivo HTML limpo do relatório. Abra esse HTML e imprima.
+
+Atenção:
+Não publique dados reais no GitHub. Os dados reais devem ficar no navegador local ou, preferencialmente, em banco protegido como Firebase/Firestore com regras de segurança.

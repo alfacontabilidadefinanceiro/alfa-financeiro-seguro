@@ -1,0 +1,18 @@
+ALFA FINANCEIRO - V5 PROFISSIONAL
+
+Principais correções:
+1. Relatórios agora têm cards de totais e linha TOTAL GERAL.
+2. PDF/impressão passa a levar total do relatório no cabeçalho e no rodapé da tabela.
+3. Criado módulo Escritório para cadastrar dados da Alfa, PIX, WhatsApp e assinatura dos relatórios.
+4. Quando o cliente não tiver WhatsApp cadastrado, o sistema abre o WhatsApp do escritório com mensagem interna para atualização do cadastro.
+5. Modelos de WhatsApp passam a usar o cadastro do escritório.
+
+Ordem correta de uso:
+1. Abrir index.html fora do ZIP/RAR, em pasta extraída.
+2. Entrar no módulo Escritório e salvar telefone/PIX do escritório.
+3. Importar CSV de cobranças.
+4. Conferir Clientes sem telefone e atualizar cadastro.
+5. Gerar mensalidades.
+6. Usar Relatórios > escolher modelo > conferir os cards de total > PDF profissional / Imprimir.
+
+Atenção: não publicar dados reais no GitHub. Para uso definitivo com dados reais, migrar armazenamento para Firebase/Firestore com regras de segurança.

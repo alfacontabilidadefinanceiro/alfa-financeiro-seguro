@@ -1,0 +1,15 @@
+CHECKLIST DE SEGURANÇA PARA PUBLICAR
+
+[ ] Não existe dado real de cliente no GitHub.
+[ ] Não existe extrato bancário, guia, boleto, PDF ou Excel no repositório.
+[ ] Arquivos JSON/CSV de dados estão vazios.
+[ ] GitHub e Google estão com verificação em duas etapas.
+[ ] Firebase Authentication está ativo.
+[ ] O domínio do GitHub Pages está autorizado no Firebase.
+[ ] Cadastro livre está bloqueado ou controlado.
+[ ] Apenas e-mails autorizados conseguem acessar.
+[ ] Foi testado em aba anônima.
+[ ] Foi feito backup antes de publicar nova versão.
+[ ] Dados reais serão mantidos fora do repositório.
+
+OBS.: GitHub Pages é hospedagem estática. Não use o repositório público como banco de dados.
