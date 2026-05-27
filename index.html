@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V25 | Nuvem segura</title>
+  <title>Alfa Financeiro V26 | Nuvem rápida e segura</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -1090,7 +1090,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V25 - Nuvem segura, recuperação de coleções e proteção contra salvar vazio.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V26 - Nuvem rápida, salvamento híbrido e proteção contra salvar vazio.</div>
     </form>
   </section>
 
@@ -1100,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V25 nuvem segura</span>
+          <span>Controle interno • V26 nuvem rápida</span>
         </div>
       </div>
 
@@ -1117,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V25. Firestore em nuvem, recuperação automática e proteção contra sobrescrever com base vazia.</p>
+        <p><span class="status-dot"></span>VERSÃO V26. Firestore em nuvem com carregamento rápido, recuperação automática e proteção contra sobrescrever com base vazia.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -2190,7 +2190,7 @@
     let cloudPendingReason = "";
     let cloudLastSavedAt = "";
     let cloudLastLoadedAt = "";
-    const cloudTimeoutMs = 60000;
+    const cloudTimeoutMs = 180000;
 
     const storageKey = "alfaFinanceiroLancamentosV1";
     const clientsStorageKey = "alfaFinanceiroClientesV1";
@@ -2834,8 +2834,11 @@ Atenciosamente,
       return safeFirestoreId(`${type}_${person}_${month}_${due}_${cents}`, "lancamento");
     }
 
-    async function commitBatchOperations(operations, chunkSize = 430) {
+    async function commitBatchOperations(operations, chunkSize = 200) {
+      const total = Math.ceil(operations.length / chunkSize) || 1;
       for (let i = 0; i < operations.length; i += chunkSize) {
+        const batchNumber = Math.floor(i / chunkSize) + 1;
+        setCloudStatus(`Salvando na nuvem... lote ${batchNumber}/${total}`, "warn");
         const batch = writeBatch(db);
         operations.slice(i, i + chunkSize).forEach(operation => operation(batch));
         await withTimeout(batch.commit(), cloudTimeoutMs, "Tempo esgotado ao salvar lote na nuvem.");
@@ -2855,6 +2858,24 @@ Atenciosamente,
       } catch {
         return value ?? null;
       }
+    }
+
+
+    function estimateJsonBytes(value) {
+      try {
+        return new Blob([JSON.stringify(value ?? null)]).size;
+      } catch {
+        return 9999999;
+      }
+    }
+
+    function compactCloudPayload(cleanClients, cleanEntries) {
+      const payload = {
+        clients: safeJsonCopy(cleanClients),
+        entries: safeJsonCopy(cleanEntries)
+      };
+      // Firestore limita documentos em cerca de 1 MiB. Mantemos margem de segurança.
+      return estimateJsonBytes(payload) <= 850000 ? payload : { clients: null, entries: null };
     }
 
     function nowTimeText() {
@@ -2892,25 +2913,32 @@ Atenciosamente,
         let cloudEntries = [];
         let cloudClients = [];
 
-        const useCollections = data.storageMode === "collections_v22" || Array.isArray(data.activeEntryIds) || Array.isArray(data.activeClientIds);
-        if (useCollections) {
-          const [entryDocs, clientDocs] = await Promise.all([
-            getCollectionDocsMap("entries"),
-            getCollectionDocsMap("clients")
-          ]);
-          // Proteção V25: se o documento principal foi salvo vazio por outro navegador,
-          // mas as subcoleções ainda possuem dados, carregamos todos os documentos das coleções.
-          // Isso evita aparecer 0 clientes/0 lançamentos em outro computador.
-          const rawActiveEntryIds = Array.isArray(data.activeEntryIds) ? data.activeEntryIds : null;
-          const rawActiveClientIds = Array.isArray(data.activeClientIds) ? data.activeClientIds : null;
-          const activeEntryIds = new Set(rawActiveEntryIds && rawActiveEntryIds.length ? rawActiveEntryIds : [...entryDocs.keys()]);
-          const activeClientIds = new Set(rawActiveClientIds && rawActiveClientIds.length ? rawActiveClientIds : [...clientDocs.keys()]);
-          cloudEntries = [...entryDocs.entries()].filter(([id]) => activeEntryIds.has(id)).map(([, value]) => value);
-          cloudClients = [...clientDocs.entries()].filter(([id]) => activeClientIds.has(id)).map(([, value]) => value);
-        } else {
-          // Compatibilidade com versões antigas que salvavam tudo em um único documento.
+        const hasCompactPayload = Array.isArray(data.entries) || Array.isArray(data.clients);
+        if (hasCompactPayload && ((data.entries || []).length || (data.clients || []).length)) {
+          // V26: carregamento rápido pelo documento principal quando couber no limite do Firestore.
+          // Isso evita depender de centenas de leituras para abrir em outro computador.
           cloudEntries = Array.isArray(data.entries) ? data.entries : [];
           cloudClients = Array.isArray(data.clients) ? data.clients : [];
+        } else {
+          const useCollections = data.storageMode === "collections_v22" || data.storageMode === "hybrid_v26" || Array.isArray(data.activeEntryIds) || Array.isArray(data.activeClientIds);
+          if (useCollections) {
+            const [entryDocs, clientDocs] = await Promise.all([
+              getCollectionDocsMap("entries"),
+              getCollectionDocsMap("clients")
+            ]);
+            // Proteção V26: se o documento principal foi salvo vazio por outro navegador,
+            // mas as subcoleções ainda possuem dados, carregamos todos os documentos das coleções.
+            const rawActiveEntryIds = Array.isArray(data.activeEntryIds) ? data.activeEntryIds : null;
+            const rawActiveClientIds = Array.isArray(data.activeClientIds) ? data.activeClientIds : null;
+            const activeEntryIds = new Set(rawActiveEntryIds && rawActiveEntryIds.length ? rawActiveEntryIds : [...entryDocs.keys()]);
+            const activeClientIds = new Set(rawActiveClientIds && rawActiveClientIds.length ? rawActiveClientIds : [...clientDocs.keys()]);
+            cloudEntries = [...entryDocs.entries()].filter(([id]) => activeEntryIds.has(id)).map(([, value]) => value);
+            cloudClients = [...clientDocs.entries()].filter(([id]) => activeClientIds.has(id)).map(([, value]) => value);
+          } else {
+            // Compatibilidade com versões antigas que salvavam tudo em um único documento.
+            cloudEntries = Array.isArray(data.entries) ? data.entries : [];
+            cloudClients = Array.isArray(data.clients) ? data.clients : [];
+          }
         }
 
         const hasCloudData = cloudEntries.length || cloudClients.length || data.officeProfile || data.whatsappSettings;
@@ -2963,29 +2991,34 @@ Atenciosamente,
         const activeEntryIds = cleanEntries.map(entry => entry.cloudId);
         const activeClientIds = cleanClients.map(client => client.cloudId);
 
-        // Proteção V25: nunca sobrescrever a nuvem com base vazia por abertura em outro navegador/computador.
+        // Proteção V26: nunca sobrescrever a nuvem com base vazia por abertura em outro navegador/computador.
         // Para limpar dados, use o botão específico de excluir/limpar com confirmação, não o salvamento automático.
         if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
           setCloudStatus("Proteção ativada: base local vazia não foi salva na nuvem. Clique em Carregar nuvem ou Diagnóstico.", "warn");
-          console.warn("Alfa Financeiro V25: bloqueado salvamento vazio", { reason });
+          console.warn("Alfa Financeiro V26: bloqueado salvamento vazio", { reason });
           return;
         }
 
         const operations = [];
+        const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
+        const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
 
         operations.push(batch => batch.set(cloudStateRef(), {
-          version: "V25-Firestore-Sync-Seguro",
-          storageMode: "collections_v22",
+          version: "V26-Firestore-Hibrido-Rapido",
+          storageMode: usingCompactPayload ? "hybrid_v26" : "collections_v22",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
           syncReason: reason,
           activeEntryIds,
           activeClientIds,
+          clients: compactPayload.clients,
+          entries: compactPayload.entries,
           officeProfile: safeJsonCopy(officeProfile),
           whatsappSettings: safeJsonCopy(whatsappSettings),
           whatsappLogs: safeJsonCopy((whatsappLogs || []).slice(0, 300)),
           totalEntries: activeEntryIds.length,
-          totalClients: activeClientIds.length
+          totalClients: activeClientIds.length,
+          compactPayload: usingCompactPayload
         }, { merge: true }));
 
         cleanClients.forEach(client => {
@@ -3001,7 +3034,7 @@ Atenciosamente,
         cloudLoaded = true;
         cloudLastSavedAt = nowTimeText();
         updateCloudSummaryStatus("Salvo automático");
-        console.info(`Alfa Financeiro: sincronizado no Firestore por coleções (${reason}).`);
+        console.info(`Alfa Financeiro: sincronizado no Firestore V26 (${reason}).`);
       } catch (error) {
         console.error("Erro ao sincronizar com Firestore", error);
         setCloudStatus(firebaseErrorMessage(error), "err");
@@ -3042,9 +3075,11 @@ Atenciosamente,
       window.addEventListener("offline", () => {
         setCloudStatus("Sem internet. Dados ficam neste navegador até reconectar.", "err");
       });
+      // V26: abrir/voltar para a aba não deve salvar automaticamente.
+      // Isso evita um computador vazio ou uma simples navegação gerar sincronização desnecessária.
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && isAuthorizedUser(auth.currentUser)) {
-          scheduleCloudSync("retorno-aba");
+          setCloudStatus(cloudLastSavedAt ? `Nuvem pronta • último salvamento ${cloudLastSavedAt}` : "Nuvem pronta. Alterações reais serão salvas automaticamente.", "ok");
         }
       });
     }
@@ -7000,7 +7035,7 @@ Atenciosamente,
         return "Limite do Firestore atingido. Aguarde alguns minutos e tente novamente.";
       }
       if (String(error?.message || "").toLowerCase().includes("exceeds") || String(error?.message || "").toLowerCase().includes("1048487")) {
-        return "Base muito grande para salvar em um único documento. Esta versão salva por coleções; publique novamente a V23 e tente outra vez.";
+        return "Base muito grande para salvar em um único documento. Esta versão salva por coleções; publique novamente a V26 e tente outra vez.";
       }
       if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
         return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";
@@ -7132,7 +7167,9 @@ Atenciosamente,
         const state = stateSnap.exists() ? (stateSnap.data() || {}) : {};
         const clientsMap = await getCollectionDocsMap("clients");
         const entriesMap = await getCollectionDocsMap("entries");
-        const msg = `Firestore OK. E-mail: ${auth.currentUser.email}. Clientes na nuvem: ${clientsMap.size}. Lançamentos na nuvem: ${entriesMap.size}. Documento principal: ${stateSnap.exists() ? "existe" : "não existe"}.`;
+        const compactClients = Array.isArray(state.clients) ? state.clients.length : 0;
+        const compactEntries = Array.isArray(state.entries) ? state.entries.length : 0;
+        const msg = `Firestore OK. E-mail: ${auth.currentUser.email}. Documento principal: ${stateSnap.exists() ? "existe" : "não existe"}. Compacto: ${compactClients} cliente(s) e ${compactEntries} lançamento(s). Coleções: ${clientsMap.size} cliente(s) e ${entriesMap.size} lançamento(s).`;
         setCloudStatus(msg, "ok");
         showToast(msg);
         console.info("Diagnóstico Alfa Financeiro", { state, clientes: clientsMap.size, lancamentos: entriesMap.size });

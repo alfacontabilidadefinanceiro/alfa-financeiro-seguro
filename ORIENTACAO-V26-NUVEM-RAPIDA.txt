@@ -1,0 +1,14 @@
+ALFA FINANCEIRO V26 - NUVEM RÁPIDA E SEGURA
+
+O que mudou:
+1. Salvamento híbrido: grava um documento principal compacto para carregar rápido em outro computador e mantém coleções como segurança.
+2. Não salva automaticamente apenas por abrir/voltar para a aba.
+3. Não sobrescreve nuvem com base vazia.
+4. Mostra progresso por lote ao salvar.
+5. Diagnóstico informa dados do documento principal e das coleções.
+
+Uso recomendado:
+1. No computador principal, clique em Salvar nuvem e aguarde mensagem verde.
+2. Clique em Diagnóstico. Deve aparecer quantidade de clientes/lancamentos no Compacto ou Coleções.
+3. No outro computador, clique em Carregar nuvem.
+4. Só importe dados reais dentro do site. Não envie CSV/planilhas/extratos ao GitHub.
