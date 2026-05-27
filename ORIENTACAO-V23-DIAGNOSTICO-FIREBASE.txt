@@ -1,0 +1,18 @@
+ALFA FINANCEIRO V23 - DIAGNÓSTICO FIREBASE E NUVEM
+
+Objetivo:
+- Melhorar mensagens de erro do Firebase.
+- Aumentar tempo de espera da nuvem para 30 segundos.
+- Manter salvamento por coleções no Firestore.
+- Identificar melhor se o problema é Authentication, Firestore, regras, domínio autorizado ou internet.
+
+Antes de testar:
+1. Firebase Console > Authentication > Sign-in method: ativar E-mail/senha.
+2. Firebase Console > Authentication > Users: criar o usuário alfacontabilidade2014@gmail.com com senha.
+3. Firebase Console > Authentication > Settings > Authorized domains: incluir alfacontabilidadefinanceiro.github.io.
+4. Firebase Console > Firestore Database: criar banco de dados.
+5. Firestore Database > Rules: colar e publicar as regras do arquivo FIRESTORE-RULES-ALFA-FINANCEIRO.txt.
+
+Uso:
+- Publique os arquivos extraídos desta pasta no GitHub Pages.
+- Não publique CSV, planilhas, boletos, extratos ou backups com dados reais.

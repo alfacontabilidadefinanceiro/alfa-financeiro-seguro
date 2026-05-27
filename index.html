@@ -2187,7 +2187,7 @@
     let cloudPendingReason = "";
     let cloudLastSavedAt = "";
     let cloudLastLoadedAt = "";
-    const cloudTimeoutMs = 12000;
+    const cloudTimeoutMs = 30000;
 
     const storageKey = "alfaFinanceiroLancamentosV1";
     const clientsStorageKey = "alfaFinanceiroClientesV1";
@@ -2957,7 +2957,7 @@ Atenciosamente,
         const operations = [];
 
         operations.push(batch => batch.set(cloudStateRef(), {
-          version: "V22-Firestore-Colecoes",
+          version: "V23-Firestore-Diagnostico",
           storageMode: "collections_v22",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -6951,37 +6951,51 @@ Atenciosamente,
     }
 
     function firebaseErrorMessage(error) {
-      const code = error?.code || "";
+      const code = String(error?.code || "").toLowerCase();
+      const rawMessage = String(error?.message || error || "").trim();
+      const message = rawMessage.toLowerCase();
+
+      if (message.includes("tempo esgotado") || message.includes("timeout")) {
+        return "Tempo esgotado ao acessar a nuvem. Confira se o Cloud Firestore foi criado, se as regras foram publicadas e se a internet está estável.";
+      }
       if (code.includes("operation-not-allowed")) {
-        return "Login por e-mail e senha ainda não está ativado no Firebase.";
+        return "Login por e-mail e senha ainda não está ativado no Firebase. Vá em Authentication > Sign-in method e ative E-mail/senha.";
+      }
+      if (code.includes("configuration-not-found")) {
+        return "Authentication ainda não foi configurado neste projeto. Crie/ative o método E-mail/senha no Firebase Authentication.";
       }
       if (code.includes("unauthorized-domain")) {
-        return "Este domínio ainda não está autorizado no Firebase Authentication.";
+        return "Este domínio ainda não está autorizado no Firebase Authentication. Adicione alfacontabilidadefinanceiro.github.io em Authorized domains.";
       }
-      if (code.includes("network-request-failed")) {
-        return "Sem conexão com o Firebase. Verifique a internet e tente novamente.";
+      if (code.includes("network-request-failed") || code.includes("unavailable") || message.includes("offline")) {
+        return "Sem conexão com o Firebase/Firestore. Verifique a internet e tente novamente.";
       }
       if (code.includes("permission-denied")) {
-        return "Sem permissão no Firestore. Confira as regras do banco de dados e o e-mail autorizado.";
+        return "Sem permissão no Firestore. Confira as regras do banco de dados e se o login foi feito com o e-mail autorizado.";
+      }
+      if (code.includes("not-found") || message.includes("cloud firestore api has not been used") || message.includes("firestore") && message.includes("not been enabled")) {
+        return "Cloud Firestore ainda não está ativo neste projeto. Vá em Build > Firestore Database > Criar banco de dados.";
+      }
+      if (code.includes("failed-precondition")) {
+        return "Firestore retornou falha de pré-condição. Confirme se o banco foi criado em modo produção e se as regras foram publicadas.";
       }
       if (code.includes("resource-exhausted")) {
-        return "Limite do Firestore atingido. A V22 salva por coleções para evitar documento grande; tente novamente.";
+        return "Limite do Firestore atingido. Aguarde alguns minutos e tente novamente.";
       }
       if (String(error?.message || "").toLowerCase().includes("exceeds") || String(error?.message || "").toLowerCase().includes("1048487")) {
-        return "Arquivo de dados muito grande para um único documento. A V22 salva por coleções; publique a versão atualizada e tente novamente.";
-      }
-      if (code.includes("unavailable")) {
-        return "Firestore indisponível no momento. Tente novamente em alguns instantes.";
+        return "Base muito grande para salvar em um único documento. Esta versão salva por coleções; publique novamente a V23 e tente outra vez.";
       }
       if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
         return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";
       }
-      if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) {
-        return "E-mail ou senha não cadastrados no Firebase.";
+      if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found") || code.includes("invalid-login-credentials")) {
+        return "E-mail ou senha não cadastrados no Firebase Authentication.";
       }
-      if (code.includes("popup-closed-by-user")) return "Login com Google cancelado.";
+      if (code.includes("invalid-email")) return "E-mail inválido.";
+      if (code.includes("missing-password")) return "Informe a senha.";
       if (code.includes("too-many-requests")) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
-      return `Não foi possível entrar. Código do Firebase: ${code || "erro desconhecido"}.`;
+      if (rawMessage) return `Erro no Firebase: ${rawMessage}`;
+      return `Erro no Firebase. Código: ${code || "sem código"}. Abra o console do navegador (F12) para ver o detalhe.`;
     }
 
     async function showProtectedApp(user) {
