@@ -1100,7 +1100,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V31 mensalidades</span>
+          <span>Controle interno • V34 mensalidades estáveis</span>
         </div>
       </div>
 
@@ -1117,7 +1117,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V31. Confere mensalidade de todos os clientes ativos por competência, permite serviços extras e evita duplicidade por cliente, competência e serviço.</p>
+        <p><span class="status-dot"></span>VERSÃO V34. Corrige geração mensal por chave única cliente+competência+serviço, impede duplicidade e garante conferência estável das mensalidades.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -2683,7 +2683,7 @@ Atenciosamente,
 
     function businessDuplicateReason(incomingRaw, existingRaw) {
       if (!incomingRaw || !existingRaw) return "";
-      if (incomingRaw.id && existingRaw.id && incomingRaw.id === existingRaw.id) return "";
+      if (incomingRaw.id && existingRaw.id && incomingRaw.id === existingRaw.id) return "mesmo id";
       if (existingRaw.status === "cancelado" || incomingRaw.status === "cancelado") return "";
 
       const incoming = normalizeEntryForRuntime(incomingRaw);
@@ -2708,6 +2708,15 @@ Atenciosamente,
         const categoryIncoming = serviceKey(incoming.category || incoming.service || "Honorários contábeis");
         const categoryExisting = serviceKey(existing.category || existing.service || "Honorários contábeis");
         const sameRevenueService = categoryIncoming === categoryExisting;
+        const incomingMonthly = incoming.serviceType === "mensalidade" || incoming.recurringParentId || incoming.source === "cadastro-cliente" || incoming.monthlyKey;
+        const existingMonthly = existing.serviceType === "mensalidade" || existing.recurringParentId || existing.source === "cadastro-cliente" || existing.monthlyKey;
+        if (incomingMonthly || existingMonthly) {
+          const incomingKey = monthlyChargeKeyForEntry(incoming);
+          const existingKey = monthlyChargeKeyForEntry(existing);
+          if (incomingKey && existingKey && incomingKey === existingKey) return "mesma mensalidade do cliente, competência e serviço";
+          // Mensalidades de clientes diferentes não podem ser fundidas por semelhança de nome.
+          return "";
+        }
         if (samePerson && sameCompetence && sameRevenueService) return "mesmo cliente, valor, competência e tipo de cobrança";
         if (samePerson && samePaidDate && sameRevenueService) return "mesmo recebimento já baixado";
       }
@@ -5867,6 +5876,35 @@ Atenciosamente,
       return monthSequence(start, end);
     }
 
+    function monthlyServiceForClient(client) {
+      return client?.service || "Honorários contábeis";
+    }
+
+    function monthlyClientStableKey(client) {
+      const doc = normalizeDocument(client?.document || "");
+      if (doc) return `doc-${doc}`;
+      if (client?.id) return `id-${client.id}`;
+      if (client?.key) return `key-${client.key}`;
+      return `nome-${normalizeText(client?.name || "sem-cliente")}`;
+    }
+
+    function monthlyChargeKeyForClient(client, month) {
+      const normalizedMonth = normalizeMonthInput(month) || month;
+      const service = serviceKey(monthlyServiceForClient(client));
+      return `${monthlyClientStableKey(client)}|${normalizedMonth}|${service}`;
+    }
+
+    function monthlyChargeKeyForEntry(entry) {
+      if (!entry) return "";
+      if (entry.monthlyKey) return String(entry.monthlyKey);
+      const month = normalizeMonthInput(entry.billingMonth || entry.competencia || String(entry.date || "").slice(0, 7));
+      if (!month) return "";
+      const doc = normalizeDocument(entry.document || "");
+      const person = doc ? `doc-${doc}` : (entry.recurringParentId ? `id-${entry.recurringParentId}` : (entry.clientId ? `id-${entry.clientId}` : `nome-${normalizeText(entry.name || entry.bankCounterparty || "sem-cliente")}`));
+      const service = serviceKey(entry.category || entry.service || "Honorários contábeis");
+      return `${person}|${month}|${service}`;
+    }
+
     function monthlyChargeClientMatch(entry, client, month) {
       if (!entry || !client) return false;
       if (entry.type !== "receita") return false;
@@ -5874,9 +5912,13 @@ Atenciosamente,
       const entryMonth = entry.billingMonth || String(entry.date || "").slice(0, 7);
       if (entryMonth !== month) return false;
 
-      const expectedServiceKey = serviceKey(client.service || "Honorários contábeis");
+      const expectedMonthlyKey = monthlyChargeKeyForClient(client, month);
+      const entryMonthlyKey = monthlyChargeKeyForEntry(entry);
+      if (entryMonthlyKey && expectedMonthlyKey && entryMonthlyKey === expectedMonthlyKey) return true;
+
+      const expectedServiceKey = serviceKey(monthlyServiceForClient(client));
       const entryServiceKey = serviceKey(entry.category || entry.service || "Honorários contábeis");
-      const isRecurringCharge = entry.serviceType === "mensalidade" || entry.recurringParentId || entry.source === "cadastro-cliente";
+      const isRecurringCharge = entry.serviceType === "mensalidade" || entry.recurringParentId || entry.source === "cadastro-cliente" || entry.monthlyKey;
       if (!isRecurringCharge && entryServiceKey !== expectedServiceKey) return false;
       if (isRecurringCharge && entryServiceKey !== expectedServiceKey && !(expectedServiceKey === "honorarios-contabeis" && entryServiceKey === "honorarios-contabeis")) return false;
 
@@ -5897,6 +5939,9 @@ Atenciosamente,
     }
 
     function findMonthlyChargeForClient(client, month) {
+      const expectedKey = monthlyChargeKeyForClient(client, month);
+      const exact = entries.find(entry => monthlyChargeKeyForEntry(entry) === expectedKey && entry.status !== "cancelado");
+      if (exact) return exact;
       const matches = entries.filter(entry => monthlyChargeClientMatch(entry, client, month));
       if (!matches.length) return null;
       const open = matches.find(entry => isOpenEntry(entry));
@@ -5916,6 +5961,9 @@ Atenciosamente,
       if (!existing.recurringParentId) { existing.recurringParentId = client.id; changed = true; }
       if (!existing.sourceId) { existing.sourceId = client.id; changed = true; }
       if (!existing.source) { existing.source = "cadastro-cliente"; changed = true; }
+      const mKey = monthlyChargeKeyForClient(client, month);
+      if (existing.monthlyKey !== mKey) { existing.monthlyKey = mKey; changed = true; }
+      if (!existing.clientId) { existing.clientId = client.id; changed = true; }
 
       // Não altera parcelas já pagas/bonificadas, para preservar histórico de baixa.
       if (isOpenEntry(existing) && !existing.receiptProtocol) {
@@ -5954,8 +6002,10 @@ Atenciosamente,
         description: `${service} ${formatMonth(month)}`,
         source: "cadastro-cliente",
         sourceId: client.id,
+        clientId: client.id,
         recurringParentId: client.id,
-        billingMonth: month
+        billingMonth: month,
+        monthlyKey: monthlyChargeKeyForClient(client, month)
       };
     }
 
@@ -6024,6 +6074,16 @@ Atenciosamente,
       let touched = 0;
       clients.forEach(client => {
         touched += ensureMonthlyChargesForClient(client) || 0;
+      });
+      entries = dedupeEntries(entries);
+      // Segunda passada: garante que a deduplicação não removeu mensalidades válidas de clientes diferentes.
+      monthSequence(firstChargeMonth, lastChargeMonth).forEach(month => {
+        activeBillableClientsForMonth(month).forEach(client => {
+          if (!findMonthlyChargeForClient(client, month)) {
+            entries.push(newMonthlyChargeForClient(client, month));
+            touched++;
+          }
+        });
       });
       entries = dedupeEntries(entries);
       saveEntries();
