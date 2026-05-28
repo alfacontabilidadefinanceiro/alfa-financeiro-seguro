@@ -1131,6 +1131,26 @@
     #dashboard .summary-grid { grid-template-columns: minmax(0,1.1fr) minmax(320px,.9fr); }
     @media (max-width: 1180px) { .executive-metrics { grid-template-columns: repeat(2, minmax(0,1fr)); } }
     @media (max-width: 720px) { .executive-metrics { grid-template-columns: 1fr; } .executive-head { flex-direction:column; } }
+
+    .filter-panel {
+      display:grid;
+      grid-template-columns: minmax(260px, 1.4fr) repeat(3, minmax(150px, .7fr));
+      gap: 10px;
+      align-items:end;
+      margin: 14px 0;
+      padding: 12px;
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: 16px;
+      background: rgba(15,23,42,.42);
+    }
+    .filter-panel .field { gap: 5px; }
+    .filter-panel .field label { font-size: .68rem; letter-spacing:.08em; text-transform:uppercase; color:#aeb7c7; font-weight:900; }
+    .filter-panel input, .filter-panel select { min-height: 42px; }
+    .filter-panel .filter-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .filter-info { color:#aeb7c7; font-size:.82rem; font-weight:800; }
+    @media (max-width: 1180px) { .filter-panel { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 720px) { .filter-panel { grid-template-columns: 1fr; } }
+
 </style>
 </head>
 <body>
@@ -1154,7 +1174,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V35 - limpeza segura do Firestore e visão geral gerencial limpa.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V36 - filtros de pesquisa avançados e visão gerencial limpa.</div>
     </form>
   </section>
 
@@ -1164,7 +1184,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V35 nuvem limpa</span>
+          <span>Controle interno • V36 filtros</span>
         </div>
       </div>
 
@@ -1181,7 +1201,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V35. Inclui limpeza segura do banco Firestore, proteção contra sobrescrita indevida e visão geral gerencial mais limpa.</p>
+        <p><span class="status-dot"></span>VERSÃO V36. Inclui filtros avançados por nome, CNPJ/CPF, valor, status e competência, com nuvem Firestore preservada.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1432,12 +1452,42 @@
               <span class="pill" id="clientCount">0 clientes</span>
             </div>
             <div class="row-actions">
-              <span class="pill">Cadastro mestre seguro: dados salvos somente neste navegador</span>
+              <span class="pill">Cadastro mestre seguro: dados salvos na nuvem/Firestore</span>
               <button class="btn btn-secondary" id="importClientsBtn" type="button">Importar clientes CSV</button>
               <button class="btn btn-primary" id="newClientBtn" type="button">Novo cliente</button>
             </div>
           </div>
           <div class="hint"><strong>Importações separadas:</strong> use este botão somente para cadastro/atualização de clientes. Para boletos pagos, use “Baixar boletos pagos”. Para extrato bancário, use “Importar extrato/saídas”. Assim o sistema não apaga lançamentos anteriores.</div>
+          <div class="filter-panel" aria-label="Filtros de clientes">
+            <div class="field">
+              <label for="clientSearchInput">Pesquisar clientes</label>
+              <input id="clientSearchInput" type="search" placeholder="Razão social, fantasia, CNPJ/CPF, telefone, e-mail, honorário, vencimento..." autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="clientSituationFilter">Situação</label>
+              <select id="clientSituationFilter">
+                <option value="todos">Todos</option>
+                <option value="vencidos">Com atraso/vencidos</option>
+                <option value="pendentes">Pendentes no mês</option>
+                <option value="recebidos">Recebidos no mês</option>
+                <option value="em_dia">Em dia</option>
+                <option value="sem_telefone">Sem telefone</option>
+                <option value="sem_cobranca">Sem cobrança no mês</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="clientMinFeeFilter">Honorário mínimo</label>
+              <input id="clientMinFeeFilter" type="number" min="0" step="0.01" placeholder="Ex.: 250" />
+            </div>
+            <div class="field">
+              <label for="clientMaxFeeFilter">Honorário máximo</label>
+              <input id="clientMaxFeeFilter" type="number" min="0" step="0.01" placeholder="Ex.: 500" />
+            </div>
+            <div class="filter-info" id="clientFilterInfo">Filtra sem alterar cadastro nem lançamentos.</div>
+            <div class="filter-actions">
+              <button class="btn btn-secondary" id="clientClearFiltersBtn" type="button">Limpar filtros</button>
+            </div>
+          </div>
           <div class="table-wrap sticky-client-table">
             <table>
               <thead>
@@ -1481,6 +1531,33 @@
             </div>
           </div>
           <div class="hint" id="batchWhatsappPanel" hidden></div>
+          <div class="filter-panel" aria-label="Filtros de contas a receber">
+            <div class="field">
+              <label for="receivableSearchInput">Pesquisar a receber</label>
+              <input id="receivableSearchInput" type="search" placeholder="Cliente, CNPJ/CPF, valor, vencimento, competência, serviço, forma..." autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="receivableStatusFilter">Status</label>
+              <select id="receivableStatusFilter">
+                <option value="todos">Todos</option>
+                <option value="vencido">Vencidos</option>
+                <option value="aberto">Em aberto</option>
+                <option value="pago">Pago</option>
+                <option value="bonificado">Bonificado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="receivableMinValueFilter">Valor mínimo</label>
+              <input id="receivableMinValueFilter" type="number" min="0" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="receivableMaxValueFilter">Valor máximo</label>
+              <input id="receivableMaxValueFilter" type="number" min="0" step="0.01" />
+            </div>
+            <div class="filter-info" id="receivableFilterInfo">Pesquisa sem alterar baixa de boletos.</div>
+            <div class="filter-actions"><button class="btn btn-secondary" id="receivableClearFiltersBtn" type="button">Limpar filtros</button></div>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -1537,6 +1614,32 @@
             </div>
           </div>
           <div class="hint"><strong>Rotina recomendada:</strong> cadastre as despesas fixas, importe guias/boletos em PDF ou CSV, confira vencimento e valor, depois alimente com extrato bancário para baixa/conciliação. PDF escaneado pode exigir conferência manual.</div>
+          <div class="filter-panel" aria-label="Filtros de contas a pagar">
+            <div class="field">
+              <label for="payableSearchInput">Pesquisar a pagar</label>
+              <input id="payableSearchInput" type="search" placeholder="Fornecedor, CNPJ/CPF, valor, vencimento, guia, categoria, descrição..." autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="payableStatusFilter">Status</label>
+              <select id="payableStatusFilter">
+                <option value="todos">Todos</option>
+                <option value="vencido">Vencidas</option>
+                <option value="aberto">Em aberto</option>
+                <option value="pago">Pago</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="payableMinValueFilter">Valor mínimo</label>
+              <input id="payableMinValueFilter" type="number" min="0" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="payableMaxValueFilter">Valor máximo</label>
+              <input id="payableMaxValueFilter" type="number" min="0" step="0.01" />
+            </div>
+            <div class="filter-info" id="payableFilterInfo">Filtra despesas, guias e saídas a classificar.</div>
+            <div class="filter-actions"><button class="btn btn-secondary" id="payableClearFiltersBtn" type="button">Limpar filtros</button></div>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -1601,6 +1704,35 @@
             <div class="detail-card">
               <span>Competência</span>
               <strong id="detailMonth">-</strong>
+            </div>
+          </div>
+          <div class="filter-panel" aria-label="Filtros da lista detalhada">
+            <div class="field">
+              <label for="detailSearchInput">Pesquisar vencidos / detalhes</label>
+              <input id="detailSearchInput" type="search" placeholder="Nome, CNPJ/CPF, valor, vencimento, competência, forma, categoria..." autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="detailStatusFilter">Status</label>
+              <select id="detailStatusFilter">
+                <option value="todos">Todos</option>
+                <option value="vencido">Vencidos</option>
+                <option value="aberto">Em aberto</option>
+                <option value="pago">Pago</option>
+                <option value="bonificado">Bonificado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="detailMinValueFilter">Valor mínimo</label>
+              <input id="detailMinValueFilter" type="number" min="0" step="0.01" placeholder="Ex.: 250" />
+            </div>
+            <div class="field">
+              <label for="detailMaxValueFilter">Valor máximo</label>
+              <input id="detailMaxValueFilter" type="number" min="0" step="0.01" placeholder="Ex.: 500" />
+            </div>
+            <div class="filter-info" id="detailFilterInfo">Pesquisa por nome, CNPJ/CPF, valor e histórico.</div>
+            <div class="filter-actions">
+              <button class="btn btn-secondary" id="detailClearFiltersBtn" type="button">Limpar filtros</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -4042,11 +4174,56 @@ Atenciosamente,
       };
     }
 
+    function normalizeDigits(value) {
+      return String(value || "").replace(/\D/g, "");
+    }
+
+    function parseNumberFilter(value) {
+      if (value === null || value === undefined || String(value).trim() === "") return null;
+      const normalized = String(value).replace(/\./g, "").replace(",", ".");
+      const num = Number(normalized);
+      return Number.isFinite(num) ? num : null;
+    }
+
+    function entrySearchSource(entry) {
+      const value = Number(entry.paidAmount || entry.amount || 0);
+      return [
+        entry.id, entry.source, entry.sourceId, entry.protocol, entry.originId, entry.importKey,
+        entry.name, entry.document, normalizeDigits(entry.document), entry.description, entry.category, entry.method, entry.type,
+        entry.billingMonth, formatMonth(entry.billingMonth || entry.date), entry.date, formatDate(entry.date),
+        entry.paidAt, formatDate(entry.paidAt), visibleStatus(entry), payableSituation(entry),
+        formatMoney(value), String(value), String(value).replace(".", ",")
+      ].filter(Boolean).join(" ");
+    }
+
+    function matchesFreeSearch(source, search) {
+      const raw = String(search || "").trim();
+      if (!raw) return true;
+      const normalizedSource = normalizeText(source);
+      const digitSource = normalizeDigits(source);
+      const normalizedTokens = normalizeText(raw).split(" ").filter(Boolean);
+      const digitToken = normalizeDigits(raw);
+      const textOk = normalizedTokens.every(token => normalizedSource.includes(token) || digitSource.includes(token));
+      const digitOk = !digitToken || digitSource.includes(digitToken) || normalizedSource.includes(digitToken);
+      return textOk && digitOk;
+    }
+
+    function entryMatchesValueRange(entry, minId, maxId) {
+      const min = parseNumberFilter(document.getElementById(minId)?.value);
+      const max = parseNumberFilter(document.getElementById(maxId)?.value);
+      const value = Number(entry.paidAmount || entry.amount || 0);
+      return (min === null || value >= min) && (max === null || value <= max);
+    }
+
+    function entryMatchesStatusSelect(entry, selectId) {
+      const status = document.getElementById(selectId)?.value || "todos";
+      return status === "todos" || visibleStatus(entry) === status;
+    }
+
     function filteredEntries(extraType = null) {
       const filters = getFilters();
       return entries.filter(entry => {
-        const haystack = [entry.description, entry.name, entry.category, entry.method, entry.type].join(" ").toLowerCase();
-        const matchesSearch = !filters.search || haystack.includes(filters.search);
+        const matchesSearch = !filters.search || matchesFreeSearch(entrySearchSource(entry), filters.search);
         const matchesType = extraType ? entry.type === extraType : filters.type === "todos" || entry.type === filters.type;
         const matchesStatus = filters.status === "todos" || visibleStatus(entry) === filters.status;
         const matchesMonth = !filters.month || entryMatchesMonth(entry, filters.month);
@@ -4510,11 +4687,27 @@ Atenciosamente,
         </tr>`;
     }
 
+    function applyAccountAdvancedFilter(list, mode) {
+      const prefix = mode === "receita" ? "receivable" : "payable";
+      const search = document.getElementById(`${prefix}SearchInput`)?.value || "";
+      const statusId = `${prefix}StatusFilter`;
+      const minId = `${prefix}MinValueFilter`;
+      const maxId = `${prefix}MaxValueFilter`;
+      const filtered = list.filter(entry => matchesFreeSearch(entrySearchSource(entry), search)
+        && entryMatchesStatusSelect(entry, statusId)
+        && entryMatchesValueRange(entry, minId, maxId));
+      const info = document.getElementById(`${prefix}FilterInfo`);
+      if (info) info.textContent = `${filtered.length} registro(s) exibido(s) de ${list.length}.`;
+      return filtered;
+    }
+
     function renderAccountRows(tbodyId, list, countId) {
       const tbody = document.getElementById(tbodyId);
       if (!tbody) return;
-      tbody.innerHTML = list.length ? list.map(accountRowTemplate).join("") : `<tr><td colspan="7"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
-      document.getElementById(countId).textContent = `${list.length} registro${list.length === 1 ? "" : "s"}`;
+      const mode = tbodyId === "receberRows" ? "receita" : tbodyId === "pagarRows" ? "despesa" : "";
+      const visibleList = mode ? applyAccountAdvancedFilter(list, mode) : list;
+      tbody.innerHTML = visibleList.length ? visibleList.map(accountRowTemplate).join("") : `<tr><td colspan="7"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
+      document.getElementById(countId).textContent = `${visibleList.length} registro${visibleList.length === 1 ? "" : "s"}`;
     }
 
     function unidentifiedIncomeRows() {
@@ -4667,12 +4860,45 @@ Atenciosamente,
       return "";
     }
 
+    function clientSearchSource(client, summary) {
+      return [
+        client.name, client.fantasyName, client.document, normalizeDigits(client.document), client.phone, client.email,
+        client.service, client.defaultMethod, client.observation, client.firstChargeMonth, client.lastChargeMonth,
+        client.dueDay, formatMoney(clientMonthlyFeeValue(client, summary)), String(clientMonthlyFeeValue(client, summary)),
+        formatMoney(summary.receivedAmount), formatMoney(summary.openAmount), summary.lateMonths.map(formatMonth).join(" "),
+        summary.nextDue, formatDate(summary.nextDue), summary.lastPaid, formatDate(summary.lastPaid)
+      ].filter(Boolean).join(" ");
+    }
+
+    function clientSituationMatches(client, summary) {
+      const filter = document.getElementById("clientSituationFilter")?.value || "todos";
+      const expectedMonthValue = clientMonthExpectedValue(client, summary);
+      if (filter === "vencidos") return summary.lateMonths.length > 0 || summary.hasLate;
+      if (filter === "pendentes") return summary.openAmount > 0;
+      if (filter === "recebidos") return summary.receivedAmount > 0;
+      if (filter === "em_dia") return summary.receivedAmount >= expectedMonthValue && expectedMonthValue > 0 && !summary.hasLate;
+      if (filter === "sem_telefone") return !normalizeWhatsappPhone(client.phone || "");
+      if (filter === "sem_cobranca") return !summary.monthEntries.length;
+      return true;
+    }
+
+    function clientAdvancedFilterMatches(client, summary) {
+      const search = document.getElementById("clientSearchInput")?.value || "";
+      const min = parseNumberFilter(document.getElementById("clientMinFeeFilter")?.value);
+      const max = parseNumberFilter(document.getElementById("clientMaxFeeFilter")?.value);
+      const fee = clientMonthlyFeeValue(client, summary);
+      return matchesFreeSearch(clientSearchSource(client, summary), search)
+        && clientSituationMatches(client, summary)
+        && (min === null || fee >= min)
+        && (max === null || fee <= max);
+    }
+
     function renderClients() {
       syncClientsFromEntries();
       const sortedClients = [...clients].sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
       const visibleClients = sortedClients
         .map(client => ({ client, summary: getClientSummary(client) }))
-        .filter(item => matchesClientQuickFilter(item.summary));
+        .filter(item => matchesClientQuickFilter(item.summary) && clientAdvancedFilterMatches(item.client, item.summary));
       const rows = visibleClients.map(({ client, summary }) => {
         const monthlyFeeValue = clientMonthlyFeeValue(client, summary);
         const expectedMonthValue = clientMonthExpectedValue(client, summary);
@@ -4717,6 +4943,8 @@ Atenciosamente,
       document.getElementById("clientRows").innerHTML = rows.length ? rows.join("") : `<tr><td colspan="12"><div class="empty">Nenhum cliente cadastrado ainda.</div></td></tr>`;
       const label = clientFilterLabel();
       document.getElementById("clientCount").textContent = `${visibleClients.length} cliente${visibleClients.length === 1 ? "" : "s"}${label ? ` - ${label}` : ""}`;
+      const info = document.getElementById("clientFilterInfo");
+      if (info) info.textContent = `${visibleClients.length} cliente(s) exibido(s) de ${sortedClients.length}.`;
     }
 
     function renderExecutivePanel() {
@@ -5724,7 +5952,27 @@ Atenciosamente,
     .cloud-status.ok { border-color:rgba(34,197,94,.45); background:rgba(22,101,52,.20); color:#86efac; }
     .cloud-status.warn { border-color:rgba(245,158,11,.45); background:rgba(120,53,15,.20); color:#fde68a; }
     .cloud-status.err { border-color:rgba(239,68,68,.55); background:rgba(127,29,29,.26); color:#fecaca; }
-  </style>
+  
+    .filter-panel {
+      display:grid;
+      grid-template-columns: minmax(260px, 1.4fr) repeat(3, minmax(150px, .7fr));
+      gap: 10px;
+      align-items:end;
+      margin: 14px 0;
+      padding: 12px;
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: 16px;
+      background: rgba(15,23,42,.42);
+    }
+    .filter-panel .field { gap: 5px; }
+    .filter-panel .field label { font-size: .68rem; letter-spacing:.08em; text-transform:uppercase; color:#aeb7c7; font-weight:900; }
+    .filter-panel input, .filter-panel select { min-height: 42px; }
+    .filter-panel .filter-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .filter-info { color:#aeb7c7; font-size:.82rem; font-weight:800; }
+    @media (max-width: 1180px) { .filter-panel { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 720px) { .filter-panel { grid-template-columns: 1fr; } }
+
+</style>
 </head>
 <body>
   <div class="sheet">
@@ -5849,16 +6097,27 @@ Atenciosamente,
       return configs[detailMode] || configs.vencidos;
     }
 
+    function filteredDetailRows(rows) {
+      const search = document.getElementById("detailSearchInput")?.value || "";
+      const filtered = rows.filter(entry => matchesFreeSearch(entrySearchSource(entry), search)
+        && entryMatchesStatusSelect(entry, "detailStatusFilter")
+        && entryMatchesValueRange(entry, "detailMinValueFilter", "detailMaxValueFilter"));
+      const info = document.getElementById("detailFilterInfo");
+      if (info) info.textContent = `${filtered.length} registro(s) exibido(s) de ${rows.length}. Pesquise por nome, CNPJ/CPF, valor, vencimento, competência, forma ou categoria.`;
+      return filtered;
+    }
+
     function renderDetails() {
       const config = detailConfig();
-      const rows = config.rows();
+      const baseRows = config.rows();
+      const rows = filteredDetailRows(baseRows);
       const people = new Set(rows.map(entry => clientKey(entry.name, entry.document))).size;
       document.getElementById("detailTitle").textContent = config.title;
-      document.getElementById("detailCount").textContent = `${rows.length} registro${rows.length === 1 ? "" : "s"}`;
+      document.getElementById("detailCount").textContent = `${rows.length} registro${rows.length === 1 ? "" : "s"}${rows.length !== baseRows.length ? ` de ${baseRows.length}` : ""}`;
       document.getElementById("detailTotal").innerHTML = moneySpan(config.total(rows));
       document.getElementById("detailPeople").textContent = people;
       document.getElementById("detailMonth").textContent = detailMode === "vencidos" ? "Todos" : formatMonth(selectedMonth());
-      document.getElementById("detailRows").innerHTML = rows.length ? rows.map(detailRowTemplate).join("") : `<tr><td colspan="9"><div class="empty">Nenhum registro encontrado.</div></td></tr>`;
+      document.getElementById("detailRows").innerHTML = rows.length ? rows.map(detailRowTemplate).join("") : `<tr><td colspan="9"><div class="empty">Nenhum registro encontrado para os filtros informados.</div></td></tr>`;
       titles.detalhes = [config.title, config.subtitle];
     }
 
@@ -7899,6 +8158,34 @@ Atenciosamente,
     ["searchInput", "typeFilter", "statusFilter"].forEach(id => {
       document.getElementById(id).addEventListener("input", render);
       document.getElementById(id).addEventListener("change", render);
+    });
+    [
+      "detailSearchInput", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter",
+      "clientSearchInput", "clientSituationFilter", "clientMinFeeFilter", "clientMaxFeeFilter",
+      "receivableSearchInput", "receivableStatusFilter", "receivableMinValueFilter", "receivableMaxValueFilter",
+      "payableSearchInput", "payableStatusFilter", "payableMinValueFilter", "payableMaxValueFilter"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", render);
+      el.addEventListener("change", render);
+    });
+    const clearFilterGroups = {
+      detailClearFiltersBtn: ["detailSearchInput", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter"],
+      clientClearFiltersBtn: ["clientSearchInput", "clientSituationFilter", "clientMinFeeFilter", "clientMaxFeeFilter"],
+      receivableClearFiltersBtn: ["receivableSearchInput", "receivableStatusFilter", "receivableMinValueFilter", "receivableMaxValueFilter"],
+      payableClearFiltersBtn: ["payableSearchInput", "payableStatusFilter", "payableMinValueFilter", "payableMaxValueFilter"]
+    };
+    Object.entries(clearFilterGroups).forEach(([buttonId, inputIds]) => {
+      document.getElementById(buttonId)?.addEventListener("click", () => {
+        inputIds.forEach((inputId, index) => {
+          const el = document.getElementById(inputId);
+          if (!el) return;
+          if (el.tagName === "SELECT") el.value = "todos";
+          else el.value = "";
+        });
+        render();
+      });
     });
     document.getElementById("monthFilter").addEventListener("input", event => setSelectedMonth(event.target.value));
     document.getElementById("monthFilter").addEventListener("change", event => setSelectedMonth(event.target.value));
