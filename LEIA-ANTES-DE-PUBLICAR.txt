@@ -1,13 +1,20 @@
-ALFA FINANCEIRO V33 - PACOTE LIMPO PARA PUBLICAR
+ALFA FINANCEIRO V35 - LIMPEZA DO BANCO E VISÃO GERAL LIMPA
 
-Correção principal:
-- Corrigido erro: serviceKey is not defined.
-- Criada função serviceKey() usada na comparação de duplicidade por tipo de cobrança/serviço.
-- Mantida a regra de cliente mestre e serviços extras por cliente.
+PUBLICAR NO GITHUB:
+- Envie somente os arquivos extraídos deste ZIP.
+- Não envie CSV de clientes, extratos, boletos, PDF, planilhas ou backups reais.
 
-Arquivos deste pacote são apenas do sistema.
-Não coloque no GitHub: CSV de clientes, extratos, boletos, planilhas ou backups reais.
+NOVIDADES:
+1. Botão Limpar banco: limpa clientes e lançamentos no Firestore e neste navegador, com dupla confirmação.
+2. Visão geral mais limpa: painel gerencial com previsto, recebido, em aberto, vencido e itens para revisar.
+3. Mantém segurança: não sobrescreve nuvem vazia sem confirmação e usa login autorizado.
 
-Teste executado antes da liberação:
-- JavaScript extraído do index.html validado com node --check, sem erro de sintaxe.
-- Verificado que a função serviceKey() existe no código antes da liberação.
+ROTINA PARA RECOMEÇAR:
+1. Publique a V35.
+2. Faça login.
+3. Clique em Backup se quiser guardar uma cópia.
+4. Clique em Limpar banco e confirme digitando LIMPAR.
+5. Importe clientes.
+6. Gere cobranças 05/2026 a 03/2027.
+7. Importe boletos pagos/extrato.
+8. Clique em Salvar nuvem.

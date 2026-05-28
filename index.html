@@ -1067,7 +1067,71 @@
     .cloud-status.ok { border-color:rgba(34,197,94,.45); background:rgba(22,101,52,.20); color:#86efac; }
     .cloud-status.warn { border-color:rgba(245,158,11,.45); background:rgba(120,53,15,.20); color:#fde68a; }
     .cloud-status.err { border-color:rgba(239,68,68,.55); background:rgba(127,29,29,.26); color:#fecaca; }
-  </style>
+  
+
+    /* V35 - visão geral gerencial limpa */
+    .btn-danger {
+      border-color: rgba(239,68,68,.65) !important;
+      background: linear-gradient(135deg, rgba(239,68,68,.22), rgba(127,29,29,.38)) !important;
+      color: #fecaca !important;
+    }
+    .btn-danger:hover { filter: brightness(1.12); }
+    .topbar { gap: 18px; align-items: flex-start; }
+    .topbar .actions {
+      align-items: center;
+      gap: 10px;
+      max-width: 760px;
+      justify-content: flex-end;
+    }
+    .cloud-status { max-width: min(680px, 100%); white-space: normal; }
+    .modern-executive-panel {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid rgba(148,163,184,.18);
+      background:
+        radial-gradient(circle at top left, rgba(239,68,68,.13), transparent 34%),
+        linear-gradient(180deg, rgba(17,24,39,.98), rgba(11,18,32,.96));
+      box-shadow: 0 22px 70px rgba(0,0,0,.28);
+      margin-bottom: 18px;
+    }
+    .executive-head {
+      display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px;
+    }
+    .executive-head h2 { margin: 4px 0 4px; font-size: 1.35rem; }
+    .executive-head p { margin: 0; color: var(--muted); }
+    .eyebrow {
+      text-transform: uppercase; letter-spacing: .14em; font-size:.72rem; font-weight: 900; color:#fca5a5;
+    }
+    .executive-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .executive-metrics {
+      display:grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap:12px;
+    }
+    .executive-card {
+      border: 1px solid rgba(148,163,184,.17);
+      background: rgba(15,23,42,.72);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 118px;
+      display:flex; flex-direction:column; justify-content:space-between;
+    }
+    .executive-card span { color:#cbd5e1; text-transform:uppercase; letter-spacing:.08em; font-weight:900; font-size:.74rem; }
+    .executive-card strong { font-size:1.35rem; margin-top:8px; }
+    .executive-card small { color: var(--muted); line-height:1.35; }
+    .executive-card.receita strong, .executive-card.caixa strong { color:#86efac; }
+    .executive-card.aberto strong { color:#fde68a; }
+    .executive-card.vencido strong, .executive-card.revisar strong { color:#fca5a5; }
+    .executive-workflow {
+      margin-top: 14px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; color:#cbd5e1;
+      border-top: 1px solid rgba(148,163,184,.12); padding-top: 14px;
+    }
+    .executive-workflow span { color: var(--muted); font-weight:800; }
+    .executive-workflow strong {
+      background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); border-radius:999px; padding:7px 10px; font-size:.82rem;
+    }
+    #dashboard .summary-grid { grid-template-columns: minmax(0,1.1fr) minmax(320px,.9fr); }
+    @media (max-width: 1180px) { .executive-metrics { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 720px) { .executive-metrics { grid-template-columns: 1fr; } .executive-head { flex-direction:column; } }
+</style>
 </head>
 <body>
   <section class="login-screen" id="loginScreen">
@@ -1090,7 +1154,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V31 - Firestore estável, serviços por cobrança e conferência mensal automática.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V35 - limpeza segura do Firestore e visão geral gerencial limpa.</div>
     </form>
   </section>
 
@@ -1100,7 +1164,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V34 mensalidades estáveis</span>
+          <span>Controle interno • V35 nuvem limpa</span>
         </div>
       </div>
 
@@ -1117,7 +1181,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V34. Corrige geração mensal por chave única cliente+competência+serviço, impede duplicidade e garante conferência estável das mensalidades.</p>
+        <p><span class="status-dot"></span>VERSÃO V35. Inclui limpeza segura do banco Firestore, proteção contra sobrescrita indevida e visão geral gerencial mais limpa.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1138,6 +1202,7 @@
           <button class="btn btn-secondary" id="cloudLoadNowBtn" type="button" title="Busca os dados salvos no Firestore e atualiza a tela">Carregar nuvem</button>
           <button class="btn btn-secondary" id="cloudSyncNowBtn" type="button" title="Força o salvamento dos dados atuais no Firestore">Salvar nuvem</button>
           <button class="btn btn-secondary" id="cloudDiagnosticBtn" type="button" title="Mostra e testa a comunicação com o Firestore">Diagnóstico</button>
+          <button class="btn btn-danger" id="cloudClearDatabaseBtn" type="button" title="Limpa clientes e lançamentos da nuvem e do navegador, mantendo o sistema publicado">Limpar banco</button>
           <button class="btn btn-secondary" id="importClientsTopBtn" type="button">Importar clientes</button>
           <button class="btn btn-secondary" id="importMonthlyPaymentsBtn" type="button">Baixar boletos pagos</button>
           <button class="btn btn-secondary" id="importBtn" type="button">Importar extrato/saídas</button>
@@ -1183,6 +1248,35 @@
       </section>
 
       <section class="view active" id="dashboard">
+        <section class="panel modern-executive-panel" id="executivePanel">
+          <div class="executive-head">
+            <div>
+              <span class="eyebrow">Painel gerencial</span>
+              <h2 id="executiveTitle">Resumo executivo</h2>
+              <p id="executiveSubtitle">Visão objetiva do mês selecionado, separando competência, caixa e pendências.</p>
+            </div>
+            <div class="executive-actions">
+              <button class="btn btn-secondary" id="executiveOpenReceivablesBtn" type="button">A receber</button>
+              <button class="btn btn-secondary" id="executiveOpenReportsBtn" type="button">Relatórios</button>
+            </div>
+          </div>
+          <div class="executive-metrics" aria-label="Resumo executivo do mês">
+            <div class="executive-card receita"><span>Previsto na competência</span><strong id="execExpected">R$ 0,00</strong><small>Honorários e demais receitas do mês</small></div>
+            <div class="executive-card caixa"><span>Recebido no caixa</span><strong id="execReceived">R$ 0,00</strong><small>Entradas efetivamente pagas no mês</small></div>
+            <div class="executive-card aberto"><span>Em aberto</span><strong id="execOpen">R$ 0,00</strong><small>Parcelas ainda pendentes</small></div>
+            <div class="executive-card vencido"><span>Vencido</span><strong id="execLate">R$ 0,00</strong><small>Clientes que exigem cobrança</small></div>
+            <div class="executive-card revisar"><span>A classificar/revisar</span><strong id="execReview">R$ 0,00</strong><small>Saídas ou recebimentos sem destino seguro</small></div>
+          </div>
+          <div class="executive-workflow">
+            <span>Rotina sugerida:</span>
+            <strong>1. Carregar nuvem</strong>
+            <strong>2. Conferir mensalidades</strong>
+            <strong>3. Baixar boletos pagos</strong>
+            <strong>4. Importar extrato/saídas</strong>
+            <strong>5. Salvar nuvem</strong>
+          </div>
+        </section>
+
         <section class="panel receivable-alert-panel" id="receivableAlertPanel">
           <div class="panel-head">
             <div>
@@ -3250,6 +3344,80 @@ Atenciosamente,
       await syncCloudState(reason);
     }
 
+    async function deleteAllDocsFromCollection(collectionRef, label = "coleção") {
+      const snap = await withTimeout(getDocs(collectionRef), cloudTimeoutMs, `Tempo esgotado ao listar ${label}.`);
+      const refs = [];
+      snap.forEach(documentSnapshot => refs.push(documentSnapshot.ref));
+      if (!refs.length) return 0;
+      const operations = refs.map(ref => batch => batch.delete(ref));
+      await commitBatchOperations(operations, 180);
+      return refs.length;
+    }
+
+    function resetLocalFinancialDataAfterCloudClear() {
+      entries = [];
+      clients = [];
+      whatsappLogs = [];
+      localStorage.setItem(storageKey, JSON.stringify(entries));
+      localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
+      localStorage.setItem(whatsappLogsKey, JSON.stringify(whatsappLogs));
+      localStorage.removeItem(backupHistoryKey);
+      localStorage.removeItem(lastBackupDateKey);
+    }
+
+    async function clearCloudDatabaseSafely() {
+      if (!isAuthorizedUser(auth.currentUser)) {
+        showToast("Somente o usuário autorizado pode limpar o banco de dados.");
+        return;
+      }
+      const first = window.confirm("ATENÇÃO: esta ação limpa clientes e lançamentos do Alfa Financeiro na nuvem e neste navegador. Antes de prosseguir, exporte um backup se precisar manter os dados. Deseja continuar?");
+      if (!first) return;
+      const typed = window.prompt('Para confirmar a limpeza definitiva, digite exatamente: LIMPAR');
+      if (typed !== "LIMPAR") {
+        showToast("Limpeza cancelada. Confirmação não conferiu.");
+        return;
+      }
+      window.clearTimeout(cloudSyncTimer);
+      cloudPendingReason = "";
+      cloudSyncInProgress = true;
+      setCloudStatus("Limpando banco de dados na nuvem...", "warn");
+      try {
+        const deletedClients = await deleteAllDocsFromCollection(cloudCollectionRef("clients"), "clientes");
+        const deletedEntries = await deleteAllDocsFromCollection(cloudCollectionRef("entries"), "lançamentos");
+        const cleanState = {
+          version: "V35-Limpeza-Segura",
+          storageMode: "clean_v35",
+          updatedAt: serverTimestamp(),
+          updatedBy: normalizeEmail(auth.currentUser.email),
+          syncReason: "limpeza-confirmada",
+          activeEntryIds: [],
+          activeClientIds: [],
+          clients: [],
+          entries: [],
+          officeProfile: safeJsonCopy(officeProfile),
+          whatsappSettings: safeJsonCopy(whatsappSettings),
+          whatsappLogs: [],
+          totalEntries: 0,
+          totalClients: 0,
+          compactPayload: true
+        };
+        await withTimeout(setDoc(cloudStateRef(), cleanState, { merge: false }), cloudTimeoutMs, "Tempo esgotado ao gravar estado limpo na nuvem.");
+        resetLocalFinancialDataAfterCloudClear();
+        cloudLoaded = true;
+        cloudReadyForWrites = true;
+        cloudLastSavedAt = nowTimeText();
+        setCloudStatus(`Banco limpo com segurança: ${deletedClients} cliente(s) e ${deletedEntries} lançamento(s) removido(s).`, "ok");
+        showToast("Banco limpo. Agora importe clientes e lançamentos novamente.");
+        render();
+      } catch (error) {
+        console.error("Falha ao limpar banco Alfa Financeiro", error);
+        setCloudStatus(firebaseErrorMessage(error), "err");
+        showToast(firebaseErrorMessage(error));
+      } finally {
+        cloudSyncInProgress = false;
+      }
+    }
+
     function startAutomaticCloudWatch() {
       window.addEventListener("online", () => {
         setCloudStatus("Internet voltou. Sincronizando automaticamente...", "warn");
@@ -4551,7 +4719,37 @@ Atenciosamente,
       document.getElementById("clientCount").textContent = `${visibleClients.length} cliente${visibleClients.length === 1 ? "" : "s"}${label ? ` - ${label}` : ""}`;
     }
 
+    function renderExecutivePanel() {
+      const month = selectedMonth();
+      const active = financialEntries(entries);
+      const competenceEntries = active.filter(entry => entryMatchesCompetence(entry, month));
+      const revenueCompetence = competenceEntries.filter(entry => entry.type === "receita");
+      const openRevenue = revenueCompetence.filter(isOpenEntry);
+      const lateRevenue = active.filter(entry => entry.type === "receita" && isLate(entry));
+      const receivedCash = active.filter(entry => entry.type === "receita" && isPaidInMonth(entry, month));
+      const reviewItems = active.filter(entry => {
+        const text = normalizeText([entry.category, entry.description, entry.classificationStatus, entry.name].join(" "));
+        return text.includes("classificar") || text.includes("identificar") || text.includes("revisar");
+      });
+      const expected = sumEntries(revenueCompetence);
+      const received = sumEntries(receivedCash, moneyValue);
+      const open = sumEntries(openRevenue);
+      const late = sumEntries(lateRevenue);
+      const review = sumEntries(reviewItems, entry => Number(entry.amount || entry.paidAmount || 0));
+      const monthLabel = formatMonth(month);
+      const setHtml = (id, value) => { const el = document.getElementById(id); if (el) el.innerHTML = value; };
+      const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+      setText("executiveTitle", `Resumo executivo - ${monthLabel}`);
+      setText("executiveSubtitle", `${clients.length} cliente(s) no cadastro mestre • ${entries.length} lançamento(s) na base atual • use este painel para decidir cobrança, baixa e revisão.`);
+      setHtml("execExpected", moneySpan(expected));
+      setHtml("execReceived", moneySpan(received));
+      setHtml("execOpen", moneySpan(open));
+      setHtml("execLate", moneySpan(late));
+      setHtml("execReview", moneySpan(review));
+    }
+
     function renderDashboard() {
+      renderExecutivePanel();
       const next = entries
         .filter(isOpenEntry)
         .sort((a, b) => a.date.localeCompare(b.date))
@@ -7594,6 +7792,10 @@ Atenciosamente,
         showToast(firebaseErrorMessage(error));
       }
     });
+
+    document.getElementById("cloudClearDatabaseBtn")?.addEventListener("click", clearCloudDatabaseSafely);
+    document.getElementById("executiveOpenReceivablesBtn")?.addEventListener("click", () => setView("receber"));
+    document.getElementById("executiveOpenReportsBtn")?.addEventListener("click", () => setView("relatorios"));
 
     document.querySelectorAll(".nav button").forEach(button => {
       button.addEventListener("click", () => setView(button.dataset.view));
