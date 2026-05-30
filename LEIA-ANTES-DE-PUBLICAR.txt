@@ -1,20 +1,17 @@
-ALFA FINANCEIRO V35 - LIMPEZA DO BANCO E VISÃO GERAL LIMPA
+ALFA FINANCEIRO - V38 DUPLICIDADE DE CLIENTES
 
-PUBLICAR NO GITHUB:
-- Envie somente os arquivos extraídos deste ZIP.
-- Não envie CSV de clientes, extratos, boletos, PDF, planilhas ou backups reais.
+O QUE MUDOU:
+- Ao salvar cliente manualmente, o sistema verifica duplicidade por CPF/CNPJ, razão social e nome fantasia.
+- Se encontrar CPF/CNPJ já cadastrado, exibe aviso e só continua com confirmação.
+- Se o CPF/CNPJ já existir e o usuário confirmar, o sistema atualiza o cliente existente, preservando o histórico vinculado.
+- Se encontrar apenas nome semelhante, exibe aviso e permite criar novo cadastro somente após confirmação.
 
-NOVIDADES:
-1. Botão Limpar banco: limpa clientes e lançamentos no Firestore e neste navegador, com dupla confirmação.
-2. Visão geral mais limpa: painel gerencial com previsto, recebido, em aberto, vencido e itens para revisar.
-3. Mantém segurança: não sobrescreve nuvem vazia sem confirmação e usa login autorizado.
+SEGURANÇA:
+- Publique somente os arquivos do sistema.
+- Não envie CSV de clientes, extratos, boletos, PDFs, planilhas ou backups reais para o GitHub.
+- Dados reais devem ser importados apenas dentro do sistema autenticado e salvos no Firestore.
 
-ROTINA PARA RECOMEÇAR:
-1. Publique a V35.
-2. Faça login.
-3. Clique em Backup se quiser guardar uma cópia.
-4. Clique em Limpar banco e confirme digitando LIMPAR.
-5. Importe clientes.
-6. Gere cobranças 05/2026 a 03/2027.
-7. Importe boletos pagos/extrato.
-8. Clique em Salvar nuvem.
+TESTES REALIZADOS ANTES DA ENTREGA:
+- Validação de sintaxe do JavaScript com node --check.
+- Conferência da existência das funções de duplicidade.
+- Teste de integridade do ZIP.

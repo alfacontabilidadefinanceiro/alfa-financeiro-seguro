@@ -923,7 +923,86 @@
 
     .full { grid-column: 1 / -1; }
 
+    #clientModal .modal-card {
+      width: min(1180px, 100%);
+    }
 
+    .client-open-panel {
+      grid-column: 1 / -1;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.035);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .client-open-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.035);
+    }
+
+    .client-open-header h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .client-open-header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .client-open-total {
+      text-align: right;
+      min-width: 180px;
+    }
+
+    .client-open-total span {
+      display: block;
+      color: var(--muted-2);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .client-open-total strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 24px;
+      color: var(--green);
+    }
+
+    .client-open-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .client-open-table {
+      max-height: 310px;
+    }
+
+    .client-open-table table {
+      min-width: 980px;
+    }
+
+    .client-open-table tfoot td {
+      position: sticky;
+      bottom: 0;
+      background: rgba(22, 24, 34, 0.98);
+      border-top: 2px solid rgba(34, 197, 94, 0.35);
+      font-weight: 900;
+    }
 
     .report-total-row td {
       background: rgba(34, 197, 94, 0.13);
@@ -1174,7 +1253,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V36 - filtros de pesquisa avançados e visão gerencial limpa.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V38 - duplicidade de cliente com confirmação segura.</div>
     </form>
   </section>
 
@@ -1184,7 +1263,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V36 filtros</span>
+          <span>Controle interno • V38 duplicidade</span>
         </div>
       </div>
 
@@ -1201,7 +1280,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V36. Inclui filtros avançados por nome, CNPJ/CPF, valor, status e competência, com nuvem Firestore preservada.</p>
+        <p><span class="status-dot"></span>VERSÃO V38. Inclui alerta de duplicidade ao criar/editar cliente por nome, CPF ou CNPJ, mantendo boletos em aberto no cadastro e nuvem Firestore preservada.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -2381,6 +2460,41 @@
           <label for="clientNotes">Observações</label>
           <textarea id="clientNotes" placeholder="Informações internas do atendimento"></textarea>
         </div>
+        <section class="client-open-panel" id="clientOpenPanel" data-client-key="">
+          <div class="client-open-header">
+            <div>
+              <h3>Boletos em aberto deste cliente</h3>
+              <p>Lista todas as cobranças abertas do cliente, por competência e vencimento, sem alterar os lançamentos.</p>
+              <span class="pill" id="clientOpenCount">0 boletos</span>
+            </div>
+            <div class="client-open-total">
+              <span>Total em aberto</span>
+              <strong id="clientOpenTotal">R$ 0,00</strong>
+            </div>
+          </div>
+          <div class="client-open-toolbar">
+            <input id="clientOpenSearchInput" type="search" placeholder="Pesquisar por competência, vencimento, valor, status, categoria ou forma..." autocomplete="off" />
+            <button class="btn btn-secondary" id="clientOpenClearBtn" type="button">Limpar</button>
+          </div>
+          <div class="table-wrap client-open-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Competência</th>
+                  <th>Vencimento</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Forma</th>
+                  <th>Status</th>
+                  <th>Valor</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="clientOpenRows"></tbody>
+              <tfoot id="clientOpenFooter"></tfoot>
+            </table>
+          </div>
+        </section>
       </div>
       <div class="actions" style="margin-top:16px;">
         <button class="btn btn-ghost" id="cancelClientBtn" type="button">Cancelar</button>
@@ -6246,6 +6360,82 @@ Atenciosamente,
       document.querySelector("label[for='clientDocument']").textContent = type === "pf" ? "CPF" : "CNPJ";
     }
 
+    function clientOpenReceivableMatch(entry, client) {
+      if (!entry || !client || entry.type !== "receita" || !isOpenEntry(entry)) return false;
+      const entryDoc = normalizeDocument(entry.document || "");
+      const clientDoc = normalizeDocument(client.document || "");
+      if (entryDoc && clientDoc && entryDoc === clientDoc) return true;
+      if (client.key && clientKey(entry.name, entry.document) === client.key) return true;
+      const entryName = normalizeText(entry.name || entry.bankCounterparty || entry.description || "");
+      const clientName = normalizeText(client.name || "");
+      const tradeName = normalizeText(client.tradeName || "");
+      if (clientName && entryName === clientName) return true;
+      if (tradeName && entryName === tradeName) return true;
+      if (clientName && entryName.includes(clientName)) return true;
+      if (tradeName && entryName.includes(tradeName)) return true;
+      return false;
+    }
+
+    function clientOpenReceivables(client) {
+      if (!client) return [];
+      return financialEntries(entries)
+        .filter(entry => clientOpenReceivableMatch(entry, client))
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.billingMonth || "").localeCompare(String(b.billingMonth || "")));
+    }
+
+    function clientOpenEntrySearchSource(entry) {
+      return [
+        entry.name,
+        entry.document,
+        entry.billingMonth,
+        formatMonth(entry.billingMonth || String(entry.date || "").slice(0, 7)),
+        entry.date,
+        formatDate(entry.date),
+        entry.description,
+        entry.category,
+        entry.method,
+        visibleStatus(entry),
+        receivableSituation(entry),
+        formatMoney(entry.amount || 0),
+        entry.receiptProtocol,
+        entry.source
+      ].join(" ");
+    }
+
+    function renderClientOpenReceivables(client = null) {
+      const panel = document.getElementById("clientOpenPanel");
+      const rowsEl = document.getElementById("clientOpenRows");
+      const footerEl = document.getElementById("clientOpenFooter");
+      const countEl = document.getElementById("clientOpenCount");
+      const totalEl = document.getElementById("clientOpenTotal");
+      if (!panel || !rowsEl || !footerEl || !countEl || !totalEl) return;
+      panel.dataset.clientKey = client?.key || "";
+      const search = document.getElementById("clientOpenSearchInput")?.value || "";
+      const baseRows = clientOpenReceivables(client);
+      const rows = baseRows.filter(entry => !search || matchesFreeSearch(clientOpenEntrySearchSource(entry), search));
+      const total = rows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      countEl.textContent = `${rows.length} boleto${rows.length === 1 ? "" : "s"}${rows.length !== baseRows.length ? ` de ${baseRows.length}` : ""}`;
+      totalEl.innerHTML = moneySpan(total);
+      rowsEl.innerHTML = rows.length ? rows.map(entry => `
+        <tr>
+          <td>${formatMonth(entry.billingMonth || String(entry.date || "").slice(0, 7))}</td>
+          <td>${formatDate(entry.date)}</td>
+          <td>${escapeHTML(entry.description || entry.service || entry.category || "Cobrança")}</td>
+          <td>${escapeHTML(entry.category || "-")}</td>
+          <td>${escapeHTML(entry.method || "-")}</td>
+          <td><span class="pill ${isLate(entry) ? "late" : "open"}">${escapeHTML(receivableSituation(entry))}</span></td>
+          <td class="money-in">${moneySpan(entry.amount || 0)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" data-action="edit" data-id="${escapeHTML(entry.id)}" title="Editar lançamento">✎</button>
+              <button class="icon-btn" data-action="toggle" data-id="${escapeHTML(entry.id)}" title="Baixar/Marcar pago">✓</button>
+              <button class="btn btn-secondary" data-action="whatsapp-entry" data-id="${escapeHTML(entry.id)}" type="button">WhatsApp</button>
+            </div>
+          </td>
+        </tr>`).join("") : `<tr><td colspan="8"><div class="empty">Nenhum boleto em aberto para este cliente.</div></td></tr>`;
+      footerEl.innerHTML = `<tr><td colspan="6">TOTAL EM ABERTO DO CLIENTE</td><td class="money-in">${moneySpan(total)}</td><td></td></tr>`;
+    }
+
     function openClientModal(client = null) {
       document.getElementById("clientModalTitle").textContent = client ? "Editar cliente" : "Novo cliente";
       document.getElementById("clientId").value = client?.id || "";
@@ -6268,13 +6458,16 @@ Atenciosamente,
       document.getElementById("clientDueDay").value = client?.dueDay || 15;
       document.getElementById("clientPaymentMethod").value = client?.paymentMethod || "Pix";
       document.getElementById("clientNotes").value = client?.notes || "";
+      document.getElementById("clientOpenSearchInput").value = "";
       updateClientTypeLabels();
+      renderClientOpenReceivables(client);
       clientModal.classList.add("show");
     }
 
     function closeClientModal() {
       clientModal.classList.remove("show");
       clientForm.reset();
+      renderClientOpenReceivables(null);
     }
 
     function validateClientDocument(type, documentValue) {
@@ -6561,6 +6754,60 @@ Atenciosamente,
       return ensureMonthlyChargesForAllClients(false);
     }
 
+    function clientDuplicateLabel(client) {
+      if (!client) return "Cliente sem identificação";
+      const doc = client.document ? ` - ${client.document}` : "";
+      const fee = Number(client.monthlyFee || 0) ? ` - honorário ${formatCurrency(client.monthlyFee)}` : "";
+      return `${client.name || client.tradeName || "Cliente sem nome"}${doc}${fee}`;
+    }
+
+    function clientDuplicateCandidates(name, tradeName, documentValue, key, originalKey) {
+      const normalizedDoc = normalizeDocument(documentValue);
+      const normalizedName = normalizeText(name);
+      const normalizedTrade = normalizeText(tradeName || "");
+      const candidates = clients.filter(client => client && client.key !== originalKey);
+      const byKey = candidates.find(client => client.key === key) || null;
+      const byDocument = normalizedDoc
+        ? candidates.find(client => normalizeDocument(client.document || "") === normalizedDoc)
+        : null;
+      const byName = candidates.filter(client => {
+        const clientName = normalizeText(client.name || "");
+        const clientTrade = normalizeText(client.tradeName || "");
+        if (!normalizedName && !normalizedTrade) return false;
+        return (normalizedName && (clientName === normalizedName || clientTrade === normalizedName))
+          || (normalizedTrade && (clientName === normalizedTrade || clientTrade === normalizedTrade));
+      });
+      const unique = [];
+      [byKey, byDocument, ...byName].forEach(client => {
+        if (client && !unique.some(item => item.key === client.key || item.id === client.id)) unique.push(client);
+      });
+      return { byKey, byDocument, byName, unique };
+    }
+
+    function confirmClientDuplicateIfNeeded({ name, tradeName, documentValue, key, originalKey }) {
+      const duplicates = clientDuplicateCandidates(name, tradeName, documentValue, key, originalKey);
+      if (!duplicates.unique.length) return { proceed: true, updateKey: originalKey, duplicates };
+
+      const reasons = [];
+      if (duplicates.byDocument) reasons.push(`CPF/CNPJ já cadastrado em: ${clientDuplicateLabel(duplicates.byDocument)}`);
+      if (duplicates.byKey && duplicates.byKey !== duplicates.byDocument) reasons.push(`Mesmo nome e documento em: ${clientDuplicateLabel(duplicates.byKey)}`);
+      if (duplicates.byName.length) {
+        const names = duplicates.byName.slice(0, 5).map(clientDuplicateLabel).join("\n- ");
+        reasons.push(`Nome/razão social semelhante já cadastrada:\n- ${names}`);
+      }
+
+      let message = "ATENÇÃO: possível cliente duplicado.\n\n" + reasons.join("\n\n");
+      if (duplicates.byDocument || duplicates.byKey) {
+        message += "\n\nProsseguir vai ATUALIZAR o cadastro já existente com esse CPF/CNPJ, preservando o histórico vinculado.\n\nClique em OK somente se conferiu que é o mesmo cliente. Clique em Cancelar para voltar e revisar.";
+      } else {
+        message += "\n\nProsseguir vai criar um novo cadastro mesmo com nome semelhante.\n\nClique em OK somente se for outro cliente/empresa. Clique em Cancelar para voltar e revisar.";
+      }
+
+      const proceed = window.confirm(message);
+      const updateKey = (duplicates.byDocument || duplicates.byKey)?.key || originalKey;
+      return { proceed, updateKey, duplicates };
+    }
+
     function saveClientForm(event) {
       event.preventDefault();
       const type = document.getElementById("clientType").value;
@@ -6576,20 +6823,28 @@ Atenciosamente,
         return;
       }
       const key = clientKey(name, documentValue);
-      const duplicate = clients.find(client => client.key === key && client.key !== originalKey);
-      if (duplicate) {
-        showToast("Já existe cliente cadastrado com este CPF/CNPJ.");
+      const tradeNameValue = document.getElementById("clientTradeName").value.trim();
+      const duplicateDecision = confirmClientDuplicateIfNeeded({
+        name,
+        tradeName: tradeNameValue,
+        documentValue,
+        key,
+        originalKey
+      });
+      if (!duplicateDecision.proceed) {
+        showToast("Cadastro não salvo. Revise nome, CPF ou CNPJ antes de prosseguir.");
         return;
       }
+      const effectiveOriginalKey = duplicateDecision.updateKey || originalKey;
       const now = new Date().toISOString();
-      const existing = clients.find(client => client.key === originalKey);
+      const existing = clients.find(client => client.key === effectiveOriginalKey);
       const client = {
         id: document.getElementById("clientId").value || existing?.id || crypto.randomUUID(),
         key,
         type,
         status: document.getElementById("clientStatus").value,
         name,
-        tradeName: document.getElementById("clientTradeName").value.trim(),
+        tradeName: tradeNameValue,
         document: documentValue,
         stateRegistration: document.getElementById("clientStateRegistration").value.trim(),
         cityRegistration: document.getElementById("clientCityRegistration").value.trim(),
@@ -6609,9 +6864,9 @@ Atenciosamente,
         updatedAt: now,
         source: "manual-client"
       };
-      clients = clients.filter(item => item.key !== originalKey && item.key !== key);
+      clients = clients.filter(item => item.key !== effectiveOriginalKey && item.key !== key);
       clients.push(client);
-      updateClientEntries(originalKey, client);
+      updateClientEntries(effectiveOriginalKey, client);
       ensureMonthlyChargesForClient(client);
       clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
       saveClients();
@@ -8080,6 +8335,16 @@ Atenciosamente,
     document.getElementById("closeClientModalBtn").addEventListener("click", closeClientModal);
     document.getElementById("cancelClientBtn").addEventListener("click", closeClientModal);
     document.getElementById("clientType").addEventListener("change", updateClientTypeLabels);
+    document.getElementById("clientOpenSearchInput")?.addEventListener("input", () => {
+      const key = document.getElementById("clientOpenPanel")?.dataset.clientKey || "";
+      renderClientOpenReceivables(clients.find(item => item.key === key) || null);
+    });
+    document.getElementById("clientOpenClearBtn")?.addEventListener("click", () => {
+      const input = document.getElementById("clientOpenSearchInput");
+      if (input) input.value = "";
+      const key = document.getElementById("clientOpenPanel")?.dataset.clientKey || "";
+      renderClientOpenReceivables(clients.find(item => item.key === key) || null);
+    });
     document.getElementById("saveWhatsappSettingsBtn").addEventListener("click", saveWhatsappSettingsFromForm);
     document.getElementById("officeForm")?.addEventListener("submit", saveOfficeProfileFromForm);
     document.getElementById("batchWhatsappBtn").addEventListener("click", renderBatchWhatsappPanel);
