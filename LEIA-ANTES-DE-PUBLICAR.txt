@@ -1,17 +1,20 @@
-ALFA FINANCEIRO - V38 DUPLICIDADE DE CLIENTES
+ALFA FINANCEIRO - V40 DESEMPENHO OTIMIZADO
 
-O QUE MUDOU:
-- Ao salvar cliente manualmente, o sistema verifica duplicidade por CPF/CNPJ, razão social e nome fantasia.
-- Se encontrar CPF/CNPJ já cadastrado, exibe aviso e só continua com confirmação.
-- Se o CPF/CNPJ já existir e o usuário confirmar, o sistema atualiza o cliente existente, preservando o histórico vinculado.
-- Se encontrar apenas nome semelhante, exibe aviso e permite criar novo cadastro somente após confirmação.
+Publicar no GitHub Pages somente os arquivos desta pasta.
+Nao publicar CSV de clientes, extratos, boletos, PDFs, planilhas, backups ou dados reais.
 
-SEGURANÇA:
-- Publique somente os arquivos do sistema.
-- Não envie CSV de clientes, extratos, boletos, PDFs, planilhas ou backups reais para o GitHub.
-- Dados reais devem ser importados apenas dentro do sistema autenticado e salvos no Firestore.
+Ajustes da V40:
+- Baixas, lançamentos manuais e atualizações de saldo ficaram mais leves.
+- A tela agora renderiza somente a aba ativa, em vez de recalcular todo o sistema a cada clique.
+- A deduplicação de lançamentos foi otimizada para evitar lentidão com muitos boletos/mensalidades.
+- O salvamento automático na nuvem fica em segundo plano e com atraso controlado, reduzindo travamentos.
+- A geração de mensalidades não roda a cada renderização; use o botão próprio para conferir/gerar mensalidades.
 
-TESTES REALIZADOS ANTES DA ENTREGA:
-- Validação de sintaxe do JavaScript com node --check.
-- Conferência da existência das funções de duplicidade.
-- Teste de integridade do ZIP.
+Após publicar:
+1. Abrir o site.
+2. Apertar Ctrl + F5.
+3. Fazer login.
+4. Carregar nuvem.
+5. Testar baixar uma parcela e lançar uma despesa.
+6. Conferir se os saldos atualizam rapidamente.
+7. Aguardar o status verde de salvamento automático.

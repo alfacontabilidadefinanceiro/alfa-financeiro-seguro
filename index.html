@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="alfa-financeiro-version" content="2026-05-27-v22-firestore-colecoes-baixa-automatica" />
+  <meta name="alfa-financeiro-version" content="2026-05-30-v40-desempenho-otimizado" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Alfa Financeiro V33 | Serviços e Cobranças</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -875,18 +875,35 @@
       align-items: flex-start;
       justify-content: center;
       padding: 18px;
-      background: rgba(0,0,0,0.6);
-      z-index: 30;
-      overflow: auto;
+      background: rgba(0,0,0,0.68);
+      z-index: 3000;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
     }
 
     .modal.show { display: flex; }
 
     .modal-card {
       width: min(840px, 100%);
+      max-height: calc(100dvh - 36px);
       border-radius: var(--radius-lg);
       padding: 18px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      overscroll-behavior: contain;
+      display: flex;
+      flex-direction: column;
     }
+
+    .modal-card::-webkit-scrollbar { width: 11px; }
+    .modal-card::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--red), var(--red-2));
+      border-radius: 999px;
+      border: 3px solid rgba(18,20,29,0.95);
+    }
+    .modal-card::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
 
     .modal-head {
       display: flex;
@@ -925,6 +942,27 @@
 
     #clientModal .modal-card {
       width: min(1180px, 100%);
+      max-height: calc(100dvh - 28px);
+    }
+
+    #entryModal .modal-card,
+    #clientModal .modal-card {
+      min-height: 0;
+    }
+
+    #clientForm .form-grid,
+    #entryForm .form-grid {
+      min-height: 0;
+    }
+
+    #clientForm .actions,
+    #entryForm .actions {
+      position: sticky;
+      bottom: -18px;
+      z-index: 5;
+      padding: 12px 0 0;
+      background: linear-gradient(180deg, rgba(18,20,29,0), rgba(18,20,29,0.98) 28%);
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
 
     .client-open-panel {
@@ -989,7 +1027,8 @@
     }
 
     .client-open-table {
-      max-height: 310px;
+      max-height: min(310px, 45dvh);
+      overflow: auto;
     }
 
     .client-open-table table {
@@ -1086,6 +1125,9 @@
       .login-actions,
       .insight-strip,
       .form-grid { grid-template-columns: 1fr; }
+      .modal { padding: 8px; }
+      .modal-card { max-height: calc(100dvh - 16px); padding: 14px; }
+      #clientModal .modal-card { max-height: calc(100dvh - 16px); }
       .full { grid-column: auto; }
       .sticky-client-table th:first-child,
       .sticky-client-table td:first-child {
@@ -1253,7 +1295,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V38 - duplicidade de cliente com confirmação segura.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V40 - desempenho otimizado e salvamento em segundo plano.</div>
     </form>
   </section>
 
@@ -1263,7 +1305,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V38 duplicidade</span>
+          <span>Controle interno • V40 rápido</span>
         </div>
       </div>
 
@@ -1280,7 +1322,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V38. Inclui alerta de duplicidade ao criar/editar cliente por nome, CPF ou CNPJ, mantendo boletos em aberto no cadastro e nuvem Firestore preservada.</p>
+        <p><span class="status-dot"></span>VERSÃO V40. Corrige lentidão nas baixas e lançamentos com renderização seletiva, deduplicação rápida e salvamento em segundo plano no Firestore.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -2564,6 +2606,12 @@
     let cloudReadyForWrites = false;
     let cloudCollectionsSyncInProgress = false;
     const cloudTimeoutMs = 240000;
+    // V40: ajustes de desempenho para uso diário.
+    // O sistema passa a recalcular/renderizar somente a tela ativa, adia salvamentos em lote
+    // e evita deduplicação O(n²) a cada clique de baixa/lançamento.
+    const cloudAutoSaveDelayMs = 3500;
+    let renderInProgress = false;
+    let lastRenderAt = 0;
 
     const storageKey = "alfaFinanceiroLancamentosV1";
     const clientsStorageKey = "alfaFinanceiroClientesV1";
@@ -3116,15 +3164,35 @@ Atenciosamente,
       return { inserted: true, entry: normalized, reason: "" };
     }
 
+    function entryStrongDedupeKey(entry) {
+      const normalized = normalizeEntryForRuntime(entry || {});
+      const monthlyKey = monthlyChargeKeyForEntry(normalized);
+      if (monthlyKey && (normalized.serviceType === "mensalidade" || normalized.recurringParentId || normalized.source === "cadastro-cliente" || normalized.monthlyKey)) {
+        return `mensalidade|${monthlyKey}`;
+      }
+      const protocol = duplicateProtocol(normalized);
+      if (protocol) return `protocolo|${protocol}`;
+      if (normalized.receiptProtocol) return `recibo|${String(normalized.receiptProtocol).trim().toLowerCase()}`;
+      const person = duplicatePersonKey(normalized);
+      const monthOrDate = normalized.billingMonth || duplicateMonth(normalized) || String(normalized.date || normalized.paidAt || "").slice(0, 10);
+      const service = normalized.type === "receita" ? serviceKey(normalized.category || normalized.service || "Honorários contábeis") : normalizeText(normalized.category || "sem-categoria");
+      const value = amountToCents(normalized.paidAmount || normalized.amount || 0);
+      const statusGroup = (normalized.status === "pago" || normalized.status === "bonificado") ? `pago-${String(normalized.paidAt || "").slice(0, 10)}` : "aberto";
+      return `${normalized.type || "mov"}|${person}|${monthOrDate}|${service}|${value}|${statusGroup}`;
+    }
+
     function dedupeEntries(list) {
-      const result = [];
+      // V40: versão linear. A rotina antiga fazia result.find(...) com comparação de negócio
+      // para cada lançamento, ficando pesada quando havia muitas mensalidades/extratos.
+      const byKey = new Map();
       (Array.isArray(list) ? list : []).forEach(raw => {
         const entry = normalizeEntryForRuntime(raw);
-        const duplicate = result.find(existing => businessDuplicateReason(entry, existing));
-        if (duplicate) mergeDuplicateEntry(duplicate, entry);
-        else result.push(entry);
+        const key = entryStrongDedupeKey(entry);
+        const existing = byKey.get(key);
+        if (existing) mergeDuplicateEntry(existing, entry);
+        else byKey.set(key, entry);
       });
-      return result;
+      return [...byKey.values()];
     }
 
     function setupQuickExpenseCategory() {
@@ -3499,7 +3567,7 @@ Atenciosamente,
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
         const statePayload = {
-          version: "V33-Clientes-Mestre-Nuvem-Corrigida",
+          version: "V40-Desempenho-Otimizado",
           storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -3580,7 +3648,7 @@ Atenciosamente,
         const pendingReason = cloudPendingReason || reason || "salvar";
         cloudPendingReason = "";
         syncCloudState(pendingReason);
-      }, 900);
+      }, cloudAutoSaveDelayMs);
     }
 
     async function forceCloudSync(reason = "manual") {
@@ -6270,8 +6338,49 @@ Atenciosamente,
       });
     }
 
+    function currentViewId() {
+      return document.querySelector(".view.active")?.id || "dashboard";
+    }
+
     function render() {
-      ensureMonthlyChargesForMonth(selectedMonth(), true);
+      // V40: renderização seletiva. Antes todo clique recalculava todas as telas
+      // (relatórios, previsão, clientes, contas, detalhes), deixando baixa/manual lento.
+      if (renderInProgress) return;
+      renderInProgress = true;
+      try {
+        const view = currentViewId();
+        lastRenderAt = Date.now();
+        if (view === "dashboard") {
+          renderKpis();
+          renderDashboard();
+          renderReceivableAlerts();
+          renderDueAlerts();
+        } else if (view === "lancamentos") {
+          renderRows("entryRows", filteredEntries(), "entryCount");
+        } else if (view === "clientes") {
+          renderClients();
+        } else if (view === "receber") {
+          renderAccountRows("receberRows", filteredReceivablesForWhatsapp(), "receberCount");
+        } else if (view === "pagar") {
+          renderAccountRows("pagarRows", filteredEntries("despesa"), "pagarCount");
+          renderReviewRows();
+        } else if (view === "detalhes") {
+          renderDetails();
+        } else if (view === "relatorios") {
+          renderReports();
+        } else if (view === "previsao") {
+          renderForecast();
+        } else if (view === "escritorio") {
+          renderOfficeProfile();
+        }
+        renderClientOpenReceivables();
+        enhanceTableScrollers();
+      } finally {
+        renderInProgress = false;
+      }
+    }
+
+    function renderAllOnce() {
       renderKpis();
       renderDashboard();
       renderReceivableAlerts();
@@ -6285,6 +6394,7 @@ Atenciosamente,
       renderForecast();
       renderDetails();
       if (document.getElementById("escritorio")?.classList.contains("active")) renderOfficeProfile();
+      renderClientOpenReceivables();
       enhanceTableScrollers();
     }
 
@@ -6330,6 +6440,28 @@ Atenciosamente,
       }
     }
 
+    function syncModalBodyLock() {
+      const anyOpen = Boolean(document.querySelector(".modal.show"));
+      document.body.classList.toggle("modal-open", anyOpen);
+    }
+
+    function showModalElement(element) {
+      if (!element) return;
+      element.classList.add("show");
+      syncModalBodyLock();
+      requestAnimationFrame(() => {
+        if (typeof element.scrollTo === "function") element.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        const card = element.querySelector(".modal-card");
+        if (card && typeof card.scrollTo === "function") card.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      });
+    }
+
+    function hideModalElement(element) {
+      if (!element) return;
+      element.classList.remove("show");
+      syncModalBodyLock();
+    }
+
     function openModal(entry = null) {
       document.getElementById("modalTitle").textContent = entry ? "Editar lançamento" : "Novo lançamento";
       document.getElementById("entryId").value = entry?.id || "";
@@ -6345,11 +6477,11 @@ Atenciosamente,
       if (quickCategory) quickCategory.value = entry?.type === "despesa" && expenseCategoryOptions.includes(entry?.category || "") ? entry.category : "";
       document.getElementById("entryMethod").value = entry?.method || "Pix";
       document.getElementById("entryDescription").value = entry?.description || "";
-      modal.classList.add("show");
+      showModalElement(modal);
     }
 
     function closeModal() {
-      modal.classList.remove("show");
+      hideModalElement(modal);
       form.reset();
     }
 
@@ -6461,11 +6593,11 @@ Atenciosamente,
       document.getElementById("clientOpenSearchInput").value = "";
       updateClientTypeLabels();
       renderClientOpenReceivables(client);
-      clientModal.classList.add("show");
+      showModalElement(clientModal);
     }
 
     function closeClientModal() {
-      clientModal.classList.remove("show");
+      hideModalElement(clientModal);
       clientForm.reset();
       renderClientOpenReceivables(null);
     }
@@ -8418,6 +8550,14 @@ Atenciosamente,
     });
     clientModal.addEventListener("click", event => {
       if (event.target === clientModal) closeClientModal();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      if (clientModal.classList.contains("show")) {
+        closeClientModal();
+        return;
+      }
+      if (modal.classList.contains("show")) closeModal();
     });
 
     ["searchInput", "typeFilter", "statusFilter"].forEach(id => {
