@@ -1,0 +1,6 @@
+Correção V57
+
+1. Corrigido erro ao salvar cliente: daysInMonth is not defined.
+2. Esse erro era de JavaScript, não do banco Firestore.
+3. Melhorada mensagem de erro para diferenciar erro técnico local de erro real do Firebase.
+4. Substitua o index.html publicado por este index.html e teste com Ctrl+F5.

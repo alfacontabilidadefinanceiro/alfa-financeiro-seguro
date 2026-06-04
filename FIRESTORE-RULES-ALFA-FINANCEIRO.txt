@@ -1,15 +1,68 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+    function email() {
+      return request.auth.token.email;
+    }
+    function isAdmin() {
+      return signedIn() && email() == "alfacontabilidade2014@gmail.com";
+    }
+    function userDoc() {
+      return /databases/$(database)/documents/alfaFinanceiro/principal/users/$(email());
+    }
     function isAuthorized() {
-      return request.auth != null
-        && request.auth.token.email in [
-          'alfacontabilidade2014@gmail.com'
-        ];
+      return isAdmin() || (signedIn() && exists(userDoc()) && get(userDoc()).data.active == true);
+    }
+    function userData() {
+      return isAdmin() ? { active: true, permissions: { admin: true } } : get(userDoc()).data;
+    }
+    function hasPerm(permission) {
+      return isAdmin() || (isAuthorized() && userData().permissions[permission] == true);
+    }
+    function canReadFinancial() {
+      return hasPerm("viewDashboard") || hasPerm("viewClients") || hasPerm("viewReceivables") || hasPerm("viewPayables") || hasPerm("viewReports");
+    }
+    function canWriteFinancial() {
+      return hasPerm("manualEntry") || hasPerm("manageClients") || hasPerm("importPayments") || hasPerm("importStatement") || hasPerm("manageCharges");
     }
 
-    match /alfaFinanceiro/{document=**} {
-      allow read, write: if isAuthorized();
+    match /alfaFinanceiro/principal {
+      allow read: if isAuthorized() && canReadFinancial();
+      // Limitação da arquitetura atual: o sistema ainda sincroniza um documento principal compacto.
+      // Por isso, usuários operacionais autorizados precisam gravar esse documento quando salvam dados.
+      allow create, update: if isAuthorized() && canWriteFinancial();
+      allow delete: if isAdmin();
+
+      match /users/{userEmail} {
+        allow read: if isAdmin() || (signedIn() && userEmail == email()) || hasPerm("manageUsers");
+        allow create, update, delete: if isAdmin() || hasPerm("manageUsers");
+      }
+
+      match /clients/{clientId} {
+        allow read: if isAuthorized() && hasPerm("viewClients");
+        allow create, update: if isAuthorized() && hasPerm("manageClients");
+        allow delete: if false;
+      }
+
+      match /entries/{entryId} {
+        allow read: if isAuthorized() && canReadFinancial();
+        allow create, update: if isAuthorized() && (hasPerm("manualEntry") || hasPerm("importPayments") || hasPerm("importStatement") || hasPerm("manageCharges"));
+        allow delete: if isAuthorized() && hasPerm("deleteEntries");
+      }
+
+      match /logs/{logId} {
+        allow read: if isAdmin() || hasPerm("manageUsers") || hasPerm("viewReports");
+        allow create: if isAuthorized();
+        allow update, delete: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

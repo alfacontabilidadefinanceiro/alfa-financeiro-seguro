@@ -1,20 +1,40 @@
-ALFA FINANCEIRO - V40 DESEMPENHO OTIMIZADO
+ALFA FINANCEIRO V54 - REVISÃO DE BOTÕES, CLIENTES E SEGURANÇA
 
-Publicar no GitHub Pages somente os arquivos desta pasta.
-Nao publicar CSV de clientes, extratos, boletos, PDFs, planilhas, backups ou dados reais.
+PUBLICAÇÃO
+1. Substitua todos os arquivos do site pela pasta desta versão.
+2. Publique principalmente o novo index.html.
+3. Publique também o alfa-logo.png e alfa-logo.jpg otimizados.
+4. No Firebase Console, publique o conteúdo de FIRESTORE-RULES-ALFA-FINANCEIRO.txt em Firestore Database > Rules.
+5. Abra o site e pressione Ctrl + F5.
 
-Ajustes da V40:
-- Baixas, lançamentos manuais e atualizações de saldo ficaram mais leves.
-- A tela agora renderiza somente a aba ativa, em vez de recalcular todo o sistema a cada clique.
-- A deduplicação de lançamentos foi otimizada para evitar lentidão com muitos boletos/mensalidades.
-- O salvamento automático na nuvem fica em segundo plano e com atraso controlado, reduzindo travamentos.
-- A geração de mensalidades não roda a cada renderização; use o botão próprio para conferir/gerar mensalidades.
+O QUE FOI CORRIGIDO
+- Botão Editar cadastro do cliente com abertura reforçada.
+- Botão Baixar honorário com checagem de permissão.
+- Novo cliente, novo lançamento, nova receita e nova despesa com checagem de permissão.
+- Layout de clientes ajustado para não depender de rolagem horizontal.
+- Barra de rolagem vertical mais visível.
+- Perfil Funcionário limitado incluído.
+- Logs locais de auditoria para cliente, lançamento e baixa.
+- Regras Firestore revisadas para restringir gravações.
+- Logos otimizados para carregar mais rápido.
 
-Após publicar:
-1. Abrir o site.
-2. Apertar Ctrl + F5.
-3. Fazer login.
-4. Carregar nuvem.
-5. Testar baixar uma parcela e lançar uma despesa.
-6. Conferir se os saldos atualizam rapidamente.
-7. Aguardar o status verde de salvamento automático.
+TESTE RÁPIDO
+1. Entre como administrador.
+2. Aba Clientes > Editar cadastro.
+3. Salve uma alteração simples.
+4. Baixe uma parcela em aberto.
+5. Crie um novo cliente.
+6. Crie uma nova receita.
+7. Crie uma nova despesa.
+8. Acesse Usuários e teste perfil Consulta ou Funcionário limitado.
+
+DIAGNÓSTICO
+No console do navegador, execute:
+alfaDiagnosticoBotoes()
+
+Se o site parecer antigo depois da publicação, use Ctrl + F5 ou teste em aba anônima.
+
+V55:
+- Correção reforçada do botão Editar cadastro na aba Clientes.
+- Se o usuário não tiver permissão de edição, o sistema mostra alerta claro informando o e-mail logado.
+- Após publicar, use Ctrl+F5 ou aba anônima para eliminar cache.

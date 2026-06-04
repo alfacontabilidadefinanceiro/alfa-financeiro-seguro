@@ -1,0 +1,11 @@
+VERSÃO V59
+
+Correção adicionada:
+- Filtro por competência em Lançamentos.
+- Filtro por competência em Contas a receber.
+- Filtro por competência em Contas a pagar.
+- Botão Limpar filtros em Lançamentos.
+- Coluna Competência nas três telas.
+
+Publicação:
+Substitua o index.html e os demais arquivos no site, depois pressione Ctrl+F5.

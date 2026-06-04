@@ -1,0 +1,14 @@
+V58 - Filtro de competência em Contas a receber
+
+Correção aplicada:
+- Adicionado filtro "Competência" na tela Contas a receber.
+- Opções são carregadas automaticamente conforme os títulos a receber existentes.
+- Permite filtrar por 05/2026, 06/2026, 07/2026 etc., ou exibir todas as competências.
+- A tabela agora exibe uma coluna "Competência" para conferência rápida.
+- O botão "Limpar filtros" também limpa a competência.
+
+Como testar:
+1. Abrir a aba Contas a receber.
+2. Selecionar uma competência no novo filtro.
+3. Conferir se a lista mostra apenas títulos daquele mês.
+4. Clicar em Limpar filtros e conferir se volta para Todas as competências.

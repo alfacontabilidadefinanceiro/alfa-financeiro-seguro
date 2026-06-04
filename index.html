@@ -2,9 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="alfa-financeiro-version" content="2026-05-30-v40-desempenho-otimizado" />
+  <meta name="alfa-financeiro-version" content="2026-06-04-v54-revisao-botoes-seguranca" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alfa Financeiro V33 | Serviços e Cobranças</title>
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>Alfa Financeiro V57 | Cadastro de clientes corrigido</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -941,18 +942,66 @@
     .full { grid-column: 1 / -1; }
 
     #clientModal .modal-card {
-      width: min(1180px, 100%);
+      width: min(1180px, calc(100vw - 28px));
+      height: calc(100dvh - 28px);
       max-height: calc(100dvh - 28px);
+      overflow-y: scroll !important;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
+    }
+
+    #entryModal .modal-card {
+      height: min(780px, calc(100dvh - 28px));
+      max-height: calc(100dvh - 28px);
+      overflow-y: scroll !important;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
     }
 
     #entryModal .modal-card,
     #clientModal .modal-card {
       min-height: 0;
+      overscroll-behavior: contain;
     }
 
     #clientForm .form-grid,
     #entryForm .form-grid {
       min-height: 0;
+    }
+
+    #clientForm select,
+    #entryForm select {
+      width: 100%;
+      min-height: 44px;
+    }
+
+    .client-billing-box {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.035);
+      padding: 12px;
+    }
+
+    .client-billing-box .billing-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .client-billing-box .billing-title strong {
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .client-billing-help {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: 8px;
     }
 
     #clientForm .actions,
@@ -1272,9 +1321,1250 @@
     @media (max-width: 1180px) { .filter-panel { grid-template-columns: repeat(2, minmax(0,1fr)); } }
     @media (max-width: 720px) { .filter-panel { grid-template-columns: 1fr; } }
 
-</style>
+
+
+    /* V44 - interface mais limpa e ações locais por módulo */
+    body.tools-collapsed #topActions .optional-top-action,
+    body.tools-collapsed #topActions .cloud-status,
+    body.tools-collapsed #topActions .top-month-control {
+      display: none !important;
+    }
+    body.tools-collapsed #topActions {
+      max-width: 520px;
+    }
+    #toggleTopToolsBtn {
+      border-color: rgba(148,163,184,.32);
+    }
+    .page-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-start;
+      margin: 0 0 14px;
+      padding: 12px;
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: 16px;
+      background: rgba(15,23,42,.42);
+    }
+    .page-action-row .action-spacer {
+      flex: 1 1 auto;
+    }
+    .page-action-row .action-note {
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 800;
+    }
+    .toolbar.compact-toolbar {
+      margin-top: 0;
+    }
+    @media (max-width: 720px) {
+      .page-action-row .btn {
+        flex: 1 1 100%;
+        justify-content: center;
+      }
+      .page-action-row .action-note {
+        width: 100%;
+      }
+    }
+
+
+
+
+
+
+
+    /* V47 - Visão geral despoluída */
+    #dashboard .modern-executive-panel,
+    #dashboard .receivable-alert-panel,
+    #dashboard .due-alert-panel,
+    #dashboard .summary-grid {
+      display: none !important;
+    }
+    .clean-dashboard-panel {
+      border: 1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.54);
+    }
+    .clean-dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .clean-dashboard-card {
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(255,255,255,.045);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 126px;
+    }
+    .clean-dashboard-card h3 {
+      margin: 0;
+      font-size: .98rem;
+    }
+    .clean-dashboard-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.35;
+      flex: 1;
+    }
+    .clean-dashboard-card .btn {
+      width: 100%;
+    }
+    .clean-dashboard-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: .84rem;
+      font-weight: 800;
+    }
+    @media (max-width: 1100px) {
+      .clean-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      .clean-dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+
+    /* V46 - correção de rolagem nos modais de cadastro e lançamento */
+    html.modal-open,
+    body.modal-open {
+      overflow: hidden !important;
+    }
+
+    .modal {
+      align-items: stretch !important;
+      justify-content: center !important;
+      padding: 14px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal.show {
+      display: flex !important;
+    }
+
+    .modal-card {
+      margin: auto 0 !important;
+      max-height: calc(100vh - 28px) !important;
+      max-height: calc(100dvh - 28px) !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+      min-height: 0 !important;
+    }
+
+    #clientModal .modal-card,
+    #entryModal .modal-card {
+      width: min(1180px, calc(100vw - 28px)) !important;
+      height: auto !important;
+      max-height: calc(100vh - 28px) !important;
+      max-height: calc(100dvh - 28px) !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    #clientForm .form-grid,
+    #entryForm .form-grid {
+      flex: 0 0 auto;
+      min-height: 0 !important;
+    }
+
+    #clientForm .actions,
+    #entryForm .actions {
+      position: sticky !important;
+      bottom: -1px !important;
+      z-index: 20 !important;
+      margin-top: 14px !important;
+      padding: 14px 0 0 !important;
+      background: linear-gradient(180deg, rgba(18,20,29,0), rgba(18,20,29,0.98) 22%, rgba(18,20,29,1) 100%) !important;
+    }
+
+    @media (max-width: 680px) {
+      .modal {
+        padding: 8px !important;
+      }
+      #clientModal .modal-card,
+      #entryModal .modal-card,
+      .modal-card {
+        width: calc(100vw - 16px) !important;
+        max-height: calc(100vh - 16px) !important;
+        max-height: calc(100dvh - 16px) !important;
+      }
+    }
+
+    /* V48 - reforço definitivo: abertura e rolagem dos modais */
+    #clientModal.show,
+    #entryModal.show {
+      display: flex !important;
+    }
+
+    #clientModal,
+    #entryModal {
+      z-index: 99999 !important;
+      align-items: flex-start !important;
+      justify-content: center !important;
+      padding: 12px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #clientModal .modal-card,
+    #entryModal .modal-card {
+      width: min(1180px, calc(100vw - 24px)) !important;
+      height: auto !important;
+      max-height: calc(100vh - 24px) !important;
+      max-height: calc(100dvh - 24px) !important;
+      overflow-y: scroll !important;
+      overflow-x: hidden !important;
+      margin: 0 auto !important;
+      scrollbar-gutter: stable both-edges;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #clientForm,
+    #entryForm {
+      min-height: 0 !important;
+    }
+
+    #clientForm .actions,
+    #entryForm .actions {
+      position: sticky !important;
+      bottom: -1px !important;
+      z-index: 30 !important;
+      background: linear-gradient(180deg, rgba(18,20,29,0), rgba(18,20,29,.98) 26%, rgba(18,20,29,1)) !important;
+    }
+
+    @media (max-width: 680px) {
+      #clientModal,
+      #entryModal { padding: 8px !important; }
+      #clientModal .modal-card,
+      #entryModal .modal-card {
+        width: calc(100vw - 16px) !important;
+        max-height: calc(100vh - 16px) !important;
+        max-height: calc(100dvh - 16px) !important;
+      }
+    }
+
+
+
+    /* V49 - barras de rolagem e lista de clientes prontas para uso */
+    html {
+      scrollbar-width: thin !important;
+      scrollbar-color: rgba(148, 163, 184, .62) rgba(15, 23, 42, .48) !important;
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, .62) rgba(15, 23, 42, .48);
+    }
+
+    ::-webkit-scrollbar {
+      width: 9px !important;
+      height: 9px !important;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, .48) !important;
+      border-radius: 999px !important;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, .62) !important;
+      border: 2px solid rgba(15, 23, 42, .86) !important;
+      border-radius: 999px !important;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(203, 213, 225, .78) !important;
+    }
+
+    .app,
+    .main,
+    .panel,
+    .view {
+      min-width: 0 !important;
+    }
+
+    .panel {
+      overflow: hidden !important;
+    }
+
+    .table-wrap {
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, .14);
+      background: rgba(8, 10, 18, .35);
+      scrollbar-gutter: stable;
+    }
+
+
+    /* Remove a barra horizontal duplicada criada acima das tabelas. */
+    .table-x-scroll {
+      display: none !important;
+    }
+
+    /* Clientes: remove rolagem vertical interna e deixa a página rolar normalmente. */
+    #clientes .table-wrap,
+    #clientes .sticky-client-table {
+      max-height: none !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      margin-top: 10px !important;
+    }
+
+    #clientes .sticky-client-table table {
+      width: 100% !important;
+      min-width: 1040px !important;
+      table-layout: auto !important;
+      font-size: 12.5px !important;
+    }
+
+    #clientes .sticky-client-table th,
+    #clientes .sticky-client-table td {
+      padding: 10px 9px !important;
+      line-height: 1.35 !important;
+      white-space: normal !important;
+      overflow-wrap: anywhere !important;
+      word-break: normal !important;
+    }
+
+    #clientes .sticky-client-table th {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 5 !important;
+      background: rgba(22, 24, 34, 1) !important;
+    }
+
+    #clientes .sticky-client-table th:first-child,
+    #clientes .sticky-client-table td:first-child {
+      position: sticky !important;
+      left: 0 !important;
+      min-width: 250px !important;
+      max-width: 340px !important;
+      background: rgba(18, 20, 29, .98) !important;
+      box-shadow: 10px 0 16px rgba(0, 0, 0, .24) !important;
+      z-index: 6 !important;
+    }
+
+    #clientes .sticky-client-table th:first-child {
+      z-index: 8 !important;
+      background: rgba(22, 24, 34, 1) !important;
+    }
+
+    /* Tabela de clientes simplificada: os detalhes continuam no botão editar/ver cliente. */
+    #clientes .sticky-client-table th:nth-child(2),
+    #clientes .sticky-client-table td:nth-child(2),
+    #clientes .sticky-client-table th:nth-child(5),
+    #clientes .sticky-client-table td:nth-child(5),
+    #clientes .sticky-client-table th:nth-child(7),
+    #clientes .sticky-client-table td:nth-child(7),
+    #clientes .sticky-client-table th:nth-child(8),
+    #clientes .sticky-client-table td:nth-child(8),
+    #clientes .sticky-client-table th:nth-child(10),
+    #clientes .sticky-client-table td:nth-child(10) {
+      display: none !important;
+    }
+
+    #clientes .filter-panel {
+      grid-template-columns: minmax(280px, 1fr) 180px 150px 150px !important;
+      gap: 10px !important;
+    }
+
+    #clientes .panel-head {
+      align-items: center !important;
+      flex-wrap: wrap !important;
+    }
+
+    #clientes .row-actions {
+      flex-wrap: wrap !important;
+      justify-content: flex-end !important;
+    }
+
+    #clientModal,
+    #entryModal {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    #clientModal .modal-card,
+    #entryModal .modal-card {
+      max-height: calc(100vh - 24px) !important;
+      max-height: calc(100dvh - 24px) !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      scrollbar-gutter: stable both-edges !important;
+    }
+
+    #clientForm .actions,
+    #entryForm .actions {
+      position: sticky !important;
+      bottom: -1px !important;
+      z-index: 30 !important;
+      padding-top: 12px !important;
+      background: linear-gradient(180deg, rgba(18,20,29,0), rgba(18,20,29,.98) 28%, rgba(18,20,29,1)) !important;
+    }
+
+    @media (max-width: 1180px) {
+      #clientes .filter-panel { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+      #clientes .sticky-client-table table { min-width: 980px !important; }
+      #clientes .sticky-client-table th:first-child,
+      #clientes .sticky-client-table td:first-child { min-width: 220px !important; max-width: 280px !important; }
+    }
+
+    @media (max-width: 720px) {
+      #clientes .filter-panel { grid-template-columns: 1fr !important; }
+      #clientes .sticky-client-table table { min-width: 860px !important; }
+      #clientes .sticky-client-table th:nth-child(4),
+      #clientes .sticky-client-table td:nth-child(4) { display: none !important; }
+      #clientModal .modal-card,
+      #entryModal .modal-card { max-height: calc(100dvh - 16px) !important; }
+    }
+
+
+    /* V50 - correção profissional: lista de clientes sem conteúdo escondido */
+    body,
+    .app,
+    .main,
+    #clientes,
+    #clientes .panel {
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+    }
+
+    #clientes .table-wrap,
+    #clientes .sticky-client-table {
+      width: 100% !important;
+      max-width: 100% !important;
+      max-height: none !important;
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
+      margin-top: 12px !important;
+      border-radius: var(--radius-md) !important;
+    }
+
+    #clientes .client-list-table,
+    #clientes .sticky-client-table table {
+      width: 100% !important;
+      min-width: 0 !important;
+      table-layout: fixed !important;
+      border-collapse: collapse !important;
+    }
+
+    #clientes .client-list-table th,
+    #clientes .client-list-table td {
+      display: table-cell !important;
+      position: static !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      white-space: normal !important;
+      overflow: visible !important;
+      overflow-wrap: anywhere !important;
+      word-break: normal !important;
+      padding: 12px 10px !important;
+      vertical-align: middle !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    #clientes .client-list-table th {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 2 !important;
+      background: rgba(22,24,34,1) !important;
+    }
+
+    #clientes .client-list-table th:nth-child(1),
+    #clientes .client-list-table td:nth-child(1) { width: 34% !important; }
+    #clientes .client-list-table th:nth-child(2),
+    #clientes .client-list-table td:nth-child(2) { width: 16% !important; }
+    #clientes .client-list-table th:nth-child(3),
+    #clientes .client-list-table td:nth-child(3) { width: 15% !important; }
+    #clientes .client-list-table th:nth-child(4),
+    #clientes .client-list-table td:nth-child(4) { width: 18% !important; }
+    #clientes .client-list-table th:nth-child(5),
+    #clientes .client-list-table td:nth-child(5) { width: 17% !important; }
+
+    #clientes .client-main-name {
+      display: block;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    #clientes .client-row-note {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+
+    #clientes .client-actions-compact {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 6px !important;
+      max-width: 100% !important;
+    }
+
+    #clientes .client-actions-compact .btn {
+      min-height: 32px !important;
+      padding: 7px 9px !important;
+      font-size: 11px !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+    }
+
+    #clientes .panel-head,
+    #clientes .page-action-row,
+    #clientes .filter-panel {
+      max-width: 100% !important;
+      overflow: visible !important;
+    }
+
+    #clientes .filter-panel {
+      grid-template-columns: minmax(260px, 1fr) 170px 150px 150px !important;
+    }
+
+    @media (max-width: 960px) {
+      #clientes .filter-panel { grid-template-columns: 1fr 1fr !important; }
+      #clientes .client-list-table thead { display: none !important; }
+      #clientes .client-list-table,
+      #clientes .client-list-table tbody,
+      #clientes .client-list-table tr,
+      #clientes .client-list-table td {
+        display: block !important;
+        width: 100% !important;
+      }
+      #clientes .client-list-table tr {
+        padding: 12px !important;
+        border-bottom: 1px solid var(--line) !important;
+      }
+      #clientes .client-list-table td {
+        border-bottom: 0 !important;
+        padding: 6px 0 !important;
+      }
+      #clientes .client-list-table td:nth-child(2)::before { content: "Documento: "; color: var(--muted); font-weight: 900; }
+      #clientes .client-list-table td:nth-child(3)::before { content: "Honorário: "; color: var(--muted); font-weight: 900; }
+      #clientes .client-list-table td:nth-child(4)::before { content: "Situação: "; color: var(--muted); font-weight: 900; }
+      #clientes .client-actions-compact { justify-content: flex-start !important; }
+    }
+
+    @media (max-width: 640px) {
+      #clientes .filter-panel { grid-template-columns: 1fr !important; }
+      #clientes .panel-head { align-items: stretch !important; }
+      #clientes .panel-head .actions,
+      #clientes .page-action-row { justify-content: stretch !important; }
+      #clientes .panel-head .btn,
+      #clientes .page-action-row .btn { width: 100% !important; }
+    }
+
+
+
+    /* V51 - clientes em cartões profissionais: ações e baixa sempre visíveis */
+    #clientes .sticky-client-table,
+    #clientes .table-wrap {
+      overflow: visible !important;
+      max-height: none !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    #clientes .client-list-table,
+    #clientes .client-list-table tbody,
+    #clientes .client-list-table tr,
+    #clientes .client-list-table td {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      table-layout: auto !important;
+      border-collapse: separate !important;
+      overflow: visible !important;
+    }
+
+    #clientes .client-list-table thead {
+      display: none !important;
+    }
+
+    #clientes .client-list-table tr.client-card-row {
+      margin: 0 0 12px 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    #clientes .client-list-table td.client-card-cell {
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    #clientes .client-card-v51 {
+      display: grid !important;
+      grid-template-columns: minmax(260px, 1.35fr) minmax(150px, .65fr) minmax(170px, .75fr) minmax(260px, .95fr) !important;
+      align-items: start !important;
+      gap: 14px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 14px !important;
+      border: 1px solid var(--line) !important;
+      border-radius: 16px !important;
+      background: rgba(13, 16, 27, .96) !important;
+      box-shadow: none !important;
+    }
+
+    #clientes .client-card-label {
+      display: block !important;
+      margin-bottom: 5px !important;
+      color: var(--muted) !important;
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      letter-spacing: .08em !important;
+      text-transform: uppercase !important;
+    }
+
+    #clientes .client-main-name {
+      font-size: 14px !important;
+      line-height: 1.35 !important;
+    }
+
+    #clientes .client-card-actions-panel {
+      display: grid !important;
+      gap: 8px !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
+    #clientes .client-card-actions-panel .btn {
+      width: 100% !important;
+      min-height: 36px !important;
+      padding: 8px 10px !important;
+      white-space: normal !important;
+      text-align: center !important;
+      justify-content: center !important;
+    }
+
+    #clientes .client-card-paybox {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 5px !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
+    #clientes .client-card-paybox label {
+      color: var(--muted) !important;
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      letter-spacing: .06em !important;
+      text-transform: uppercase !important;
+    }
+
+    #clientes .client-card-paybox select {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      min-height: 36px !important;
+      padding: 8px 10px !important;
+      font-size: 12px !important;
+    }
+
+    #clientes .client-card-actions-compact {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+
+    #clientes .client-card-actions-compact .btn:only-child {
+      grid-column: 1 / -1 !important;
+    }
+
+    @media (max-width: 1180px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: minmax(240px, 1fr) minmax(190px, .85fr) !important;
+      }
+    }
+
+    @media (max-width: 720px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: 1fr !important;
+      }
+      #clientes .client-card-actions-compact {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+
+
+    /* V52 - clientes: separação profissional e barra de rolagem visível */
+    html,
+    body {
+      overflow-x: hidden !important;
+      scrollbar-width: auto !important;
+      scrollbar-color: #ff3344 #151923 !important;
+    }
+
+    body {
+      overflow-y: scroll !important;
+      scrollbar-gutter: stable !important;
+    }
+
+    * {
+      scrollbar-width: auto;
+      scrollbar-color: #ff3344 #151923;
+    }
+
+    ::-webkit-scrollbar {
+      width: 17px !important;
+      height: 14px !important;
+      background: #151923 !important;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: linear-gradient(180deg, #111827, #151923) !important;
+      border-left: 1px solid rgba(255,255,255,.10) !important;
+      border-radius: 0 !important;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04) !important;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      min-height: 64px !important;
+      background: linear-gradient(180deg, #ff3344, #d90416) !important;
+      border: 4px solid #151923 !important;
+      border-radius: 999px !important;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 0 18px rgba(255,51,68,.35) !important;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #ff5260, #ff1f32) !important;
+    }
+
+    #clientes,
+    #clientes .panel,
+    #clientes .table-wrap,
+    #clientes .sticky-client-table,
+    #clientes .client-list-table {
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+    }
+
+    #clientes .table-x-scroll {
+      display: none !important;
+    }
+
+    #clientes .sticky-client-table,
+    #clientes .table-wrap {
+      overflow: visible !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    #clientes .client-list-table {
+      border-collapse: separate !important;
+      border-spacing: 0 14px !important;
+    }
+
+    #clientes .client-list-table tr.client-card-row {
+      margin: 0 0 16px 0 !important;
+    }
+
+    #clientes .client-card-v51 {
+      position: relative !important;
+      isolation: isolate !important;
+      grid-template-columns: minmax(260px, 1.18fr) minmax(160px, .62fr) minmax(180px, .68fr) minmax(290px, .92fr) !important;
+      gap: 14px !important;
+      padding: 16px 16px 16px 20px !important;
+      margin: 0 0 16px 0 !important;
+      border-radius: 18px !important;
+      border: 1px solid rgba(148,163,184,.22) !important;
+      border-left: 7px solid #64748b !important;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.018)),
+        rgba(11, 15, 26, .98) !important;
+      box-shadow:
+        0 18px 42px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.05) !important;
+    }
+
+    #clientes .client-card-v51::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 18px;
+      background: linear-gradient(90deg, rgba(255,255,255,.055), transparent 18%, transparent);
+      z-index: -1;
+    }
+
+    #clientes .client-card-v51.client-card-paid {
+      border-left-color: #22c55e !important;
+      box-shadow: 0 18px 42px rgba(0,0,0,.28), inset 7px 0 0 rgba(34,197,94,.16) !important;
+    }
+
+    #clientes .client-card-v51.client-card-pending,
+    #clientes .client-card-v51.client-card-attention {
+      border-left-color: #f59e0b !important;
+      box-shadow: 0 18px 42px rgba(0,0,0,.28), inset 7px 0 0 rgba(245,158,11,.18) !important;
+    }
+
+    #clientes .client-card-v51.client-card-late {
+      border-left-color: #ef4444 !important;
+      box-shadow: 0 18px 42px rgba(0,0,0,.28), inset 7px 0 0 rgba(239,68,68,.18) !important;
+    }
+
+    #clientes .client-card-v51.client-card-bonus {
+      border-left-color: #8b5cf6 !important;
+      box-shadow: 0 18px 42px rgba(0,0,0,.28), inset 7px 0 0 rgba(139,92,246,.18) !important;
+    }
+
+    #clientes .client-card-v51.client-card-neutral {
+      border-left-color: #94a3b8 !important;
+    }
+
+    #clientes .client-card-v51 > div {
+      min-width: 0 !important;
+      padding: 12px !important;
+      border-radius: 14px !important;
+      border: 1px solid rgba(148,163,184,.13) !important;
+      background: rgba(255,255,255,.032) !important;
+    }
+
+    #clientes .client-card-info {
+      background: linear-gradient(135deg, rgba(56,189,248,.075), rgba(255,255,255,.026)) !important;
+    }
+
+    #clientes .client-card-money {
+      background: linear-gradient(135deg, rgba(34,197,94,.075), rgba(255,255,255,.026)) !important;
+    }
+
+    #clientes .client-card-status {
+      background: linear-gradient(135deg, rgba(245,158,11,.07), rgba(255,255,255,.026)) !important;
+    }
+
+    #clientes .client-card-actions-panel {
+      background: linear-gradient(135deg, rgba(229,9,20,.09), rgba(255,255,255,.026)) !important;
+    }
+
+    #clientes .client-main-name {
+      display: block !important;
+      font-size: 15px !important;
+      line-height: 1.38 !important;
+      letter-spacing: -.01em !important;
+      overflow-wrap: anywhere !important;
+    }
+
+    #clientes .client-row-note {
+      display: block !important;
+      margin-top: 6px !important;
+      color: #cbd5e1 !important;
+      line-height: 1.35 !important;
+      overflow-wrap: anywhere !important;
+    }
+
+    #clientes .client-card-actions-panel .btn.btn-primary {
+      background: linear-gradient(135deg, #ff2d3e, #e50914) !important;
+      border-color: rgba(255,255,255,.18) !important;
+      box-shadow: 0 8px 20px rgba(229,9,20,.22) !important;
+    }
+
+    #clientes .client-card-paybox select {
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      border-color: rgba(148,163,184,.24) !important;
+      background-color: rgba(20,24,35,.96) !important;
+    }
+
+    #clientes .client-card-actions-compact .btn {
+      min-height: 42px !important;
+    }
+
+    @media (max-width: 1240px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr) !important;
+      }
+    }
+
+    @media (max-width: 760px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: 1fr !important;
+        padding: 14px !important;
+      }
+    }
+
+
+    /* V53 - clientes: identificação profissional, cartões compactos e rolagem reforçada */
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .main::-webkit-scrollbar,
+    #clientes::-webkit-scrollbar,
+    #clientes .table-wrap::-webkit-scrollbar,
+    .modal-card::-webkit-scrollbar {
+      width: 20px !important;
+      height: 18px !important;
+    }
+
+    html::-webkit-scrollbar-track,
+    body::-webkit-scrollbar-track,
+    .main::-webkit-scrollbar-track,
+    #clientes::-webkit-scrollbar-track,
+    #clientes .table-wrap::-webkit-scrollbar-track,
+    .modal-card::-webkit-scrollbar-track {
+      background: #0f172a !important;
+      border-left: 1px solid rgba(255,255,255,.20) !important;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06) !important;
+    }
+
+    html::-webkit-scrollbar-thumb,
+    body::-webkit-scrollbar-thumb,
+    .main::-webkit-scrollbar-thumb,
+    #clientes::-webkit-scrollbar-thumb,
+    #clientes .table-wrap::-webkit-scrollbar-thumb,
+    .modal-card::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #ff4252, #e50914) !important;
+      border: 4px solid #0f172a !important;
+      border-radius: 999px !important;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.28), 0 0 18px rgba(229,9,20,.50) !important;
+    }
+
+    #clientes .panel {
+      overflow: visible !important;
+    }
+
+    #clientes .client-list-table,
+    #clientes .client-list-table tbody,
+    #clientes .client-list-table tr,
+    #clientes .client-list-table td {
+      display: block !important;
+      width: 100% !important;
+    }
+
+    #clientes .client-list-table {
+      border-spacing: 0 !important;
+      margin-top: 6px !important;
+    }
+
+    #clientes .client-card-v51 {
+      grid-template-columns: minmax(340px, 1.28fr) minmax(175px, .56fr) minmax(190px, .58fr) minmax(285px, .82fr) !important;
+      gap: 12px !important;
+      padding: 12px 12px 12px 18px !important;
+      margin: 0 0 14px 0 !important;
+      border-radius: 18px !important;
+      border: 1px solid rgba(148,163,184,.24) !important;
+      border-left-width: 9px !important;
+      background: linear-gradient(135deg, rgba(15,23,42,.98), rgba(12,15,24,.98)) !important;
+    }
+
+    #clientes .client-card-v51 > div {
+      padding: 10px 12px !important;
+      min-height: auto !important;
+      border-radius: 14px !important;
+    }
+
+    #clientes .client-card-info {
+      display: grid !important;
+      gap: 5px !important;
+      align-content: start !important;
+    }
+
+    #clientes .client-card-meta-row {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      flex-wrap: wrap !important;
+      margin-bottom: 4px !important;
+    }
+
+    #clientes .client-seq-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-width: 34px !important;
+      height: 26px !important;
+      padding: 0 8px !important;
+      border-radius: 999px !important;
+      background: rgba(15,23,42,.92) !important;
+      border: 1px solid rgba(255,255,255,.18) !important;
+      color: #f8fafc !important;
+      font-size: 12px !important;
+      font-weight: 900 !important;
+      letter-spacing: .04em !important;
+    }
+
+    #clientes .client-status-strip {
+      display: inline-flex !important;
+      align-items: center !important;
+      min-height: 26px !important;
+      padding: 0 10px !important;
+      border-radius: 999px !important;
+      font-size: 11px !important;
+      font-weight: 900 !important;
+      letter-spacing: .04em !important;
+      text-transform: uppercase !important;
+      border: 1px solid rgba(255,255,255,.18) !important;
+    }
+
+    #clientes .client-status-paid { color: #86efac !important; background: rgba(34,197,94,.16) !important; }
+    #clientes .client-status-pending,
+    #clientes .client-status-attention { color: #fde68a !important; background: rgba(245,158,11,.16) !important; }
+    #clientes .client-status-late { color: #fecaca !important; background: rgba(239,68,68,.20) !important; }
+    #clientes .client-status-bonus { color: #ddd6fe !important; background: rgba(139,92,246,.18) !important; }
+    #clientes .client-status-neutral { color: #e2e8f0 !important; background: rgba(148,163,184,.14) !important; }
+
+    #clientes .client-main-name {
+      font-size: 16px !important;
+      line-height: 1.25 !important;
+      margin-top: 2px !important;
+    }
+
+    #clientes .client-row-note {
+      margin-top: 2px !important;
+      font-size: 12px !important;
+    }
+
+    #clientes .client-card-label {
+      margin-bottom: 4px !important;
+    }
+
+    #clientes .client-card-paybox {
+      gap: 4px !important;
+    }
+
+    #clientes .client-card-paybox select {
+      min-height: 38px !important;
+      height: 38px !important;
+      font-size: 13px !important;
+    }
+
+    #clientes .client-card-actions-panel {
+      gap: 7px !important;
+      align-content: start !important;
+    }
+
+    #clientes .client-card-actions-panel .btn {
+      min-height: 38px !important;
+      height: auto !important;
+    }
+
+    #clientes .client-card-actions-panel .btn.btn-primary {
+      min-height: 42px !important;
+      font-size: 13px !important;
+      font-weight: 900 !important;
+      background: linear-gradient(135deg, #ff3344, #e50914) !important;
+    }
+
+    #clientes .client-card-actions-compact {
+      gap: 8px !important;
+    }
+
+    #clientes .client-card-actions-compact .btn {
+      min-height: 40px !important;
+    }
+
+    @media (max-width: 1320px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: minmax(300px, 1fr) minmax(230px, .78fr) !important;
+      }
+    }
+
+    @media (max-width: 820px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+
+
+    /* V54 - revisão profissional: lista de clientes sem rolagem lateral, cartões compactos e ações sempre visíveis */
+    #clientes {
+      overflow-x: hidden !important;
+    }
+
+    #clientes .table-wrap,
+    #clientes .sticky-client-table,
+    #clientes .client-list-table,
+    #clientes .client-list-table tbody {
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow: visible !important;
+    }
+
+    #clientes .client-card-v51 {
+      display: grid !important;
+      grid-template-columns: minmax(280px, 1.2fr) minmax(170px, .62fr) minmax(185px, .66fr) minmax(310px, .86fr) !important;
+      align-items: start !important;
+      gap: 12px !important;
+      min-height: 0 !important;
+      height: auto !important;
+      padding: 14px !important;
+      margin-bottom: 14px !important;
+    }
+
+    #clientes .client-card-v51 > div {
+      align-self: start !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+    }
+
+    #clientes .client-card-info {
+      border-top: 3px solid rgba(56,189,248,.35) !important;
+    }
+
+    #clientes .client-card-money {
+      border-top: 3px solid rgba(34,197,94,.38) !important;
+    }
+
+    #clientes .client-card-status {
+      border-top: 3px solid rgba(245,158,11,.38) !important;
+    }
+
+    #clientes .client-card-actions-panel {
+      border-top: 3px solid rgba(229,9,20,.45) !important;
+      position: relative !important;
+    }
+
+    #clientes .client-card-actions-panel .btn.btn-primary {
+      min-height: 44px !important;
+      border: 1px solid rgba(255,255,255,.32) !important;
+      outline: 2px solid rgba(255,255,255,.06) !important;
+    }
+
+    #clientes .client-card-actions-compact {
+      grid-template-columns: 1fr 1fr !important;
+    }
+
+    #clientes .client-card-paybox select,
+    #clientes .client-card-paybox option {
+      max-width: 100% !important;
+    }
+
+    #clientes .client-row-note,
+    #clientes .client-main-name {
+      word-break: normal !important;
+      overflow-wrap: anywhere !important;
+    }
+
+    @media (max-width: 1320px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) !important;
+      }
+    }
+
+    @media (max-width: 760px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: 1fr !important;
+        padding: 12px !important;
+      }
+      #clientes .client-card-actions-compact {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    /* V54 - barras de rolagem visíveis, mas sem roubar área útil */
+    html, body, .main, .modal, .modal-card {
+      scrollbar-width: auto !important;
+      scrollbar-color: #ff3344 #101827 !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 16px !important;
+      height: 14px !important;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #101827 !important;
+      border-left: 1px solid rgba(255,255,255,.18) !important;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #ff4050, #d90416) !important;
+      border: 3px solid #101827 !important;
+      border-radius: 999px !important;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #ff6370, #ff2032) !important;
+    }
+
+    /* V54 - modais sempre roláveis e botões finais acessíveis */
+    #clientModal.show,
+    #entryModal.show {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+
+    #clientModal .modal-card,
+    #entryModal .modal-card {
+      max-height: calc(100dvh - 20px) !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      scrollbar-gutter: stable both-edges !important;
+    }
+
+
+    /* V55 - editor de cliente e ações: botão sempre visível e clicável */
+    .client-edit-btn {
+      min-height: 46px !important;
+      cursor: pointer !important;
+      position: relative !important;
+      z-index: 50 !important;
+      box-shadow: 0 10px 22px rgba(255, 47, 65, .22) !important;
+    }
+    .client-edit-btn:focus-visible {
+      outline: 3px solid rgba(255,255,255,.82) !important;
+      outline-offset: 3px !important;
+    }
+    #clientModal.show {
+      display: flex !important;
+      z-index: 99999 !important;
+    }
+
+  
+    .receivable-audit-panel {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:14px 16px;
+      margin:14px 0;
+      border:1px solid rgba(255,255,255,.12);
+      border-left:5px solid var(--accent);
+      border-radius:18px;
+      background:rgba(15,23,42,.58);
+      box-shadow:0 18px 45px rgba(0,0,0,.16);
+    }
+    .receivable-audit-panel strong { display:block; color:var(--text); margin-bottom:4px; }
+    .receivable-audit-panel small { display:block; color:var(--muted); line-height:1.45; }
+    .receivable-audit-panel.audit-ok { border-left-color:#22c55e; }
+    .receivable-audit-panel.audit-attention { border-left-color:#f59e0b; }
+    .receivable-audit-panel.audit-danger { border-left-color:#ef4444; }
+    .receivable-month-summary { margin: 14px 0; display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .receivable-month-card { border:1px solid var(--border); border-radius: 16px; padding: 14px; background: rgba(15,23,42,.58); box-shadow: inset 4px 0 0 rgba(148,163,184,.28); }
+    .receivable-month-card.active { box-shadow: inset 4px 0 0 var(--primary), 0 0 0 1px rgba(255,42,59,.28); background: rgba(255,42,59,.08); }
+    .receivable-month-card strong { display:block; font-size: .94rem; color: var(--text); margin-bottom: 5px; }
+    .receivable-month-card small { display:block; color: var(--muted); line-height: 1.45; font-size:.78rem; }
+    .receivable-month-card .ok { color:#86efac; font-weight:900; }
+    .receivable-month-card .warn { color:#fbbf24; font-weight:900; }
+    .receivable-month-card .danger { color:#fca5a5; font-weight:900; }
+    @media (max-width: 1100px) { .receivable-month-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 700px) { .receivable-month-summary { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .receivable-audit-panel { flex-direction:column; align-items:stretch; } }
+
+  </style>
 </head>
-<body>
+<body class="tools-collapsed">
   <section class="login-screen" id="loginScreen">
     <form class="login-panel stack" id="loginForm">
       <div class="mark login-logo"><img src="alfa-logo.png" alt="Alfa Contabilidade" /></div>
@@ -1292,10 +2582,11 @@
       </div>
       <div class="login-actions">
         <button class="btn btn-primary" id="emailLoginBtn" type="submit">Entrar</button>
+        <button class="btn btn-ghost" id="firstAccessBtn" type="button">Criar senha / primeiro acesso</button>
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V40 - desempenho otimizado e salvamento em segundo plano.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V53 - clientes com edição direta, cartões compactos, identificação por status e rolagem reforçada.</div>
     </form>
   </section>
 
@@ -1305,7 +2596,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V40 rápido</span>
+          <span>Controle interno • V49 pronto</span>
         </div>
       </div>
 
@@ -1318,11 +2609,12 @@
         <button data-view="pagar"><span class="nav-icon">-</span>A pagar</button>
         <button data-view="relatorios"><span class="nav-icon">%</span>Relatórios</button>
         <button data-view="previsao"><span class="nav-icon">M</span>Previsão 03/2027</button>
+        <button data-view="usuarios" data-admin-only="true"><span class="nav-icon">U</span>Usuários</button>
         <button data-view="escritorio"><span class="nav-icon">A</span>Escritório</button>
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V40. Corrige lentidão nas baixas e lançamentos com renderização seletiva, deduplicação rápida e salvamento em segundo plano no Firestore.</p>
+        <p><span class="status-dot"></span>VERSÃO V52. Layout profissional: clientes separados por cartão, rolagem lateral removida e barra vertical visível.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
@@ -1338,21 +2630,22 @@
           <input id="monthlyPaymentsImportInput" type="file" accept=".csv,text/csv" hidden />
           <input id="clientImportInput" type="file" accept=".csv,text/csv" hidden />
           <input id="payablesImportInput" type="file" accept=".csv,text/csv,.txt,text/plain,.pdf,application/pdf" multiple hidden />
-          <label class="top-month-control" for="globalMonthFilter"><span>Mês de análise</span><input id="globalMonthFilter" type="month" title="Mês de análise do sistema" /></label>
-          <span class="cloud-status warn" id="cloudStatusBadge" title="Sincronização automática com Firebase/Firestore">Nuvem automática aguardando</span>
-          <button class="btn btn-secondary" id="cloudLoadNowBtn" type="button" title="Busca os dados salvos no Firestore e atualiza a tela">Carregar nuvem</button>
-          <button class="btn btn-secondary" id="cloudSyncNowBtn" type="button" title="Força o salvamento dos dados atuais no Firestore">Salvar nuvem</button>
-          <button class="btn btn-secondary" id="cloudDiagnosticBtn" type="button" title="Mostra e testa a comunicação com o Firestore">Diagnóstico</button>
-          <button class="btn btn-danger" id="cloudClearDatabaseBtn" type="button" title="Limpa clientes e lançamentos da nuvem e do navegador, mantendo o sistema publicado">Limpar banco</button>
-          <button class="btn btn-secondary" id="importClientsTopBtn" type="button">Importar clientes</button>
-          <button class="btn btn-secondary" id="importMonthlyPaymentsBtn" type="button">Baixar boletos pagos</button>
-          <button class="btn btn-secondary" id="importBtn" type="button">Importar extrato/saídas</button>
-          <button class="btn btn-secondary" id="exportBtn" type="button">Exportar CSV</button>
-          <button class="btn btn-secondary" id="manualBackupBtn" type="button">Backup</button>
-          <button class="btn btn-secondary" id="generateChargesBtn" type="button">Gerar 05/2026 a 03/2027</button>
-          <button class="btn btn-secondary" id="auditChargesBtn" type="button">Conferir mensalidades</button>
-          <button class="btn btn-ghost" id="clearEntriesBtn" type="button">Excluir lançamentos</button>
-          <button class="btn btn-primary" id="newEntryBtn" type="button">Novo lançamento</button>
+          <label class="top-month-control optional-top-action" for="globalMonthFilter"><span>Mês de análise</span><input id="globalMonthFilter" type="month" title="Mês de análise do sistema" /></label>
+          <span class="cloud-status warn optional-top-action" id="cloudStatusBadge" title="Sincronização automática com Firebase/Firestore">Nuvem automática aguardando</span>
+          <button class="btn btn-secondary optional-top-action" id="cloudLoadNowBtn" type="button" title="Busca os dados salvos no Firestore e atualiza a tela">Carregar nuvem</button>
+          <button class="btn btn-secondary optional-top-action" id="cloudSyncNowBtn" type="button" title="Força o salvamento dos dados atuais no Firestore">Salvar nuvem</button>
+          <button class="btn btn-secondary optional-top-action" id="cloudDiagnosticBtn" type="button" title="Mostra e testa a comunicação com o Firestore">Diagnóstico</button>
+          <button class="btn btn-danger optional-top-action" id="cloudClearDatabaseBtn" data-permission="clearDatabase" type="button" title="Limpa clientes e lançamentos da nuvem e do navegador, mantendo o sistema publicado">Limpar banco</button>
+          <button class="btn btn-secondary" id="newClientTopBtn" data-permission="manageClients" data-open-client-modal="true" onclick="window.__alfaForceOpenClientModal && window.__alfaForceOpenClientModal(event); return false;" type="button">Novo cliente</button>
+          <button class="btn btn-secondary optional-top-action" id="importMonthlyPaymentsBtn" data-permission="importPayments" type="button">Baixar boletos pagos</button>
+          <button class="btn btn-secondary optional-top-action" id="importBtn" data-permission="importStatement" type="button">Importar extrato/saídas</button>
+          <button class="btn btn-secondary optional-top-action" id="exportBtn" data-permission="exportData" type="button">Exportar CSV</button>
+          <button class="btn btn-secondary optional-top-action" id="manualBackupBtn" data-permission="exportData" type="button">Backup</button>
+          <button class="btn btn-secondary optional-top-action" id="generateChargesBtn" data-permission="manageCharges" type="button">Gerar 05/2026 a 03/2027</button>
+          <button class="btn btn-secondary optional-top-action" id="auditChargesBtn" type="button">Conferir mensalidades</button>
+          <button class="btn btn-ghost optional-top-action" id="clearEntriesBtn" data-permission="deleteEntries" type="button">Excluir lançamentos</button>
+          <button class="btn btn-primary" id="newEntryBtn" data-permission="manualEntry" data-open-entry-modal="true" onclick="window.__alfaForceOpenEntryModal && window.__alfaForceOpenEntryModal(event, 'receita'); return false;" type="button">Novo lançamento</button>
+          <button class="btn btn-secondary" id="toggleTopToolsBtn" type="button">Ferramentas</button>
           <button class="btn btn-ghost" id="logoutBtn" type="button">Sair</button>
         </div>
       </header>
@@ -1389,6 +2682,38 @@
       </section>
 
       <section class="view active" id="dashboard">
+        <section class="panel clean-dashboard-panel" id="cleanDashboardPanel">
+          <div class="panel-head">
+            <div>
+              <h2>Atalhos principais</h2>
+              <span class="pill">Tela inicial simplificada</span>
+            </div>
+          </div>
+          <div class="clean-dashboard-grid" aria-label="Atalhos da visão geral">
+            <div class="clean-dashboard-card">
+              <h3>Clientes</h3>
+              <p>Cadastrar, editar e consultar clientes.</p>
+              <button class="btn btn-primary" data-open-client-modal="true" type="button">Novo cliente</button>
+            </div>
+            <div class="clean-dashboard-card">
+              <h3>Lançamentos</h3>
+              <p>Criar receita ou despesa manual.</p>
+              <button class="btn btn-primary" data-open-entry-modal="receita" type="button">Novo lançamento</button>
+            </div>
+            <div class="clean-dashboard-card">
+              <h3>A receber</h3>
+              <p>Conferir cobranças, baixas e pendências.</p>
+              <button class="btn btn-secondary" data-view-shortcut="receber" type="button">Abrir a receber</button>
+            </div>
+            <div class="clean-dashboard-card">
+              <h3>A pagar</h3>
+              <p>Conferir contas, vencimentos e pagamentos.</p>
+              <button class="btn btn-secondary" data-view-shortcut="pagar" type="button">Abrir a pagar</button>
+            </div>
+          </div>
+          <div class="clean-dashboard-note">Os detalhes completos continuam nos módulos laterais: Lançamentos, Clientes, A receber, A pagar e Relatórios.</div>
+        </section>
+
         <section class="panel modern-executive-panel" id="executivePanel">
           <div class="executive-head">
             <div>
@@ -1437,6 +2762,17 @@
             <div class="insight"><span>Clientes com aberto</span><strong id="receivableClientOpenCount">0</strong></div>
           </div>
           <div class="hint">O sistema gera uma parcela por cliente, por competência, de 05/2026 até 03/2027. Cada parcela usa o dia de vencimento do cadastro do cliente; se faltar, usa dia 15.</div>
+
+          <div class="receivable-audit-panel" id="receivableClientAuditPanel">
+            <div>
+              <strong>Conferência clientes x contas a receber</strong>
+              <small id="receivableClientAuditText">Carregando conferência...</small>
+            </div>
+            <div class="row-actions">
+              <button class="btn btn-secondary table-btn" id="auditReceivableClientsBtn" type="button">Conferir clientes sem cobrança</button>
+              <button class="btn btn-primary table-btn" id="generateMissingReceivableBtn" data-permission="manageCharges" type="button">Gerar cobranças faltantes</button>
+            </div>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -1462,7 +2798,7 @@
             </div>
             <div class="row-actions">
               <button class="btn btn-secondary" id="openPayablesBtn" type="button">Abrir contas a pagar</button>
-              <button class="btn btn-primary" id="importPayablesDashboardBtn" type="button">Importar guias/boletos</button>
+              <button class="btn btn-primary" id="importPayablesDashboardBtn" data-permission="manualEntry" type="button">Importar guias/boletos</button>
             </div>
           </div>
           <div class="insight-strip" aria-label="Alertas de vencimentos">
@@ -1477,6 +2813,7 @@
               <thead>
                 <tr>
                   <th>Vencimento</th>
+                  <th>Competência</th>
                   <th>Fornecedor</th>
                   <th>Categoria</th>
                   <th>Descrição</th>
@@ -1523,7 +2860,14 @@
       </section>
 
       <section class="view" id="lancamentos">
-        <div class="toolbar">
+        <div class="page-action-row" aria-label="Ações de lançamentos">
+          <button class="btn btn-primary" id="newEntryListBtn" data-permission="manualEntry" data-open-entry-modal="true" onclick="window.__alfaForceOpenEntryModal && window.__alfaForceOpenEntryModal(event, 'receita'); return false;" type="button">Novo lançamento</button>
+          <button class="btn btn-secondary" id="newReceivableListBtn" data-permission="manualEntry" data-open-entry-modal="receita" onclick="window.__alfaForceOpenEntryModal && window.__alfaForceOpenEntryModal(event, 'receita'); return false;" type="button">Nova receita</button>
+          <button class="btn btn-secondary" id="newExpenseListBtn" data-permission="manualEntry" data-open-entry-modal="despesa" onclick="window.__alfaForceOpenEntryModal && window.__alfaForceOpenEntryModal(event, 'despesa'); return false;" type="button">Nova despesa</button>
+          <span class="action-spacer"></span>
+          <span class="action-note">Use estes botões para lançar sem voltar para a visão geral.</span>
+        </div>
+        <div class="toolbar compact-toolbar">
           <input id="searchInput" type="search" placeholder="Buscar por descrição, cliente, fornecedor ou categoria" />
           <select id="typeFilter">
             <option value="todos">Todos os tipos</option>
@@ -1538,7 +2882,11 @@
             <option value="bonificado">Bonificado</option>
             <option value="cancelado">Cancelado</option>
           </select>
-          <input id="monthFilter" type="month" />
+          <select id="entryCompetenceFilter" title="Filtrar lançamentos por competência">
+            <option value="todos">Todas as competências</option>
+          </select>
+          <button class="btn btn-secondary" id="entryClearFiltersBtn" type="button">Limpar filtros</button>
+          <input id="monthFilter" type="month" title="Mês interno de referência dos painéis" style="display:none" aria-hidden="true" tabindex="-1" />
         </div>
         <section class="panel">
           <div class="panel-head">
@@ -1550,6 +2898,7 @@
               <thead>
                 <tr>
                   <th>Vencimento</th>
+                  <th>Competência</th>
                   <th>Descrição</th>
                   <th>Nome</th>
                   <th>Categoria</th>
@@ -1574,11 +2923,15 @@
             </div>
             <div class="row-actions">
               <span class="pill">Cadastro mestre seguro: dados salvos na nuvem/Firestore</span>
-              <button class="btn btn-secondary" id="importClientsBtn" type="button">Importar clientes CSV</button>
-              <button class="btn btn-primary" id="newClientBtn" type="button">Novo cliente</button>
+              <button class="btn btn-secondary" id="importClientsBtn" type="button" disabled title="Cadastro de clientes agora é manual para evitar importação indevida.">Importação desativada</button>
+              <button class="btn btn-primary" id="newClientBtn" data-permission="manageClients" data-open-client-modal="true" onclick="window.__alfaForceOpenClientModal && window.__alfaForceOpenClientModal(event); return false;" type="button">Novo cliente</button>
             </div>
           </div>
-          <div class="hint"><strong>Importações separadas:</strong> use este botão somente para cadastro/atualização de clientes. Para boletos pagos, use “Baixar boletos pagos”. Para extrato bancário, use “Importar extrato/saídas”. Assim o sistema não apaga lançamentos anteriores.</div>
+          <div class="hint"><strong>Cadastro manual:</strong> clientes devem ser criados/atualizados manualmente antes de importar boletos pagos ou extratos. As importações não criam clientes automaticamente; valores sem vínculo vão para Recebimentos a identificar.</div>
+          <div class="page-action-row" aria-label="Ações de clientes">
+            <button class="btn btn-primary" id="newClientInlineBtn" data-permission="manageClients" data-open-client-modal="true" onclick="window.__alfaForceOpenClientModal && window.__alfaForceOpenClientModal(event); return false;" type="button">Novo cliente</button>
+            <span class="action-note">Cadastro de cliente é sempre manual; importação não cria cliente.</span>
+          </div>
           <div class="filter-panel" aria-label="Filtros de clientes">
             <div class="field">
               <label for="clientSearchInput">Pesquisar clientes</label>
@@ -1610,19 +2963,12 @@
             </div>
           </div>
           <div class="table-wrap sticky-client-table">
-            <table>
+            <table class="client-list-table">
               <thead>
                 <tr>
                   <th>Cliente</th>
-                  <th>Tipo</th>
-                  <th>CNPJ/Documento</th>
-                  <th>Contato</th>
-                  <th>Primeira cobrança</th>
-                  <th>Honorário do mês</th>
-                  <th>Recebido no mês</th>
-                  <th>Pendente no mês</th>
-                  <th>Vencimento</th>
-                  <th>Atrasos</th>
+                  <th>Documento</th>
+                  <th>Honorário</th>
                   <th>Situação</th>
                   <th>Ações</th>
                 </tr>
@@ -1648,7 +2994,7 @@
                 <option value="three">Vencendo em até 3 dias</option>
               </select>
               <button class="btn btn-secondary" id="batchWhatsappBtn" type="button">Gerar cobranças em lote</button>
-              <button class="btn btn-primary" id="importMonthlyPaymentsReceberBtn" type="button">Baixar boletos pagos</button>
+              <button class="btn btn-primary" id="importMonthlyPaymentsReceberBtn" data-permission="importPayments" type="button">Baixar boletos pagos</button>
             </div>
           </div>
           <div class="hint" id="batchWhatsappPanel" hidden></div>
@@ -1669,6 +3015,12 @@
               </select>
             </div>
             <div class="field">
+              <label for="receivableCompetenceFilter">Competência</label>
+              <select id="receivableCompetenceFilter" title="Filtrar contas a receber por competência">
+                <option value="todos">Todas as competências</option>
+              </select>
+            </div>
+            <div class="field">
               <label for="receivableMinValueFilter">Valor mínimo</label>
               <input id="receivableMinValueFilter" type="number" min="0" step="0.01" />
             </div>
@@ -1679,11 +3031,14 @@
             <div class="filter-info" id="receivableFilterInfo">Pesquisa sem alterar baixa de boletos.</div>
             <div class="filter-actions"><button class="btn btn-secondary" id="receivableClearFiltersBtn" type="button">Limpar filtros</button></div>
           </div>
+          <!-- Painéis de conferência removidos da aba Contas a receber para manter a tela simples.
+               A conferência técnica continua disponível por função/rotina, sem poluir a operação diária. -->
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Vencimento</th>
+                  <th>Competência</th>
                   <th>Cliente</th>
                   <th>Descrição</th>
                   <th>Categoria</th>
@@ -1729,9 +3084,9 @@
               <span class="pill" id="pagarCount">0 registros</span>
             </div>
             <div class="row-actions">
-              <button class="btn btn-primary" id="importPayablesBtn" type="button">Importar guias PDF/CSV/TXT</button>
+              <button class="btn btn-primary" id="importPayablesBtn" data-permission="manualEntry" type="button">Importar guias PDF/CSV/TXT</button>
               <button class="btn btn-secondary" id="downloadPayablesTemplateBtn" type="button">Modelo CSV despesas</button>
-              <button class="btn btn-secondary" id="newPayableBtn" type="button">Nova despesa</button>
+              <button class="btn btn-secondary" id="newPayableBtn" data-permission="manualEntry" data-open-entry-modal="despesa" onclick="window.__alfaForceOpenEntryModal && window.__alfaForceOpenEntryModal(event, 'despesa'); return false;" type="button">Nova despesa</button>
             </div>
           </div>
           <div class="hint"><strong>Rotina recomendada:</strong> cadastre as despesas fixas, importe guias/boletos em PDF ou CSV, confira vencimento e valor, depois alimente com extrato bancário para baixa/conciliação. PDF escaneado pode exigir conferência manual.</div>
@@ -1751,6 +3106,12 @@
               </select>
             </div>
             <div class="field">
+              <label for="payableCompetenceFilter">Competência</label>
+              <select id="payableCompetenceFilter" title="Filtrar contas a pagar por competência">
+                <option value="todos">Todas as competências</option>
+              </select>
+            </div>
+            <div class="field">
               <label for="payableMinValueFilter">Valor mínimo</label>
               <input id="payableMinValueFilter" type="number" min="0" step="0.01" />
             </div>
@@ -1766,6 +3127,7 @@
               <thead>
                 <tr>
                   <th>Vencimento</th>
+                  <th>Competência</th>
                   <th>Fornecedor</th>
                   <th>Descrição</th>
                   <th>Categoria</th>
@@ -2190,6 +3552,83 @@
         </section>
       </section>
 
+
+      <section class="view" id="usuarios">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Usuários do sistema</h2>
+              <span class="pill paid" id="usersCount">0 usuários autorizados</span>
+            </div>
+            <span class="pill">Somente administrador</span>
+          </div>
+          <div class="hint"><strong>Regra segura:</strong> o administrador cadastra aqui o e-mail autorizado e o perfil. Para o funcionário acessar, crie o usuário no Firebase Authentication ou peça para ele usar "Criar senha / primeiro acesso" com o mesmo e-mail autorizado. As regras do Firestore precisam estar atualizadas pelo arquivo FIRESTORE-RULES-ALFA-FINANCEIRO.txt.</div>
+          <form id="userAccessForm" class="settings-grid">
+            <div class="field">
+              <label for="accessUserName">Nome do funcionário</label>
+              <input id="accessUserName" type="text" placeholder="Nome completo" />
+            </div>
+            <div class="field">
+              <label for="accessUserEmail">E-mail de login</label>
+              <input id="accessUserEmail" type="email" placeholder="funcionario@email.com" required />
+            </div>
+            <div class="field">
+              <label for="accessUserRole">Perfil</label>
+              <select id="accessUserRole">
+                <option value="financeiro">Financeiro operacional</option>
+                <option value="supervisor">Supervisor financeiro</option>
+                <option value="consulta">Consulta / relatórios</option>
+                <option value="funcionario_limitado">Funcionário limitado</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="accessUserActive">Situação</label>
+              <select id="accessUserActive">
+                <option value="sim">Ativo</option>
+                <option value="nao">Bloqueado</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label>Permissões</label>
+              <div class="filter-row" id="accessPermissionBox"></div>
+            </div>
+            <div class="field full">
+              <label for="accessUserNotes">Observação interna</label>
+              <input id="accessUserNotes" type="text" placeholder="Ex.: funcionário do financeiro, autorizado a baixar boletos" />
+            </div>
+            <div class="field full actions-inline">
+              <button class="btn btn-primary" type="submit">Salvar usuário autorizado</button>
+              <button class="btn btn-secondary" id="refreshUsersBtn" type="button">Atualizar lista</button>
+              <button class="btn btn-ghost" id="clearUserFormBtn" type="button">Limpar formulário</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Lista de usuários autorizados</h2>
+              <span class="pill">Controle de acesso</span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Perfil</th>
+                  <th>Situação</th>
+                  <th>Permissões principais</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="usersRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
       <section class="view" id="escritorio">
         <section class="panel">
           <div class="panel-head">
@@ -2465,38 +3904,73 @@
         </div>
         <div class="field">
           <label for="clientService">Serviço mensal principal</label>
-          <input id="clientService" type="text" list="serviceOptions" value="Honorários contábeis" />
-          <datalist id="serviceOptions">
-            <option value="Honorários contábeis"></option>
-            <option value="Programa SGR"></option>
-            <option value="Assessoria fiscal"></option>
-            <option value="Assessoria contábil"></option>
-            <option value="Assessoria departamento pessoal"></option>
-            <option value="Consultoria tributária mensal"></option>
-            <option value="Outros serviços mensais"></option>
-          </datalist>
-          <small class="muted">Use aqui o serviço recorrente principal. Serviços avulsos como IR, contratos e alterações podem ser lançados em Novo lançamento sem apagar a mensalidade.</small>
+          <select id="clientService">
+            <option value="Honorários contábeis">Honorários contábeis</option>
+            <option value="Programa SGR">Programa SGR</option>
+            <option value="Assessoria fiscal">Assessoria fiscal</option>
+            <option value="Assessoria contábil">Assessoria contábil</option>
+            <option value="Assessoria departamento pessoal">Assessoria departamento pessoal</option>
+            <option value="Consultoria tributária mensal">Consultoria tributária mensal</option>
+            <option value="Outros serviços mensais">Outros serviços mensais</option>
+          </select>
+          <small class="muted">Escolha o serviço recorrente. Serviços avulsos como IR, contratos e alterações devem ser lançados em Novo lançamento, sem apagar a mensalidade.</small>
         </div>
         <div class="field">
           <label for="clientMonthlyFee">Honorário mensal</label>
-          <input id="clientMonthlyFee" type="number" min="0" step="0.01" placeholder="0,00" required />
+          <input id="clientMonthlyFee" type="text" inputmode="decimal" placeholder="0,00" required />
         </div>
         <div class="field">
           <label for="clientDueDay">Dia de vencimento</label>
-          <input id="clientDueDay" type="number" min="1" max="31" value="5" required />
+          <input id="clientDueDay" type="number" min="1" max="31" value="15" required />
+        </div>
+        <div class="field">
+          <label for="clientFirstDueDate">Data do primeiro vencimento</label>
+          <input id="clientFirstDueDate" type="date" />
+          <small class="muted">Ao informar uma data, o sistema ajusta automaticamente a primeira competência e o dia de vencimento.</small>
         </div>
         <div class="field">
           <label for="clientPaymentMethod">Forma padrão</label>
           <select id="clientPaymentMethod">
             <option value="Pix">Pix</option>
-            <option value="Dinheiro">Dinheiro</option>
+            <option value="Folha de carnê">Folha de carnê</option>
             <option value="Boleto">Boleto</option>
+            <option value="Dinheiro">Dinheiro</option>
             <option value="Cartão de crédito">Cartão de crédito</option>
             <option value="Cartão de débito">Cartão de débito</option>
             <option value="Transferência bancária">Transferência bancária</option>
             <option value="Depósito">Depósito</option>
             <option value="Cheque">Cheque</option>
           </select>
+        </div>
+        <div class="client-billing-box">
+          <div class="billing-title">
+            <strong>Geração automática de parcelas</strong>
+            <span class="pill open" id="clientBillingPreview">0 parcelas previstas</span>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="clientFirstChargeMonth">Primeira competência</label>
+              <input id="clientFirstChargeMonth" type="month" />
+            </div>
+            <div class="field">
+              <label for="clientEndChargeMonth">Última competência</label>
+              <input id="clientEndChargeMonth" type="month" />
+            </div>
+            <div class="field">
+              <label for="clientInstallments">Quantidade de parcelas</label>
+              <input id="clientInstallments" type="number" min="1" max="120" placeholder="Ex.: 11" />
+            </div>
+            <div class="field">
+              <label for="clientGenerateChargesOnSave">Ao salvar cliente</label>
+              <select id="clientGenerateChargesOnSave">
+                <option value="sim">Gerar/ajustar parcelas abertas</option>
+                <option value="nao">Salvar cadastro sem gerar parcelas</option>
+              </select>
+            </div>
+          </div>
+          <div class="client-billing-help" id="clientBillingHelp">
+            O sistema cria uma cobrança por competência, usando o dia de vencimento do cliente. Não duplica parcelas existentes e não altera parcelas já pagas/bonificadas.
+          </div>
         </div>
         <div class="field full">
           <label for="clientNotes">Observações</label>
@@ -2540,7 +4014,7 @@
       </div>
       <div class="actions" style="margin-top:16px;">
         <button class="btn btn-ghost" id="cancelClientBtn" type="button">Cancelar</button>
-        <button class="btn btn-primary" type="submit">Salvar cliente</button>
+        <button class="btn btn-primary" id="saveClientBtn" type="submit">Salvar cliente</button>
       </div>
     </form>
   </div>
@@ -2555,6 +4029,7 @@
       GoogleAuthProvider,
       signInWithPopup,
       signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
       onAuthStateChanged,
       setPersistence,
       inMemoryPersistence,
@@ -2596,6 +4071,52 @@
     const googleProvider = new GoogleAuthProvider();
     const authorizedEmail = "alfacontabilidade2014@gmail.com";
     const authorizedEmails = new Set([authorizedEmail]);
+
+    const accessPermissionLabels = {
+      viewDashboard: "Ver visão geral",
+      viewClients: "Ver clientes",
+      manageClients: "Cadastrar/editar clientes",
+      viewReceivables: "Ver contas a receber",
+      importPayments: "Baixar boletos pagos",
+      importStatement: "Importar extrato/saídas",
+      viewPayables: "Ver contas a pagar",
+      manualEntry: "Lançar/editar manualmente",
+      viewReports: "Ver relatórios",
+      exportData: "Exportar/backup",
+      clearDatabase: "Limpar banco",
+      deleteEntries: "Excluir lançamentos",
+      manageUsers: "Gerenciar usuários",
+      manageCharges: "Gerar/conferir mensalidades"
+    };
+    const rolePermissionTemplates = {
+      admin: Object.fromEntries(Object.keys(accessPermissionLabels).map(key => [key, true])),
+      supervisor: {
+        viewDashboard: true, viewClients: true, manageClients: true, viewReceivables: true,
+        importPayments: true, importStatement: true, viewPayables: true, manualEntry: true,
+        viewReports: true, exportData: true, clearDatabase: false, deleteEntries: false,
+        manageUsers: false, manageCharges: true
+      },
+      financeiro: {
+        viewDashboard: true, viewClients: true, manageClients: true, viewReceivables: true,
+        importPayments: true, importStatement: true, viewPayables: true, manualEntry: true,
+        viewReports: true, exportData: false, clearDatabase: false, deleteEntries: false,
+        manageUsers: false, manageCharges: true
+      },
+      consulta: {
+        viewDashboard: true, viewClients: true, manageClients: false, viewReceivables: true,
+        importPayments: false, importStatement: false, viewPayables: true, manualEntry: false,
+        viewReports: true, exportData: false, clearDatabase: false, deleteEntries: false,
+        manageUsers: false, manageCharges: false
+      },
+      funcionario_limitado: {
+        viewDashboard: true, viewClients: true, manageClients: false, viewReceivables: true,
+        importPayments: false, importStatement: false, viewPayables: false, manualEntry: false,
+        viewReports: false, exportData: false, clearDatabase: false, deleteEntries: false,
+        manageUsers: false, manageCharges: false
+      }
+    };
+    let currentAccessProfile = null;
+    let managedUsers = [];
     const cloudDocumentPath = ["alfaFinanceiro", "principal"];
     let cloudLoaded = false;
     let cloudSyncTimer = null;
@@ -2606,7 +4127,7 @@
     let cloudReadyForWrites = false;
     let cloudCollectionsSyncInProgress = false;
     const cloudTimeoutMs = 240000;
-    // V40: ajustes de desempenho para uso diário.
+    // V41: ajustes de desempenho para uso diário.
     // O sistema passa a recalcular/renderizar somente a tela ativa, adia salvamentos em lote
     // e evita deduplicação O(n²) a cada clique de baixa/lançamento.
     const cloudAutoSaveDelayMs = 3500;
@@ -2617,6 +4138,7 @@
     const clientsStorageKey = "alfaFinanceiroClientesV1";
     const whatsappSettingsKey = "alfaFinanceiroWhatsappSettingsV1";
     const whatsappLogsKey = "alfaFinanceiroWhatsappLogsV1";
+    const auditLogsKey = "alfaFinanceiroAuditLogsV1";
     const officeProfileKey = "alfaFinanceiroCadastroEscritorioV1";
     const backupHistoryKey = "alfaFinanceiroBackupsV1";
     const lastBackupDateKey = "alfaFinanceiroUltimoBackupV1";
@@ -2635,12 +4157,13 @@
     const titles = {
       dashboard: ["Visão geral financeira", "Resumo do mês, vencimentos e fluxo dos lançamentos."],
       lancamentos: ["Lançamentos", "Controle completo de receitas, despesas, status e vencimentos."],
-      clientes: ["Clientes", "Cadastro automático, documentos e recebimentos por cliente."],
+      clientes: ["Clientes", "Cadastro manual, documentos e recebimentos por cliente."],
       receber: ["Contas a receber", "Entradas previstas, clientes pendentes e recebimentos pagos."],
       pagar: ["Contas a pagar", "Despesas, fornecedores, vencimentos, reclassificação e duplicidades bloqueadas."],
       detalhes: ["Detalhes financeiros", "Lista focada do indicador selecionado."],
       relatorios: ["Relatórios", "Leitura rápida das categorias e do resultado financeiro mensal."],
       previsao: ["Previsão e cobrança até 03/2027", "Acompanhamento mensal, agenda de cobrança e clientes sem telefone."],
+      usuarios: ["Usuários e permissões", "Cadastro de acessos internos, perfis e permissões operacionais."],
       escritorio: ["Cadastro do escritório", "Dados usados nos relatórios, modelos de cobrança e WhatsApp interno."]
     };
 
@@ -2664,6 +4187,7 @@
     let officeProfile = loadOfficeProfile();
     let whatsappSettings;
     let whatsappLogs;
+    let auditLogs;
 
     const paymentMethods = [
       "Pix",
@@ -2781,6 +4305,7 @@ Atenciosamente,
 
     whatsappSettings = loadWhatsappSettings();
     whatsappLogs = loadWhatsappLogs();
+    auditLogs = loadAuditLogs();
 
     function todayISO(offset = 0) {
       const date = new Date();
@@ -2832,7 +4357,7 @@ Atenciosamente,
       const paidAmount = parseNumericAmount(entry.paidAmount ?? entry.valor_pago ?? entry.valorPago ?? entry.paid_value ?? 0);
       return {
         ...entry,
-        id: entry.id || crypto.randomUUID(),
+        id: entry.id || generateId(),
         source: entry.source || "manual",
         type: normalizedType,
         status,
@@ -2894,7 +4419,7 @@ Atenciosamente,
     function expandRecurringEntries(baseEntries) {
       const months = monthSequence();
       return baseEntries.flatMap(entry => {
-        if (entry.type !== "receita") return [{ ...entry, id: crypto.randomUUID() }];
+        if (entry.type !== "receita") return [{ ...entry, id: generateId() }];
         return months.map(month => {
           const isFirstMonth = month === firstChargeMonth;
           const sourceId = `${entry.sourceId || entry.id}-${month}`;
@@ -2961,7 +4486,7 @@ Atenciosamente,
       const key = client.key || clientKey(name, documentValue);
       return {
         ...client,
-        id: client.id || client.clientId || client.cloudId || crypto.randomUUID(),
+        id: client.id || client.clientId || client.cloudId || generateId(),
         cloudId: client.cloudId || clientCloudId({ ...client, name, document: documentValue, key }),
         key,
         type: client.type || normalizeClientTypeFromDocument(documentValue, client.tipo_documento || client.tipo || ""),
@@ -2984,6 +4509,7 @@ Atenciosamente,
         notes: client.notes || client.observacao || client.observacoes || client.obs || "",
         firstChargeMonth: parseMonthInput(client.firstChargeMonth || client.inicio_cobranca || client.inicio || client.competencia_inicial, firstChargeMonth),
         endChargeMonth: parseMonthInput(client.endChargeMonth || client.fim_cobranca || client.fim || client.competencia_final, lastChargeMonth),
+        installmentCount: Number(client.installmentCount || client.quantidade_parcelas || client.qtd_parcelas || 0) || 0,
         createdAt: client.createdAt || new Date().toISOString(),
         updatedAt: client.updatedAt || new Date().toISOString(),
         source: client.source || "manual-client"
@@ -3182,7 +4708,7 @@ Atenciosamente,
     }
 
     function dedupeEntries(list) {
-      // V40: versão linear. A rotina antiga fazia result.find(...) com comparação de negócio
+      // V41: versão linear. A rotina antiga fazia result.find(...) com comparação de negócio
       // para cada lançamento, ficando pesada quando havia muitas mensalidades/extratos.
       const byKey = new Map();
       (Array.isArray(list) ? list : []).forEach(raw => {
@@ -3344,12 +4870,109 @@ Atenciosamente,
       scheduleCloudSync("whatsapp-logs");
     }
 
+    function loadAuditLogs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(auditLogsKey) || "[]");
+        return Array.isArray(saved) ? saved.slice(0, 500) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveAuditLogs() {
+      localStorage.setItem(auditLogsKey, JSON.stringify((auditLogs || []).slice(0, 500)));
+    }
+
+    function registerAuditLog(action, entity, details = {}) {
+      try {
+        const item = {
+          id: generateId("log"),
+          at: new Date().toISOString(),
+          user: normalizeEmail(auth.currentUser?.email || "sem-login"),
+          action,
+          entity,
+          details: safeJsonCopy(details)
+        };
+        auditLogs = [item, ...(auditLogs || [])].slice(0, 500);
+        saveAuditLogs();
+      } catch (error) {
+        console.warn("Não foi possível registrar log de auditoria.", error);
+      }
+    }
+
     function normalizeEmail(value) {
       return String(value || "").trim().toLowerCase();
     }
 
+    function generateId(prefix = "id") {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+      return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function escapeHtml(value) {
+      return escapeHTML(value);
+    }
+
+    function isAdminEmail(email) {
+      return normalizeEmail(email) === authorizedEmail;
+    }
+
+    function defaultAccessProfileForEmail(email) {
+      const normalized = normalizeEmail(email);
+      if (isAdminEmail(normalized)) {
+        return {
+          email: normalized,
+          name: "Administrador Alfa",
+          role: "admin",
+          active: true,
+          permissions: { ...rolePermissionTemplates.admin },
+          admin: true
+        };
+      }
+      return null;
+    }
+
+    function userAccessDocRef(email) {
+      return doc(db, ...cloudDocumentPath, "users", normalizeEmail(email));
+    }
+
+    async function loadAccessProfileForUser(user) {
+      const email = normalizeEmail(user?.email || "");
+      if (!email) return null;
+      const adminProfile = defaultAccessProfileForEmail(email);
+      if (adminProfile) return adminProfile;
+      try {
+        const snap = await withTimeout(getDoc(userAccessDocRef(email)), cloudTimeoutMs, "Tempo esgotado ao validar usuário autorizado.");
+        if (!snap.exists()) return null;
+        const data = snap.data() || {};
+        if (data.active === false) return null;
+        const role = data.role || "financeiro";
+        return {
+          email,
+          name: data.name || email,
+          role,
+          active: data.active !== false,
+          permissions: { ...(rolePermissionTemplates[role] || rolePermissionTemplates.financeiro), ...(data.permissions || {}) },
+          admin: false,
+          source: "firestore-users"
+        };
+      } catch (error) {
+        console.error("Erro ao validar usuário autorizado", error);
+        setLoginError(firebaseErrorMessage(error));
+        return null;
+      }
+    }
+
     function isAuthorizedUser(user) {
-      return Boolean(user?.email && authorizedEmails.has(normalizeEmail(user.email)));
+      const email = normalizeEmail(user?.email || "");
+      if (!email) return false;
+      if (isAdminEmail(email)) return true;
+      return Boolean(currentAccessProfile?.active && normalizeEmail(currentAccessProfile.email) === email);
+    }
+
+    function hasPermission(permission) {
+      if (currentAccessProfile?.admin || isAdminEmail(auth.currentUser?.email)) return true;
+      return Boolean(currentAccessProfile?.permissions?.[permission]);
     }
 
     function cloudStateRef() {
@@ -3368,7 +4991,7 @@ Atenciosamente,
         .replace(/[^a-z0-9_-]+/g, "_")
         .replace(/^_+|_+$/g, "")
         .slice(0, 140);
-      return base || `${fallback}_${crypto.randomUUID()}`;
+      return base || `${fallback}_${generateId()}`;
     }
 
     function clientCloudId(client) {
@@ -3483,6 +5106,7 @@ Atenciosamente,
       localStorage.setItem(officeProfileKey, JSON.stringify(officeProfile));
       localStorage.setItem(whatsappSettingsKey, JSON.stringify(whatsappSettings));
       localStorage.setItem(whatsappLogsKey, JSON.stringify((whatsappLogs || []).slice(0, 300)));
+      localStorage.setItem(auditLogsKey, JSON.stringify((auditLogs || []).slice(0, 500)));
     }
 
     async function loadCloudState() {
@@ -3512,6 +5136,7 @@ Atenciosamente,
           officeProfile = { ...loadOfficeProfile(), ...(data.officeProfile || {}) };
           whatsappSettings = { ...loadWhatsappSettings(), ...(data.whatsappSettings || {}) };
           whatsappLogs = Array.isArray(data.whatsappLogs) ? data.whatsappLogs.slice(0, 300) : whatsappLogs;
+          auditLogs = Array.isArray(data.auditLogs) ? data.auditLogs.slice(0, 500) : auditLogs;
           persistCloudStateLocally();
           cloudLoaded = true;
           cloudReadyForWrites = true;
@@ -3560,14 +5185,14 @@ Atenciosamente,
         // Proteção V27: jamais sobrescrever a nuvem com uma base zerada por abertura em outro computador.
         if (!activeEntryIds.length && !activeClientIds.length && reason !== "limpeza-confirmada") {
           setCloudStatus("Proteção ativada: base local vazia não foi salva. Clique em Carregar nuvem.", "warn");
-          console.warn("Alfa Financeiro V33: bloqueado salvamento vazio", { reason });
+          console.warn("Alfa Financeiro V41: bloqueado salvamento vazio", { reason });
           return;
         }
 
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
         const statePayload = {
-          version: "V40-Desempenho-Otimizado",
+          version: "V56-Salvar-Cliente-Corrigido",
           storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -3579,6 +5204,7 @@ Atenciosamente,
           officeProfile: safeJsonCopy(officeProfile),
           whatsappSettings: safeJsonCopy(whatsappSettings),
           whatsappLogs: safeJsonCopy((whatsappLogs || []).slice(0, 300)),
+          auditLogs: safeJsonCopy((auditLogs || []).slice(0, 500)),
           totalEntries: activeEntryIds.length,
           totalClients: activeClientIds.length,
           compactPayload: usingCompactPayload
@@ -3675,6 +5301,7 @@ Atenciosamente,
       localStorage.setItem(storageKey, JSON.stringify(entries));
       localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
       localStorage.setItem(whatsappLogsKey, JSON.stringify(whatsappLogs));
+      localStorage.setItem(auditLogsKey, JSON.stringify(auditLogs || []));
       localStorage.removeItem(backupHistoryKey);
       localStorage.removeItem(lastBackupDateKey);
     }
@@ -3711,6 +5338,7 @@ Atenciosamente,
           officeProfile: safeJsonCopy(officeProfile),
           whatsappSettings: safeJsonCopy(whatsappSettings),
           whatsappLogs: [],
+          auditLogs: safeJsonCopy((auditLogs || []).slice(0, 500)),
           totalEntries: 0,
           totalClients: 0,
           compactPayload: true
@@ -3887,55 +5515,11 @@ Atenciosamente,
     }
 
     function upsertClientFromEntry(entry) {
+      // Regra de negócio: cliente é cadastro mestre manual.
+      // Lançamentos, extratos e importações não podem criar cliente automaticamente.
       if (!entry || entry.type !== "receita" || !entry.name) return null;
       const key = clientKey(entry.name, entry.document);
-      const now = new Date().toISOString();
-      const entryMonth = entry.billingMonth || String(entry.date || firstChargeMonth).slice(0, 7);
-      let client = clients.find(item => item.key === key);
-
-      if (!client) {
-        client = {
-          id: crypto.randomUUID(),
-          key,
-          name: entry.name,
-          type: normalizeDocument(entry.document).length === 11 ? "pf" : "pj",
-          document: entry.document || "",
-          tradeName: "",
-          responsible: "",
-          phone: "",
-          whatsappAllowed: "sim",
-          email: "",
-          address: "",
-          city: "",
-          stateRegistration: "",
-          cityRegistration: "",
-          service: entry.category || "Honorários contábeis",
-          monthlyFee: Number(entry.amount || 0),
-          dueDay: Number(String(entry.date || "").slice(-2)) || 5,
-          paymentMethod: entry.method || "Pix",
-          status: "ativo",
-          notes: "",
-          firstChargeMonth: entryMonth || firstChargeMonth,
-          createdAt: now,
-          updatedAt: now,
-          source: entry.source || "manual"
-        };
-        clients.push(client);
-      } else {
-        client.name = client.name || entry.name;
-        if (!client.document && entry.document) client.document = entry.document;
-        client.type = client.type || (normalizeDocument(client.document).length === 11 ? "pf" : "pj");
-        client.monthlyFee = Number(client.monthlyFee || entry.amount || 0);
-        client.dueDay = Number(client.dueDay || String(entry.date || "").slice(-2) || 5);
-        client.paymentMethod = client.paymentMethod || entry.method || "Pix";
-        client.service = client.service || entry.category || "Honorários contábeis";
-        client.status = client.status || "ativo";
-        client.whatsappAllowed = client.whatsappAllowed || "sim";
-        client.firstChargeMonth = earliestMonth(client.firstChargeMonth, entryMonth || firstChargeMonth);
-        client.updatedAt = now;
-        if (entry.source === "csv") client.source = "csv";
-      }
-      return client;
+      return clients.find(item => item.key === key) || null;
     }
 
     function earliestMonth(...months) {
@@ -3954,51 +5538,14 @@ Atenciosamente,
     }
 
     function syncClientsFromEntries(options = {}) {
-      // V33: cliente cadastrado é base mestre. Esta rotina nunca zera a lista de clientes.
-      // Ela apenas complementa clientes ausentes a partir de lançamentos de receita.
-      const byKey = new Map();
-      sanitizeClients(clients).forEach(client => byKey.set(client.key || clientKey(client.name, client.document), client));
-      let added = 0;
-      entries.forEach(entry => {
-        if (!entry || entry.type !== "receita" || !entry.name) return;
-        const key = clientKey(entry.name, entry.document);
-        const existing = byKey.get(key);
-        const entryMonth = entry.billingMonth || String(entry.date || firstChargeMonth).slice(0, 7);
-        if (existing) {
-          if (!existing.monthlyFee && Number(entry.amount)) existing.monthlyFee = Number(entry.amount || 0);
-          if (!existing.dueDay) existing.dueDay = Number(String(entry.date || "").slice(-2)) || 15;
-          if (!existing.service) existing.service = entry.category || "Honorários contábeis";
-          if (!existing.paymentMethod) existing.paymentMethod = entry.method || "Pix";
-          existing.firstChargeMonth = earliestMonth(existing.firstChargeMonth, entryMonth || firstChargeMonth);
-          existing.updatedAt = existing.updatedAt || new Date().toISOString();
-          return;
-        }
-        const now = new Date().toISOString();
-        byKey.set(key, normalizeClientForRuntime({
-          id: crypto.randomUUID(),
-          key,
-          name: entry.name,
-          type: normalizeDocument(entry.document).length === 11 ? "pf" : "pj",
-          document: entry.document || "",
-          service: entry.category || "Honorários contábeis",
-          monthlyFee: Number(entry.amount || 0),
-          dueDay: Number(String(entry.date || "").slice(-2)) || 15,
-          paymentMethod: entry.method || "Pix",
-          status: "ativo",
-          firstChargeMonth: entryMonth || firstChargeMonth,
-          endChargeMonth: lastChargeMonth,
-          createdAt: now,
-          updatedAt: now,
-          source: "gerado-por-lancamento"
-        }));
-        added++;
-      });
-      clients = sanitizeClients([...byKey.values()]);
-      if (options.persist && added) {
+      // Regra de negócio: clientes são mantidos apenas pelo cadastro manual.
+      // Esta rotina não cria nem complementa clientes a partir de lançamentos/importações.
+      clients = sanitizeClients(clients);
+      if (options.persist) {
         localStorage.setItem(clientsStorageKey, JSON.stringify(clients));
-        scheduleCloudSync("clientes-complementados");
+        scheduleCloudSync("clientes-normalizados");
       }
-      return added;
+      return 0;
     }
 
     function formatMoney(value) {
@@ -4019,6 +5566,13 @@ Atenciosamente,
       if (!value) return "-";
       const [year, month] = value.split("-");
       return `${month}/${year}`;
+    }
+
+    function daysInMonth(monthValue) {
+      const normalized = normalizeMonthInput(monthValue) || selectedMonth();
+      const [year, month] = String(normalized || "").split("-").map(Number);
+      if (!year || !month) return 31;
+      return new Date(year, month, 0).getDate();
     }
 
     function monthSequence(startMonth = firstChargeMonth, endMonth = lastChargeMonth) {
@@ -4404,12 +5958,16 @@ Atenciosamente,
 
     function filteredEntries(extraType = null) {
       const filters = getFilters();
-      return entries.filter(entry => {
-        const matchesSearch = !filters.search || matchesFreeSearch(entrySearchSource(entry), filters.search);
+      const base = entries.filter(entry => {
         const matchesType = extraType ? entry.type === extraType : filters.type === "todos" || entry.type === filters.type;
+        return matchesType;
+      });
+      if (!extraType) updateEntryCompetenceOptions(base);
+      return base.filter(entry => {
+        const matchesSearch = !filters.search || matchesFreeSearch(entrySearchSource(entry), filters.search);
         const matchesStatus = filters.status === "todos" || visibleStatus(entry) === filters.status;
-        const matchesMonth = !filters.month || entryMatchesMonth(entry, filters.month);
-        return matchesSearch && matchesType && matchesStatus && matchesMonth;
+        const matchesCompetence = extraType ? true : entryMatchesListCompetenceFilter(entry);
+        return matchesSearch && matchesStatus && matchesCompetence;
       }).sort(extraType === "receita" ? sortByNameThenDate : (a, b) => a.date.localeCompare(b.date));
     }
 
@@ -4643,7 +6201,7 @@ Atenciosamente,
       const provider = extra.name || extractProviderNameFromText(file?.name || "", textValue || "");
       const needsReview = !amount || !extractDueDateFromText(joined) || category === "Despesas a classificar";
       return normalizeEntryForRuntime({
-        id: crypto.randomUUID(),
+        id: generateId(),
         source: extra.source || "guia-importada",
         sourceId: extra.sourceId || `${file?.name || "arquivo"}|${file?.size || 0}|${file?.lastModified || 0}`,
         type: "despesa",
@@ -4801,6 +6359,7 @@ Atenciosamente,
       return `
         <tr>
           <td>${formatDate(entry.date)}</td>
+          <td>${formatMonth(entryCompetenceMonth(entry) || entryDueMonth(entry))}</td>
           <td>${escapeHTML(entry.description || "Sem descrição")}</td>
           <td>${escapeHTML(entry.name)}</td>
           <td>${escapeHTML(entry.category)}</td>
@@ -4814,7 +6373,8 @@ Atenciosamente,
     function renderRows(tbodyId, list, countId = null, compact = false) {
       const tbody = document.getElementById(tbodyId);
       if (!tbody) return;
-      tbody.innerHTML = list.length ? list.map(entry => rowTemplate(entry, compact)).join("") : `<tr><td colspan="8"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
+      const emptyColspan = compact ? 7 : 9;
+      tbody.innerHTML = list.length ? list.map(entry => rowTemplate(entry, compact)).join("") : `<tr><td colspan="${emptyColspan}"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
       if (countId) {
         document.getElementById(countId).textContent = `${list.length} registro${list.length === 1 ? "" : "s"}`;
       }
@@ -4826,6 +6386,7 @@ Atenciosamente,
       return `
         <tr>
           <td>${formatDate(entry.date)}</td>
+          <td>${formatMonth(entryCompetenceMonth(entry) || entryDueMonth(entry))}</td>
           <td>${escapeHTML(entry.name)}</td>
           <td>${escapeHTML(entry.description || "Sem descrição")}</td>
           <td>${escapeHTML(entry.category)}</td>
@@ -4869,18 +6430,188 @@ Atenciosamente,
         </tr>`;
     }
 
+    function populateCompetenceFilter(selectId, list = [], allLabel = "Todas as competências") {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      const current = select.value || "todos";
+      const counts = new Map();
+      list.forEach(entry => {
+        const month = entryCompetenceMonth(entry) || entryDueMonth(entry);
+        if (!month) return;
+        counts.set(month, (counts.get(month) || 0) + 1);
+      });
+      const months = [...counts.keys()].sort();
+      const options = [`<option value="todos">${escapeHTML(allLabel)} (${list.length})</option>`]
+        .concat(months.map(month => `<option value="${month}">${formatMonth(month)} - ${counts.get(month)} registro(s)</option>`));
+      select.innerHTML = options.join("");
+      select.value = current === "todos" || months.includes(current) ? current : "todos";
+    }
+
+    function updateReceivableCompetenceOptions(list = []) {
+      populateCompetenceFilter("receivableCompetenceFilter", list, "Todas as competências");
+    }
+
+    function updatePayableCompetenceOptions(list = []) {
+      populateCompetenceFilter("payableCompetenceFilter", list, "Todas as competências");
+    }
+
+    function updateEntryCompetenceOptions(list = []) {
+      populateCompetenceFilter("entryCompetenceFilter", list, "Todas as competências");
+    }
+
+    function entryMatchesCompetenceSelect(entry, selectId) {
+      const value = document.getElementById(selectId)?.value || "todos";
+      if (!value || value === "todos") return true;
+      return (entryCompetenceMonth(entry) || entryDueMonth(entry)) === value;
+    }
+
+    function entryMatchesReceivableCompetenceFilter(entry) {
+      return entryMatchesCompetenceSelect(entry, "receivableCompetenceFilter");
+    }
+
+    function entryMatchesPayableCompetenceFilter(entry) {
+      return entryMatchesCompetenceSelect(entry, "payableCompetenceFilter");
+    }
+
+    function entryMatchesListCompetenceFilter(entry) {
+      return entryMatchesCompetenceSelect(entry, "entryCompetenceFilter");
+    }
+
     function applyAccountAdvancedFilter(list, mode) {
       const prefix = mode === "receita" ? "receivable" : "payable";
+      if (mode === "receita") updateReceivableCompetenceOptions(list);
+      if (mode === "despesa") updatePayableCompetenceOptions(list);
       const search = document.getElementById(`${prefix}SearchInput`)?.value || "";
       const statusId = `${prefix}StatusFilter`;
       const minId = `${prefix}MinValueFilter`;
       const maxId = `${prefix}MaxValueFilter`;
+      const competenceId = mode === "receita" ? "receivableCompetenceFilter" : "payableCompetenceFilter";
       const filtered = list.filter(entry => matchesFreeSearch(entrySearchSource(entry), search)
         && entryMatchesStatusSelect(entry, statusId)
-        && entryMatchesValueRange(entry, minId, maxId));
+        && entryMatchesValueRange(entry, minId, maxId)
+        && entryMatchesCompetenceSelect(entry, competenceId));
       const info = document.getElementById(`${prefix}FilterInfo`);
-      if (info) info.textContent = `${filtered.length} registro(s) exibido(s) de ${list.length}.`;
+      if (info) {
+        const competenceValue = document.getElementById(competenceId)?.value || "todos";
+        const competenceText = competenceValue && competenceValue !== "todos" ? ` Competência: ${formatMonth(competenceValue)}.` : "";
+        info.textContent = `${filtered.length} registro(s) exibido(s) de ${list.length}.${competenceText}`;
+      }
       return filtered;
+    }
+
+
+    function receivableAuditMonth() {
+      const selected = document.getElementById("receivableCompetenceFilter")?.value || "todos";
+      return selected && selected !== "todos" ? selected : selectedMonth();
+    }
+
+    function openReceivableEntriesForAudit(month) {
+      return entries.filter(entry => entry.type === "receita"
+        && entry.status !== "cancelado"
+        && entry.status !== "pago"
+        && entry.status !== "bonificado"
+        && (entry.billingMonth || String(entry.date || "").slice(0, 7)) === month);
+    }
+
+    function receivableClientAudit(month = receivableAuditMonth()) {
+      const expectedClients = activeBillableClientsForMonth(month);
+      const openMonthly = expectedClients.map(client => ({
+        client,
+        charge: findMonthlyChargeForClient(client, month)
+      }));
+      const missingClients = openMonthly.filter(item => !item.charge).map(item => item.client);
+      const paidClients = openMonthly.filter(item => item.charge && (item.charge.status === "pago" || item.charge.status === "bonificado")).map(item => item.client);
+      const openClients = openMonthly.filter(item => item.charge && isOpenEntry(item.charge)).map(item => item.client);
+      const openTitles = openReceivableEntriesForAudit(month);
+      return {
+        month,
+        expectedClients,
+        expected: expectedClients.length,
+        openTitles: openTitles.length,
+        openClients: openClients.length,
+        paidClients: paidClients.length,
+        missing: missingClients.length,
+        missingClients
+      };
+    }
+
+    function receivableMonthAuditSummary(month) {
+      const normalized = normalizeMonthInput(month) || selectedMonth();
+      const expectedClients = activeBillableClientsForMonth(normalized);
+      const charges = entries.filter(entry => entry.type === "receita" && entry.status !== "cancelado" && (entryCompetenceMonth(entry) || entryDueMonth(entry)) === normalized);
+      const open = charges.filter(isOpenEntry);
+      const paid = charges.filter(entry => entry.status === "pago" || entry.status === "bonificado");
+      const missing = expectedClients.filter(client => !findMonthlyChargeForClient(client, normalized));
+      return { month: normalized, expected: expectedClients.length, total: charges.length, open: open.length, paid: paid.length, missing: missing.length };
+    }
+
+    function renderReceivableCompetenceSummary() {
+      const box = document.getElementById("receivableCompetenceSummary");
+      if (!box) return;
+      const selected = document.getElementById("receivableCompetenceFilter")?.value || "todos";
+      const months = [...new Set([
+        ...monthSequence(firstChargeMonth, lastChargeMonth),
+        ...entries.filter(entry => entry.type === "receita").map(entry => entryCompetenceMonth(entry) || entryDueMonth(entry)).filter(Boolean)
+      ])].sort();
+      const rows = months.map(receivableMonthAuditSummary).filter(item => item.expected || item.total).slice(0, 14);
+      box.innerHTML = rows.length ? rows.map(item => {
+        const active = selected !== "todos" && item.month === selected ? " active" : "";
+        const statusClass = item.missing ? "danger" : (item.paid ? "warn" : "ok");
+        const statusText = item.missing ? `${item.missing} sem título` : `${item.open} em aberto`;
+        return `<button class="receivable-month-card${active}" type="button" data-select-receivable-month="${item.month}">
+          <strong>${formatMonth(item.month)}</strong>
+          <small><span class="${statusClass}">${statusText}</span></small>
+          <small>${item.expected} cliente(s) esperado(s) • ${item.total} título(s) • ${item.paid} pago(s)/bonificado(s)</small>
+        </button>`;
+      }).join("") : `<div class="empty">Nenhuma competência com cobrança localizada.</div>`;
+    }
+
+    function renderReceivableClientAudit() {
+      const audits = [
+        { panel: document.getElementById("receivableClientAuditPanel"), text: document.getElementById("receivableClientAuditText") },
+        { panel: document.getElementById("receivableClientAuditPanelModule"), text: document.getElementById("receivableClientAuditTextModule") }
+      ];
+      const audit = receivableClientAudit();
+      const missingNames = audit.missingClients.slice(0, 5).map(client => client.name || client.document || "Cliente sem nome").join(", ");
+      const parts = [
+        `Competência ${formatMonth(audit.month)}: ${audit.expected} cliente(s) ativo(s) com honorário esperado.`,
+        `${audit.openTitles} título(s) em aberto na competência.`,
+        `${audit.paidClients} cliente(s) já pago(s)/bonificado(s).`,
+        audit.missing ? `${audit.missing} cliente(s) sem título gerado: ${missingNames}${audit.missing > 5 ? "..." : ""}.` : "Nenhum cliente ativo está sem cobrança gerada nessa competência."
+      ];
+      audits.forEach(({ panel, text }) => {
+        if (!panel || !text) return;
+        panel.classList.remove("audit-ok", "audit-attention", "audit-danger");
+        if (audit.missing > 0) panel.classList.add("audit-danger");
+        else if (audit.paidClients > 0 || audit.expected !== audit.openTitles) panel.classList.add("audit-attention");
+        else panel.classList.add("audit-ok");
+        text.textContent = parts.join(" ");
+      });
+      // Resumo visual por cartões removido da aba Contas a receber.
+    }
+
+    function showReceivableClientAudit() {
+      const audit = receivableClientAudit();
+      const missingNames = audit.missingClients.slice(0, 20).map((client, index) => `${index + 1}. ${client.name || "Cliente sem nome"} - ${client.document || "sem documento"}`).join("\n");
+      const detail = audit.missing ? `\n\nClientes sem título gerado:\n${missingNames}${audit.missing > 20 ? "\n..." : ""}` : "";
+      alert(`Conferência de contas a receber - ${formatMonth(audit.month)}\n\nClientes ativos esperados: ${audit.expected}\nTítulos em aberto: ${audit.openTitles}\nClientes pagos/bonificados: ${audit.paidClients}\nClientes sem título: ${audit.missing}${detail}`);
+      console.info("Conferência clientes x contas a receber", audit);
+      renderReceivableClientAudit();
+      return audit;
+    }
+
+    async function generateMissingReceivableChargesFromAudit() {
+      if (!ensurePermission("manageCharges", "gerar cobranças faltantes")) return;
+      const audit = receivableClientAudit();
+      if (!audit.missing) {
+        showToast(`Nenhuma cobrança faltante para ${formatMonth(audit.month)}.`);
+        renderReceivableClientAudit();
+        return;
+      }
+      if (!confirm(`Gerar ${audit.missing} cobrança(s) faltante(s) para a competência ${formatMonth(audit.month)}?`)) return;
+      const created = ensureMonthlyChargesForMonth(audit.month, true);
+      render();
+      showToast(`${created} cobrança(s) faltante(s) gerada(s) para ${formatMonth(audit.month)}.`);
     }
 
     function renderAccountRows(tbodyId, list, countId) {
@@ -4888,8 +6619,9 @@ Atenciosamente,
       if (!tbody) return;
       const mode = tbodyId === "receberRows" ? "receita" : tbodyId === "pagarRows" ? "despesa" : "";
       const visibleList = mode ? applyAccountAdvancedFilter(list, mode) : list;
-      tbody.innerHTML = visibleList.length ? visibleList.map(accountRowTemplate).join("") : `<tr><td colspan="7"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
+      tbody.innerHTML = visibleList.length ? visibleList.map(accountRowTemplate).join("") : `<tr><td colspan="8"><div class="empty">Nenhum lançamento encontrado.</div></td></tr>`;
       document.getElementById(countId).textContent = `${visibleList.length} registro${visibleList.length === 1 ? "" : "s"}`;
+      if (mode === "receita") renderReceivableClientAudit();
     }
 
     function unidentifiedIncomeRows() {
@@ -4922,6 +6654,7 @@ Atenciosamente,
           <td class="money-in">+ ${moneySpan(entry.paidAmount || entry.amount || 0)}</td>
           <td>
             <div class="row-actions">
+              <button class="btn btn-secondary table-btn" data-action="link-unidentified-income" data-id="${entry.id}" type="button">Vincular cliente</button>
               <button class="btn btn-secondary table-btn" data-action="make-avulsa" data-id="${entry.id}" type="button">Receita avulsa</button>
               <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
               <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
@@ -4989,8 +6722,14 @@ Atenciosamente,
       return true;
     }
 
+    function accountEntriesByType(type) {
+      const list = entries.filter(entry => entry.type === type && entry.status !== "cancelado");
+      return list.sort(type === "receita" ? sortByNameThenDate : (a, b) => String(a.date || "").localeCompare(String(b.date || "")) || normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+    }
+
     function filteredReceivablesForWhatsapp() {
-      return filteredEntries("receita").filter(receivableWhatsappFilter);
+      // A tela Contas a receber não pode depender dos filtros escondidos da aba Lançamentos.
+      return accountEntriesByType("receita").filter(receivableWhatsappFilter);
     }
 
     function getClientSummary(client) {
@@ -5081,10 +6820,21 @@ Atenciosamente,
       const visibleClients = sortedClients
         .map(client => ({ client, summary: getClientSummary(client) }))
         .filter(item => matchesClientQuickFilter(item.summary) && clientAdvancedFilterMatches(item.client, item.summary));
-      const rows = visibleClients.map(({ client, summary }) => {
+
+      window.__alfaVisibleClientsV54 = visibleClients.map(item => item.client);
+      window.__alfaVisibleClientsV55 = window.__alfaVisibleClientsV54;
+      const rows = visibleClients.map(({ client, summary }, index) => {
         const monthlyFeeValue = clientMonthlyFeeValue(client, summary);
         const expectedMonthValue = clientMonthExpectedValue(client, summary);
-      const status = !summary.monthEntries.length
+        const pendingEntries = entries
+          .filter(entry => entry.type === "receita" && clientKey(entry.name, entry.document) === client.key && isOpenEntry(entry))
+          .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+        const pending = pendingEntries[0] || firstPendingClientEntry(summary);
+        const pendingText = summary.openAmount > 0 ? `${moneySpan(summary.openAmount)} em aberto` : "Sem pendência";
+        const nextDueText = summary.nextDue ? `Venc. ${formatDate(summary.nextDue)}` : "Sem vencimento";
+        const phoneOrEmail = [client.phone, client.email].filter(Boolean).join(" / ");
+        const documentText = client.document || "Documento não informado";
+        const status = !summary.monthEntries.length
           ? monthlyFeeValue > 0 ? `<span class="pill open">Gerar cobrança</span>` : `<span class="pill">Sem cobrança</span>`
           : summary.monthEntries.every(entry => entry.status === "bonificado" || entry.status === "cancelado")
             ? `<span class="pill bonus">Bonificado</span>`
@@ -5095,34 +6845,87 @@ Atenciosamente,
             : summary.hasLate
               ? `<span class="pill late">Vencido</span>`
               : `<span class="pill open">Pendente</span>`;
-        const lateText = summary.lateMonths.length
-          ? `${summary.lateMonths.map(formatMonth).join(", ")} (${moneySpan(summary.lateAmount)})`
-          : "-";
+        const clientCardTone = status.includes('pill paid')
+          ? 'paid'
+          : status.includes('pill late')
+            ? 'late'
+            : status.includes('pill bonus')
+              ? 'bonus'
+              : status.includes('Gerar cobrança')
+                ? 'attention'
+                : status.includes('Sem cobrança')
+                  ? 'neutral'
+                  : 'pending';
+
+        const pendingOptions = pendingEntries.map(entry => {
+          const month = formatMonth(entry.billingMonth || String(entry.date || "").slice(0, 7));
+          const due = entry.date ? ` - venc. ${formatDate(entry.date)}` : "";
+          return `<option value="${escapeHTML(entry.id)}">${escapeHTML(month)} - ${formatMoney(entry.amount)}${escapeHTML(due)}</option>`;
+        }).join("");
+
+        const defaultMethod = client.defaultMethod || client.paymentMethod || "Pix";
+        const paymentOptions = ["Pix", "Boleto", "Dinheiro", "Transferência", "Cartão", "Bonificação"].map(method => (
+          `<option value="${escapeHTML(method)}" ${normalizeText(method) === normalizeText(defaultMethod) ? "selected" : ""}>${escapeHTML(method)}</option>`
+        )).join("");
+
+        const clientNumber = String(index + 1).padStart(2, "0");
+        const statusLabelText = status.includes("Em dia") ? "Em dia"
+          : status.includes("Atraso") ? "Atraso anterior"
+          : status.includes("Vencido") ? "Vencido"
+          : status.includes("Bonificado") ? "Bonificado"
+          : status.includes("Gerar cobrança") ? "Gerar cobrança"
+          : status.includes("Sem cobrança") ? "Sem cobrança"
+          : "Pendente";
+
+        const paymentBox = pendingEntries.length ? `
+          <div class="client-card-paybox">
+            <label>Parcela em aberto</label>
+            <select data-client-entry="${escapeHTML(client.key)}" title="Escolha a competência para baixar">
+              ${pendingOptions}
+            </select>
+            <label>Forma de recebimento</label>
+            <select data-client-payment="${escapeHTML(client.key)}" title="Forma de recebimento">
+              ${paymentOptions}
+            </select>
+          </div>` : `<small class="client-row-note">Nenhum honorário em aberto para baixa.</small>`;
+
         return `
-          <tr>
-            <td>${escapeHTML(client.name)}</td>
-            <td>${client.type === "pf" ? "PF" : "PJ"}</td>
-            <td>${escapeHTML(client.document || "-")}</td>
-            <td>${escapeHTML([client.phone, client.email].filter(Boolean).join(" / ") || "-")}</td>
-            <td>${formatMonth(client.firstChargeMonth || firstChargeMonth)}</td>
-            <td class="money-in">${moneySpan(monthlyFeeValue)}</td>
-            <td class="money-in">${moneySpan(summary.receivedAmount)}</td>
-            <td class="${summary.openAmount > 0 ? "money-out" : "money-in"}">${moneySpan(summary.openAmount)}</td>
-            <td>${summary.nextDue ? formatDate(summary.nextDue) : "-"}</td>
-            <td>${escapeHTML(lateText)}</td>
-            <td>${status}</td>
-            <td>
-              <div class="row-actions">
-                <button class="icon-btn" data-action="edit-client" data-client-key="${escapeHTML(client.key)}" title="Editar cadastro">E</button>
-                ${clientCompetenceControl(client, summary)}
-                ${clientPaymentControl(client, summary)}
-                <button class="icon-btn" data-action="client-cash" data-client-key="${escapeHTML(client.key)}" title="Baixar cobrança">✓</button>
-                ${whatsappChargeButton(client, summary)}
-              </div>
+          <tr class="client-card-row">
+            <td class="client-card-cell" colspan="5">
+              <article class="client-card-v51 client-card-${clientCardTone}">
+                <div class="client-card-info">
+                  <div class="client-card-meta-row">
+                    <span class="client-seq-badge">${clientNumber}</span>
+                    <span class="client-status-strip client-status-${clientCardTone}">${escapeHTML(statusLabelText)}</span>
+                  </div>
+                  <strong class="client-main-name">${escapeHTML(client.name || "Cliente sem nome")}</strong>
+                  <small class="client-row-note"><b>Contato:</b> ${escapeHTML(phoneOrEmail || "não informado")}</small>
+                  <small class="client-row-note"><b>Documento:</b> ${escapeHTML(documentText)}</small>
+                </div>
+                <div class="client-card-money">
+                  <span class="client-card-label">Honorário do mês</span>
+                  <strong class="money-in">${moneySpan(monthlyFeeValue)}</strong>
+                  <small class="client-row-note">${nextDueText}</small>
+                </div>
+                <div class="client-card-status">
+                  <span class="client-card-label">Situação</span>
+                  ${status}
+                  <small class="client-row-note">${pendingText}</small>
+                </div>
+                <div class="client-card-actions-panel">
+                  <button class="btn btn-primary table-btn client-edit-btn" data-action="edit-client" data-client-index="${index}" data-client-key="${escapeHTML(client.key)}" data-client-id="${escapeHTML(client.id || "")}" data-client-document="${escapeHTML(client.document || "")}" data-client-name="${escapeHTML(client.name || "")}" onclick="return window.__alfaEditClientDirectV55 ? window.__alfaEditClientDirectV55(this.dataset.clientKey, this.dataset.clientId, this.dataset.clientDocument, this.dataset.clientName, event, this.dataset.clientIndex) : window.__alfaEditClientDirect(this.dataset.clientKey, this.dataset.clientId, this.dataset.clientDocument, this.dataset.clientName, event, this.dataset.clientIndex)" type="button">Editar cadastro</button>
+                  ${paymentBox}
+                  <div class="client-card-actions-compact">
+                    ${pending ? `<button class="btn btn-secondary table-btn" data-action="client-cash" data-permission="importPayments" data-client-key="${escapeHTML(client.key)}" type="button">Baixar honorário</button>` : ""}
+                    ${pending ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${escapeHTML(pending.id)}" type="button">WhatsApp</button>` : ""}
+                  </div>
+                </div>
+              </article>
             </td>
           </tr>`;
       });
-      document.getElementById("clientRows").innerHTML = rows.length ? rows.join("") : `<tr><td colspan="12"><div class="empty">Nenhum cliente cadastrado ainda.</div></td></tr>`;
+
+      document.getElementById("clientRows").innerHTML = rows.length ? rows.join("") : `<tr><td colspan="5"><div class="empty">Nenhum cliente cadastrado ainda.</div></td></tr>`;
       const label = clientFilterLabel();
       document.getElementById("clientCount").textContent = `${visibleClients.length} cliente${visibleClients.length === 1 ? "" : "s"}${label ? ` - ${label}` : ""}`;
       const info = document.getElementById("clientFilterInfo");
@@ -6154,6 +7957,145 @@ Atenciosamente,
     @media (max-width: 1180px) { .filter-panel { grid-template-columns: repeat(2, minmax(0,1fr)); } }
     @media (max-width: 720px) { .filter-panel { grid-template-columns: 1fr; } }
 
+
+
+    /* V51 - clientes em cartões profissionais: ações e baixa sempre visíveis */
+    #clientes .sticky-client-table,
+    #clientes .table-wrap {
+      overflow: visible !important;
+      max-height: none !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    #clientes .client-list-table,
+    #clientes .client-list-table tbody,
+    #clientes .client-list-table tr,
+    #clientes .client-list-table td {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      table-layout: auto !important;
+      border-collapse: separate !important;
+      overflow: visible !important;
+    }
+
+    #clientes .client-list-table thead {
+      display: none !important;
+    }
+
+    #clientes .client-list-table tr.client-card-row {
+      margin: 0 0 12px 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    #clientes .client-list-table td.client-card-cell {
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    #clientes .client-card-v51 {
+      display: grid !important;
+      grid-template-columns: minmax(260px, 1.35fr) minmax(150px, .65fr) minmax(170px, .75fr) minmax(260px, .95fr) !important;
+      align-items: start !important;
+      gap: 14px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 14px !important;
+      border: 1px solid var(--line) !important;
+      border-radius: 16px !important;
+      background: rgba(13, 16, 27, .96) !important;
+      box-shadow: none !important;
+    }
+
+    #clientes .client-card-label {
+      display: block !important;
+      margin-bottom: 5px !important;
+      color: var(--muted) !important;
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      letter-spacing: .08em !important;
+      text-transform: uppercase !important;
+    }
+
+    #clientes .client-main-name {
+      font-size: 14px !important;
+      line-height: 1.35 !important;
+    }
+
+    #clientes .client-card-actions-panel {
+      display: grid !important;
+      gap: 8px !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
+    #clientes .client-card-actions-panel .btn {
+      width: 100% !important;
+      min-height: 36px !important;
+      padding: 8px 10px !important;
+      white-space: normal !important;
+      text-align: center !important;
+      justify-content: center !important;
+    }
+
+    #clientes .client-card-paybox {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 5px !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
+    #clientes .client-card-paybox label {
+      color: var(--muted) !important;
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      letter-spacing: .06em !important;
+      text-transform: uppercase !important;
+    }
+
+    #clientes .client-card-paybox select {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      min-height: 36px !important;
+      padding: 8px 10px !important;
+      font-size: 12px !important;
+    }
+
+    #clientes .client-card-actions-compact {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+
+    #clientes .client-card-actions-compact .btn:only-child {
+      grid-column: 1 / -1 !important;
+    }
+
+    @media (max-width: 1180px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: minmax(240px, 1fr) minmax(190px, .85fr) !important;
+      }
+    }
+
+    @media (max-width: 720px) {
+      #clientes .client-card-v51 {
+        grid-template-columns: 1fr !important;
+      }
+      #clientes .client-card-actions-compact {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -6181,8 +8123,10 @@ Atenciosamente,
       <tbody>${bodyRows}</tbody>
       <tfoot>${footRows}</tfoot>
     </table>
-    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V33. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
+    <div class="footer-note">${escapeHTML(officeProfile.reportSignature || officeProfile.name || "Alfa Contabilidade")} • Relatório gerado automaticamente pelo Alfa Financeiro V41. Conferir com o extrato bancário e com as cobranças antes de tomar decisão financeira.</div>
   </div>
+
+
 </body>
 </html>`;
     }
@@ -6342,8 +8286,162 @@ Atenciosamente,
       return document.querySelector(".view.active")?.id || "dashboard";
     }
 
+
+    function clearUserAccessForm() {
+      const form = document.getElementById("userAccessForm");
+      if (form) form.reset();
+      const role = document.getElementById("accessUserRole");
+      if (role) role.value = "financeiro";
+      const active = document.getElementById("accessUserActive");
+      if (active) active.value = "sim";
+      fillPermissionBoxes(rolePermissionTemplates.financeiro);
+    }
+
+    function fillPermissionBoxes(selected = {}) {
+      const box = document.getElementById("accessPermissionBox");
+      if (!box) return;
+      box.innerHTML = Object.entries(accessPermissionLabels).map(([key, label]) => `
+        <label class="pill" style="cursor:pointer;">
+          <input type="checkbox" data-user-permission="${key}" ${selected[key] ? "checked" : ""} /> ${label}
+        </label>
+      `).join("");
+    }
+
+    function selectedUserPermissionsFromForm() {
+      const permissions = {};
+      document.querySelectorAll("[data-user-permission]").forEach(input => {
+        permissions[input.dataset.userPermission] = Boolean(input.checked);
+      });
+      return permissions;
+    }
+
+    async function loadManagedUsers() {
+      if (!hasPermission("manageUsers")) return [];
+      const usersMap = await getCollectionDocsMap("users");
+      managedUsers = [...usersMap.entries()].map(([id, data]) => ({ email: id, ...(data || {}) }))
+        .sort((a, b) => normalizeText(a.name || a.email).localeCompare(normalizeText(b.name || b.email), "pt-BR"));
+      return managedUsers;
+    }
+
+    function renderUsersPanel() {
+      const rows = document.getElementById("usersRows");
+      if (!rows) return;
+      const count = document.getElementById("usersCount");
+      if (!hasPermission("manageUsers")) {
+        rows.innerHTML = `<tr><td colspan="6" class="empty">Acesso restrito ao administrador.</td></tr>`;
+        if (count) count.textContent = "Acesso restrito";
+        return;
+      }
+      if (!managedUsers.length) {
+        rows.innerHTML = `<tr><td colspan="6" class="empty">Nenhum funcionário autorizado cadastrado. O administrador principal já acessa pelo e-mail ${authorizedEmail}.</td></tr>`;
+      } else {
+        rows.innerHTML = managedUsers.map(user => {
+          const role = user.role || "financeiro";
+          const active = user.active === false ? "Bloqueado" : "Ativo";
+          const mainPerms = Object.entries({ ...(rolePermissionTemplates[role] || {}), ...(user.permissions || {}) })
+            .filter(([, value]) => value)
+            .map(([key]) => accessPermissionLabels[key] || key)
+            .slice(0, 5)
+            .join(", ");
+          return `<tr>
+            <td>${escapeHtml(user.name || "")}</td>
+            <td>${escapeHtml(user.email || "")}</td>
+            <td>${escapeHtml(role)}</td>
+            <td><span class="pill ${user.active === false ? "late" : "paid"}">${active}</span></td>
+            <td>${escapeHtml(mainPerms || "Sem permissões")}</td>
+            <td><button class="btn btn-ghost" type="button" data-edit-user="${escapeHtml(user.email || "")}">Editar</button></td>
+          </tr>`;
+        }).join("");
+      }
+      if (count) count.textContent = `${managedUsers.length} usuário(s) autorizados`;
+      rows.querySelectorAll("[data-edit-user]").forEach(button => {
+        button.addEventListener("click", () => fillUserForm(managedUsers.find(user => normalizeEmail(user.email) === normalizeEmail(button.dataset.editUser))));
+      });
+    }
+
+    function fillUserForm(user) {
+      if (!user) return;
+      document.getElementById("accessUserName").value = user.name || "";
+      document.getElementById("accessUserEmail").value = user.email || "";
+      document.getElementById("accessUserRole").value = user.role || "financeiro";
+      document.getElementById("accessUserActive").value = user.active === false ? "nao" : "sim";
+      document.getElementById("accessUserNotes").value = user.notes || "";
+      const roleTemplate = rolePermissionTemplates[user.role || "financeiro"] || rolePermissionTemplates.financeiro;
+      fillPermissionBoxes({ ...roleTemplate, ...(user.permissions || {}) });
+      setView("usuarios");
+    }
+
+    async function saveUserAccessForm(event) {
+      event.preventDefault();
+      if (!hasPermission("manageUsers")) {
+        showToast("Apenas o administrador pode gerenciar usuários.");
+        return;
+      }
+      const email = normalizeEmail(document.getElementById("accessUserEmail").value);
+      const name = document.getElementById("accessUserName").value.trim();
+      const role = document.getElementById("accessUserRole").value || "financeiro";
+      if (!email) {
+        showToast("Informe o e-mail do usuário.");
+        return;
+      }
+      if (isAdminEmail(email) && role !== "admin") {
+        showToast("O usuário administrador principal deve permanecer como administrador.");
+        return;
+      }
+      const payload = {
+        email,
+        name: name || email,
+        role,
+        active: document.getElementById("accessUserActive").value !== "nao",
+        permissions: selectedUserPermissionsFromForm(),
+        notes: document.getElementById("accessUserNotes").value.trim(),
+        updatedAt: serverTimestamp(),
+        updatedBy: normalizeEmail(auth.currentUser?.email || "")
+      };
+      if (!payload.createdAt) payload.createdAt = serverTimestamp();
+      try {
+        await withTimeout(setDoc(userAccessDocRef(email), payload, { merge: true }), cloudTimeoutMs, "Tempo esgotado ao salvar usuário autorizado.");
+        await loadManagedUsers();
+        renderUsersPanel();
+        clearUserAccessForm();
+        showToast(`Usuário autorizado salvo: ${email}. Crie/valide o login no Firebase Authentication ou oriente o primeiro acesso.`);
+      } catch (error) {
+        showToast(firebaseErrorMessage(error));
+      }
+    }
+
+    function canAccessView(view) {
+      const map = {
+        dashboard: "viewDashboard",
+        lancamentos: "manualEntry",
+        clientes: "viewClients",
+        receber: "viewReceivables",
+        pagar: "viewPayables",
+        detalhes: "viewDashboard",
+        relatorios: "viewReports",
+        previsao: "viewReceivables",
+        escritorio: "viewDashboard",
+        usuarios: "manageUsers"
+      };
+      return hasPermission(map[view] || "viewDashboard");
+    }
+
+    function applyAccessPermissions() {
+      const profile = currentAccessProfile || defaultAccessProfileForEmail(auth.currentUser?.email) || { permissions: {} };
+      document.querySelectorAll("[data-admin-only]").forEach(el => {
+        el.hidden = !hasPermission("manageUsers");
+      });
+      document.querySelectorAll("[data-permission]").forEach(el => {
+        const allowed = hasPermission(el.dataset.permission);
+        el.hidden = !allowed;
+        if ("disabled" in el) el.disabled = !allowed;
+      });
+      const label = document.getElementById("userLabel");
+      if (label) label.textContent = `${profile.name || profile.email || "Usuário"} • ${profile.role || "acesso"}`;
+    }
+
     function render() {
-      // V40: renderização seletiva. Antes todo clique recalculava todas as telas
+      // V41: renderização seletiva. Antes todo clique recalculava todas as telas
       // (relatórios, previsão, clientes, contas, detalhes), deixando baixa/manual lento.
       if (renderInProgress) return;
       renderInProgress = true;
@@ -6362,7 +8460,7 @@ Atenciosamente,
         } else if (view === "receber") {
           renderAccountRows("receberRows", filteredReceivablesForWhatsapp(), "receberCount");
         } else if (view === "pagar") {
-          renderAccountRows("pagarRows", filteredEntries("despesa"), "pagarCount");
+          renderAccountRows("pagarRows", accountEntriesByType("despesa"), "pagarCount");
           renderReviewRows();
         } else if (view === "detalhes") {
           renderDetails();
@@ -6370,6 +8468,8 @@ Atenciosamente,
           renderReports();
         } else if (view === "previsao") {
           renderForecast();
+        } else if (view === "usuarios") {
+          renderUsersPanel();
         } else if (view === "escritorio") {
           renderOfficeProfile();
         }
@@ -6388,17 +8488,23 @@ Atenciosamente,
       renderRows("entryRows", filteredEntries(), "entryCount");
       renderClients();
       renderAccountRows("receberRows", filteredReceivablesForWhatsapp(), "receberCount");
-      renderAccountRows("pagarRows", filteredEntries("despesa"), "pagarCount");
+      renderAccountRows("pagarRows", accountEntriesByType("despesa"), "pagarCount");
       renderReviewRows();
       renderReports();
       renderForecast();
       renderDetails();
+      renderUsersPanel();
       if (document.getElementById("escritorio")?.classList.contains("active")) renderOfficeProfile();
       renderClientOpenReceivables();
       enhanceTableScrollers();
     }
 
     function setView(view, options = {}) {
+      if (!titles[view]) view = "dashboard";
+      if (!canAccessView(view)) {
+        showToast("Seu usuário não tem permissão para acessar este módulo.");
+        view = "dashboard";
+      }
       if (view === "clientes" && !options.keepClientFilter) {
         clientQuickFilter = "";
         activeKpiFilter = "";
@@ -6448,21 +8554,33 @@ Atenciosamente,
     function showModalElement(element) {
       if (!element) return;
       element.classList.add("show");
+      element.style.display = "flex";
+      element.setAttribute("aria-hidden", "false");
       syncModalBodyLock();
       requestAnimationFrame(() => {
         if (typeof element.scrollTo === "function") element.scrollTo({ top: 0, left: 0, behavior: "instant" });
         const card = element.querySelector(".modal-card");
-        if (card && typeof card.scrollTo === "function") card.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        if (card) {
+          card.style.overflowY = "auto";
+          card.style.maxHeight = "calc(100dvh - 24px)";
+          if (typeof card.scrollTo === "function") card.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        }
       });
     }
 
     function hideModalElement(element) {
       if (!element) return;
       element.classList.remove("show");
+      element.style.display = "";
+      element.setAttribute("aria-hidden", "true");
       syncModalBodyLock();
     }
 
     function openModal(entry = null) {
+      if (!hasPermission("manualEntry")) {
+        showToast("Seu usuário não tem permissão para criar ou editar lançamentos.");
+        return;
+      }
       document.getElementById("modalTitle").textContent = entry ? "Editar lançamento" : "Novo lançamento";
       document.getElementById("entryId").value = entry?.id || "";
       document.getElementById("entryType").value = entry?.type || "receita";
@@ -6568,7 +8686,25 @@ Atenciosamente,
       footerEl.innerHTML = `<tr><td colspan="6">TOTAL EM ABERTO DO CLIENTE</td><td class="money-in">${moneySpan(total)}</td><td></td></tr>`;
     }
 
+
+    function ensureSelectOption(selectId, value) {
+      const select = document.getElementById(selectId);
+      const text = String(value || "").trim();
+      if (!select || !text) return;
+      const exists = [...select.options].some(option => option.value === text);
+      if (!exists) {
+        const option = document.createElement("option");
+        option.value = text;
+        option.textContent = text;
+        select.appendChild(option);
+      }
+    }
+
     function openClientModal(client = null) {
+      if (!hasPermission("manageClients")) {
+        showToast("Seu usuário não tem permissão para cadastrar ou editar clientes.");
+        return;
+      }
       document.getElementById("clientModalTitle").textContent = client ? "Editar cliente" : "Novo cliente";
       document.getElementById("clientId").value = client?.id || "";
       document.getElementById("clientOriginalKey").value = client?.key || "";
@@ -6585,13 +8721,21 @@ Atenciosamente,
       document.getElementById("clientEmail").value = client?.email || "";
       document.getElementById("clientAddress").value = client?.address || "";
       document.getElementById("clientCity").value = client?.city || "";
-      document.getElementById("clientService").value = client?.service || "Honorários contábeis";
+      const serviceValue = client?.service || "Honorários contábeis";
+      ensureSelectOption("clientService", serviceValue);
+      document.getElementById("clientService").value = serviceValue;
       document.getElementById("clientMonthlyFee").value = client?.monthlyFee || "";
       document.getElementById("clientDueDay").value = client?.dueDay || 15;
-      document.getElementById("clientPaymentMethod").value = client?.paymentMethod || "Pix";
+      document.getElementById("clientPaymentMethod").value = client?.paymentMethod || "Folha de carnê";
+      document.getElementById("clientFirstChargeMonth").value = client?.firstChargeMonth || firstChargeMonth;
+      document.getElementById("clientEndChargeMonth").value = client?.endChargeMonth || lastChargeMonth;
+      document.getElementById("clientFirstDueDate").value = client?.firstDueDate || isoDateFromMonthAndDay(client?.firstChargeMonth || firstChargeMonth, client?.dueDay || 15);
+      document.getElementById("clientInstallments").value = client?.installmentCount || monthCountInclusive(client?.firstChargeMonth || firstChargeMonth, client?.endChargeMonth || lastChargeMonth) || "";
+      document.getElementById("clientGenerateChargesOnSave").value = "sim";
       document.getElementById("clientNotes").value = client?.notes || "";
       document.getElementById("clientOpenSearchInput").value = "";
       updateClientTypeLabels();
+      updateClientBillingPreview();
       renderClientOpenReceivables(client);
       showModalElement(clientModal);
     }
@@ -6601,6 +8745,144 @@ Atenciosamente,
       clientForm.reset();
       renderClientOpenReceivables(null);
     }
+
+    function findClientForEdit(key, id, documentValue, name, indexValue = null) {
+      const normalizedKey = String(key || "").trim();
+      const normalizedId = String(id || "").trim();
+      const normalizedDocument = normalizeDocument(documentValue || "");
+      const normalizedName = normalizeText(name || "");
+      const parsedIndex = Number(indexValue);
+
+      // 1) Primeiro tenta o retrato da tela atual. Isso evita falha quando a lista foi ordenada/filtrada.
+      if (Number.isInteger(parsedIndex) && parsedIndex >= 0) {
+        const fromSnapshot = window.__alfaVisibleClientsV54?.[parsedIndex] || window.__alfaVisibleClientsV55?.[parsedIndex];
+        if (fromSnapshot) return fromSnapshot;
+      }
+
+      // 2) Depois tenta identificadores estáveis.
+      let found = clients.find(item => normalizedId && String(item?.id || "") === normalizedId);
+      if (found) return found;
+
+      found = clients.find(item => normalizedKey && String(item?.key || "") === normalizedKey);
+      if (found) return found;
+
+      found = clients.find(item => normalizedDocument && normalizeDocument(item?.document || "") === normalizedDocument);
+      if (found) return found;
+
+      // 3) Último recurso: nome normalizado. Usado apenas quando não há ID/documento válido.
+      found = clients.find(item => normalizedName && normalizeText(item?.name || "") === normalizedName);
+      return found || null;
+    }
+
+    function setClientFieldValue(id, value) {
+      const element = document.getElementById(id);
+      if (element) element.value = value == null ? "" : value;
+    }
+
+    function openClientModalDirectV54(client = null) {
+      const title = document.getElementById("clientModalTitle");
+      if (title) title.textContent = client ? "Editar cliente" : "Novo cliente";
+      setClientFieldValue("clientId", client?.id || "");
+      setClientFieldValue("clientOriginalKey", client?.key || "");
+      setClientFieldValue("clientType", client?.type || "pj");
+      setClientFieldValue("clientStatus", client?.status || "ativo");
+      setClientFieldValue("clientName", client?.name || "");
+      setClientFieldValue("clientTradeName", client?.tradeName || "");
+      setClientFieldValue("clientDocument", client?.document || "");
+      setClientFieldValue("clientStateRegistration", client?.stateRegistration || "");
+      setClientFieldValue("clientCityRegistration", client?.cityRegistration || "");
+      setClientFieldValue("clientResponsible", client?.responsible || "");
+      setClientFieldValue("clientPhone", client?.phone || "");
+      setClientFieldValue("clientWhatsappAllowed", client?.whatsappAllowed || "sim");
+      setClientFieldValue("clientEmail", client?.email || "");
+      setClientFieldValue("clientAddress", client?.address || "");
+      setClientFieldValue("clientCity", client?.city || "");
+      const serviceValue = client?.service || "Honorários contábeis";
+      try { ensureSelectOption("clientService", serviceValue); } catch {}
+      setClientFieldValue("clientService", serviceValue);
+      setClientFieldValue("clientMonthlyFee", client?.monthlyFee || "");
+      setClientFieldValue("clientDueDay", client?.dueDay || 15);
+      setClientFieldValue("clientPaymentMethod", client?.paymentMethod || "Folha de carnê");
+      setClientFieldValue("clientFirstChargeMonth", client?.firstChargeMonth || firstChargeMonth);
+      setClientFieldValue("clientEndChargeMonth", client?.endChargeMonth || lastChargeMonth);
+      setClientFieldValue("clientFirstDueDate", client?.firstDueDate || isoDateFromMonthAndDay(client?.firstChargeMonth || firstChargeMonth, client?.dueDay || 15));
+      setClientFieldValue("clientInstallments", client?.installmentCount || monthCountInclusive(client?.firstChargeMonth || firstChargeMonth, client?.endChargeMonth || lastChargeMonth) || "");
+      setClientFieldValue("clientGenerateChargesOnSave", "sim");
+      setClientFieldValue("clientNotes", client?.notes || "");
+      setClientFieldValue("clientOpenSearchInput", "");
+      try { updateClientTypeLabels(); } catch {}
+      try { updateClientBillingPreview(); } catch {}
+      try { renderClientOpenReceivables(client); } catch {}
+      showModalElement(clientModal);
+      setTimeout(() => document.getElementById(client ? "clientPhone" : "clientName")?.focus(), 80);
+    }
+
+    window.__alfaEditClientDirect = function alfaEditClientDirect(key, id, documentValue, name, event, indexValue = null) {
+      if (event) {
+        event.preventDefault?.();
+        event.stopPropagation?.();
+        event.stopImmediatePropagation?.();
+      }
+
+      const email = normalizeEmail(auth.currentUser?.email || "");
+      if (!hasPermission("manageClients")) {
+        const message = `Seu usuário (${email || "não identificado"}) não tem permissão para editar clientes. Entre com o administrador principal ou habilite a permissão "Cadastrar/editar clientes" em Usuários.`;
+        showToast(message);
+        alert(message);
+        return false;
+      }
+
+      const client = findClientForEdit(key, id, documentValue, name, indexValue);
+      if (!client) {
+        console.warn("Alfa Financeiro: cliente não localizado para edição", { key, id, documentValue, name, indexValue, clients });
+        alert("Cliente não localizado para edição. Atualize a página com Ctrl+F5 e tente novamente. Se persistir, o cadastro pode estar sem ID/documento e precisa ser normalizado.");
+        return false;
+      }
+
+      // Abertura direta e segura do formulário, sem depender de onclick antigo, tabela ou propagação do clique.
+      try {
+        openClientModalDirectV54(client);
+      } catch (error) {
+        console.error("Alfa Financeiro: abertura direta do editor de cliente falhou.", error, client);
+        try { openClientModal(client); } catch (fallbackError) { console.error("Fallback openClientModal também falhou.", fallbackError); }
+      }
+
+      if (!clientModal?.classList.contains("show")) {
+        clientModal?.classList.add("show");
+        if (clientModal) {
+          clientModal.style.display = "flex";
+          clientModal.style.zIndex = "99999";
+          clientModal.setAttribute("aria-hidden", "false");
+        }
+        syncModalBodyLock();
+      }
+
+      setTimeout(() => {
+        const modalTitle = document.getElementById("clientModalTitle")?.textContent || "";
+        const loadedName = document.getElementById("clientName")?.value || "";
+        if (!loadedName && client?.name) {
+          console.warn("Editor abriu sem preencher campos. Reaplicando dados do cliente.", client);
+          openClientModalDirectV54(client);
+        }
+        console.info("Editor de cliente aberto", { modalTitle, loadedName, clientId: client.id, key: client.key });
+      }, 120);
+      return false;
+    };
+
+    window.__alfaEditClientDirectV55 = window.__alfaEditClientDirect;
+
+    document.addEventListener("click", function alfaEditClientCaptureV53(event) {
+      const button = event.target.closest?.('button[data-action="edit-client"]');
+      if (!button) return;
+      window.__alfaEditClientDirect(button.dataset.clientKey, button.dataset.clientId, button.dataset.clientDocument, button.dataset.clientName, event, button.dataset.clientIndex);
+    }, true);
+
+    window.openClientCadastroAlfa = () => openClientModal();
+    window.openAlfaClientModal = window.openClientCadastroAlfa;
+    window.openLancamentoAlfa = (tipo = "receita") => {
+      openModal();
+      if (tipo === "despesa") setExpenseDefaultsOnModal();
+    };
 
     function validateClientDocument(type, documentValue) {
       const digits = normalizeDocument(documentValue);
@@ -6636,6 +8918,60 @@ Atenciosamente,
       const left = normalizeMonthInput(a) || lastChargeMonth;
       const right = normalizeMonthInput(b) || lastChargeMonth;
       return compareMonths(left, right) <= 0 ? left : right;
+    }
+
+    function addMonthsToMonth(month, amount) {
+      const normalized = normalizeMonthInput(month) || firstChargeMonth;
+      const [year, monthNumber] = normalized.split("-").map(Number);
+      const date = new Date(year, monthNumber - 1 + Number(amount || 0), 1);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function monthCountInclusive(startMonth, endMonth) {
+      const start = normalizeMonthInput(startMonth) || firstChargeMonth;
+      const end = normalizeMonthInput(endMonth) || start;
+      if (compareMonths(start, end) > 0) return 0;
+      return monthSequence(start, end).length;
+    }
+
+    function calculatedEndMonthByInstallments(startMonth, installments) {
+      const total = Number(installments || 0);
+      if (!total || total < 1) return "";
+      return minMonth(addMonthsToMonth(startMonth, total - 1), lastChargeMonth);
+    }
+
+
+    function isoDateFromMonthAndDay(month, day) {
+      const normalizedMonth = normalizeMonthInput(month) || selectedMonth();
+      const due = Math.min(Math.max(Number(day || 15), 1), daysInMonth(normalizedMonth));
+      return `${normalizedMonth}-${String(due).padStart(2, "0")}`;
+    }
+
+    function syncFirstDueDateToBillingFields() {
+      const firstDue = document.getElementById("clientFirstDueDate")?.value;
+      if (!firstDue) return;
+      const month = firstDue.slice(0, 7);
+      const day = Number(firstDue.slice(8, 10));
+      if (month) document.getElementById("clientFirstChargeMonth").value = month;
+      if (day >= 1 && day <= 31) document.getElementById("clientDueDay").value = day;
+      updateClientBillingPreview();
+    }
+
+    function updateClientBillingPreview() {
+      const preview = document.getElementById("clientBillingPreview");
+      const help = document.getElementById("clientBillingHelp");
+      if (!preview || !help) return;
+      const start = normalizeMonthInput(document.getElementById("clientFirstChargeMonth")?.value) || firstChargeMonth;
+      let end = normalizeMonthInput(document.getElementById("clientEndChargeMonth")?.value) || lastChargeMonth;
+      const qty = Number(document.getElementById("clientInstallments")?.value || 0);
+      if (qty > 0) end = calculatedEndMonthByInstallments(start, qty) || end;
+      end = minMonth(end, lastChargeMonth);
+      const due = Number(document.getElementById("clientDueDay")?.value || 15);
+      const fee = parseNumericAmount(document.getElementById("clientMonthlyFee")?.value || 0);
+      const service = document.getElementById("clientService")?.value || "Honorários contábeis";
+      const count = monthCountInclusive(start, end);
+      preview.textContent = `${count} parcela${count === 1 ? "" : "s"} prevista${count === 1 ? "" : "s"}`;
+      help.textContent = `${service}: ${count} parcela${count === 1 ? "" : "s"} de ${formatMoney(fee)} de ${formatMonth(start)} até ${formatMonth(end)}, com vencimento no dia ${due >= 1 && due <= 31 ? due : 15}. Parcelas pagas não serão alteradas.`;
     }
 
     function chargeEndMonth(client = null) {
@@ -6889,7 +9225,7 @@ Atenciosamente,
     function clientDuplicateLabel(client) {
       if (!client) return "Cliente sem identificação";
       const doc = client.document ? ` - ${client.document}` : "";
-      const fee = Number(client.monthlyFee || 0) ? ` - honorário ${formatCurrency(client.monthlyFee)}` : "";
+      const fee = Number(client.monthlyFee || 0) ? ` - honorário ${formatMoney(client.monthlyFee)}` : "";
       return `${client.name || client.tradeName || "Cliente sem nome"}${doc}${fee}`;
     }
 
@@ -6941,7 +9277,29 @@ Atenciosamente,
     }
 
     function saveClientForm(event) {
-      event.preventDefault();
+      try {
+        return saveClientFormCore(event);
+      } catch (error) {
+        console.error("Alfa Financeiro: erro ao salvar cliente", error);
+        const detail = (typeof firebaseErrorMessage === "function" ? firebaseErrorMessage(error) : (error?.message || String(error)));
+        showToast("Erro ao salvar cliente: " + detail);
+        alert("Não foi possível salvar o cliente.\n\nDetalhe técnico: " + detail + "\n\nSe persistir, atualize a página com Ctrl+F5 e tente novamente.");
+        return false;
+      }
+    }
+
+    function saveClientFormCore(event) {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      const clientFormElement = document.getElementById("clientForm");
+      if (clientFormElement && typeof clientFormElement.reportValidity === "function" && !clientFormElement.reportValidity()) {
+        showToast("Confira os campos obrigatórios do cliente antes de salvar.");
+        return false;
+      }
+      if (!hasPermission("manageClients")) {
+        showToast("Seu usuário não tem permissão para salvar clientes.");
+        return;
+      }
       const type = document.getElementById("clientType").value;
       const name = document.getElementById("clientName").value.trim();
       const documentValue = document.getElementById("clientDocument").value.trim();
@@ -6969,9 +9327,26 @@ Atenciosamente,
       }
       const effectiveOriginalKey = duplicateDecision.updateKey || originalKey;
       const now = new Date().toISOString();
-      const existing = clients.find(client => client.key === effectiveOriginalKey);
+      const formClientId = document.getElementById("clientId")?.value || "";
+      const normalizedDocumentForSave = normalizeDocument(documentValue);
+      const existing = clients.find(client =>
+        (formClientId && String(client.id || "") === formClientId) ||
+        (effectiveOriginalKey && client.key === effectiveOriginalKey) ||
+        (originalKey && client.key === originalKey) ||
+        (normalizedDocumentForSave && normalizeDocument(client.document || "") === normalizedDocumentForSave)
+      );
+      const firstDueDateValue = document.getElementById("clientFirstDueDate")?.value || "";
+      const startMonthValue = normalizeMonthInput(firstDueDateValue ? firstDueDateValue.slice(0, 7) : document.getElementById("clientFirstChargeMonth")?.value) || existing?.firstChargeMonth || firstChargeMonth;
+      const installmentCountValue = Number(document.getElementById("clientInstallments")?.value || 0) || 0;
+      let endMonthValue = normalizeMonthInput(document.getElementById("clientEndChargeMonth")?.value) || existing?.endChargeMonth || lastChargeMonth;
+      if (installmentCountValue > 0) endMonthValue = calculatedEndMonthByInstallments(startMonthValue, installmentCountValue) || endMonthValue;
+      endMonthValue = minMonth(endMonthValue, lastChargeMonth);
+      if (compareMonths(startMonthValue, endMonthValue) > 0) {
+        showToast("Período inválido: a primeira competência não pode ser posterior à última.");
+        return;
+      }
       const client = {
-        id: document.getElementById("clientId").value || existing?.id || crypto.randomUUID(),
+        id: document.getElementById("clientId").value || existing?.id || generateId(),
         key,
         type,
         status: document.getElementById("clientStatus").value,
@@ -6987,25 +9362,47 @@ Atenciosamente,
         address: document.getElementById("clientAddress").value.trim(),
         city: document.getElementById("clientCity").value.trim(),
         service: document.getElementById("clientService").value.trim() || "Honorários contábeis",
-        monthlyFee: Number(document.getElementById("clientMonthlyFee").value || 0),
-        dueDay: Number(document.getElementById("clientDueDay").value || 15),
+        monthlyFee: Math.max(0, parseNumericAmount(document.getElementById("clientMonthlyFee").value || 0)),
+        dueDay: Number(firstDueDateValue ? firstDueDateValue.slice(8, 10) : document.getElementById("clientDueDay").value || 15),
+        firstDueDate: firstDueDateValue || isoDateFromMonthAndDay(startMonthValue, document.getElementById("clientDueDay").value || 15),
         paymentMethod: document.getElementById("clientPaymentMethod").value,
         notes: document.getElementById("clientNotes").value.trim(),
-        firstChargeMonth: existing?.firstChargeMonth || firstChargeMonth,
+        firstChargeMonth: startMonthValue,
+        endChargeMonth: endMonthValue,
+        installmentCount: installmentCountValue || monthCountInclusive(startMonthValue, endMonthValue),
         createdAt: existing?.createdAt || now,
         updatedAt: now,
         source: "manual-client"
       };
-      clients = clients.filter(item => item.key !== effectiveOriginalKey && item.key !== key);
+      clients = clients.filter(item =>
+        item.key !== effectiveOriginalKey &&
+        item.key !== originalKey &&
+        item.key !== key &&
+        (!formClientId || String(item.id || "") !== formClientId) &&
+        (!normalizedDocumentForSave || normalizeDocument(item.document || "") !== normalizedDocumentForSave)
+      );
       clients.push(client);
       updateClientEntries(effectiveOriginalKey, client);
-      ensureMonthlyChargesForClient(client);
+      const shouldGenerateCharges = document.getElementById("clientGenerateChargesOnSave")?.value !== "nao";
+      const adjustedCharges = shouldGenerateCharges ? ensureMonthlyChargesForClient(client) : 0;
       clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
+      registerAuditLog(existing ? "editar_cliente" : "criar_cliente", "cliente", { id: client.id, name: client.name, document: client.document, monthlyFee: client.monthlyFee });
       saveClients();
       saveEntries();
+      try {
+        // Salva imediatamente na nuvem; o salvamento agendado continua como segurança.
+        forceCloudSync(existing ? "editar-cliente" : "criar-cliente").catch(error => {
+          console.error("Alfa Financeiro: cliente salvo localmente, mas falhou ao sincronizar na nuvem", error);
+          setCloudStatus("Cliente salvo neste navegador. Sincronização na nuvem pendente: " + firebaseErrorMessage(error), "warn");
+          showToast("Cliente salvo localmente. Verifique a sincronização da nuvem.");
+        });
+      } catch (syncError) {
+        console.warn("Sincronização imediata não iniciada", syncError);
+      }
       closeClientModal();
       render();
-      showToast("Cliente salvo com sucesso.");
+      const chargeMessage = shouldGenerateCharges ? ` Parcelas geradas/ajustadas: ${adjustedCharges}.` : " Parcelas não geradas nesta edição.";
+      showToast(`Cliente salvo com sucesso.${chargeMessage}`);
     }
 
     function showToast(message) {
@@ -7059,7 +9456,11 @@ Atenciosamente,
 
     function saveForm(event) {
       event.preventDefault();
-      const id = document.getElementById("entryId").value || crypto.randomUUID();
+      if (!hasPermission("manualEntry")) {
+        showToast("Seu usuário não tem permissão para salvar lançamentos.");
+        return;
+      }
+      const id = document.getElementById("entryId").value || generateId();
       const payload = {
         id,
         type: document.getElementById("entryType").value,
@@ -7101,12 +9502,79 @@ Atenciosamente,
       const index = entries.findIndex(entry => entry.id === id);
       if (index >= 0) entries[index] = normalizedPayload;
       else entries.unshift(normalizedPayload);
-      upsertClientFromEntry(normalizedPayload);
+      registerAuditLog(index >= 0 ? "editar_lancamento" : "criar_lancamento", "lancamento", { id: normalizedPayload.id, type: normalizedPayload.type, name: normalizedPayload.name, amount: normalizedPayload.amount, status: normalizedPayload.status });
+      // Não cria cliente automaticamente a partir de lançamento manual.
       saveClients();
       saveEntries();
       closeModal();
       render();
       showToast("Lançamento salvo com sucesso.");
+    }
+
+    function openReceivablesForClient(client) {
+      const key = clientKey(client?.name, client?.document);
+      return entries
+        .filter(entry => entry.type === "receita" && isOpenEntry(entry) && clientKey(entry.name, entry.document) === key)
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || Number(a.amount || 0) - Number(b.amount || 0));
+    }
+
+    function linkUnidentifiedIncomeToClient(unidentified) {
+      if (!unidentified || unidentified.type !== "receita") return;
+      const value = Math.abs(Number(unidentified.paidAmount || unidentified.amount || 0));
+      const paidAt = unidentified.paidAt || unidentified.date || todayISO();
+      const defaultSearch = unidentified.bankCounterparty || unidentified.name || "";
+      const search = prompt("Digite parte do nome, fantasia ou CNPJ/CPF do cliente para vincular este recebimento:", defaultSearch);
+      if (!search) return;
+      const q = normalizeMatchText(search);
+      const candidates = clients
+        .filter(client => {
+          const haystack = normalizeMatchText([client.name, client.tradeName, client.document, client.notes].join(" "));
+          return haystack.includes(q) || tokenScore(q, haystack) >= 0.35;
+        })
+        .slice(0, 20);
+      if (!candidates.length) {
+        showToast("Nenhum cliente cadastrado localizado. Cadastre o cliente manualmente primeiro e tente vincular novamente.");
+        return;
+      }
+      const clientList = candidates.map((client, index) => `${index + 1}. ${client.name} | ${client.document || "sem documento"}`).join("\n");
+      const chosenClientNumber = Number(prompt(`Escolha o cliente para vincular o recebimento de ${formatMoney(value)}:\n\n${clientList}`, "1"));
+      const client = candidates[chosenClientNumber - 1];
+      if (!client) return;
+      const open = openReceivablesForClient(client);
+      if (!open.length) {
+        const avulsa = confirm("Este cliente não tem parcela em aberto. Deseja transformar este recebimento em receita avulsa vinculada ao cliente?");
+        if (!avulsa) return;
+        unidentified.name = client.name;
+        unidentified.document = client.document;
+        unidentified.category = "Outras receitas do escritório";
+        unidentified.description = `${unidentified.description || "Recebimento"} - vinculado manualmente ao cliente sem parcela em aberto`;
+        unidentified.classificationStatus = "Vinculado manualmente como receita avulsa";
+        unidentified.source = "receita-avulsa-vinculada";
+        saveEntries();
+        render();
+        showToast("Recebimento vinculado ao cliente como receita avulsa.");
+        return;
+      }
+      const openList = open.map((entry, index) => `${index + 1}. ${formatMonth(entry.billingMonth || String(entry.date || "").slice(0,7))} | venc. ${formatDate(entry.date)} | ${formatMoney(entry.amount || 0)} | ${entry.category || "Honorários"}`).join("\n");
+      const chosenEntryNumber = Number(prompt(`Escolha a parcela em aberto para baixar com este recebimento de ${formatMoney(value)}:\n\n${openList}`, "1"));
+      const target = open[chosenEntryNumber - 1];
+      if (!target) return;
+      const confirmLink = confirm(`Confirmar vínculo?\n\nRecebimento: ${formatMoney(value)} em ${formatDate(paidAt)}\nCliente: ${client.name}\nParcela: ${formatMonth(target.billingMonth || String(target.date || "").slice(0,7))} - ${formatMoney(target.amount || 0)}`);
+      if (!confirmLink) return;
+      target.status = "pago";
+      target.paidAt = paidAt;
+      target.paidAmount = value;
+      target.method = unidentified.method || target.method || "Extrato";
+      target.receiptProtocol = unidentified.receiptProtocol || unidentified.sourceId || target.receiptProtocol || "";
+      target.receiptDescription = unidentified.receiptDescription || unidentified.description || target.receiptDescription || "Recebimento vinculado manualmente";
+      target.bankCounterparty = unidentified.bankCounterparty || unidentified.name || target.bankCounterparty || "";
+      target.bankMovementType = unidentified.bankMovementType || target.bankMovementType || "";
+      target.classificationStatus = "Baixado por vínculo manual de recebimento não identificado";
+      const idx = entries.findIndex(entry => entry.id === unidentified.id);
+      if (idx >= 0) entries.splice(idx, 1);
+      saveEntries();
+      render();
+      showToast("Recebimento vinculado e parcela baixada manualmente.");
     }
 
     function handleTableAction(event) {
@@ -7128,6 +9596,10 @@ Atenciosamente,
       }
 
       if (button.dataset.action === "client-cash") {
+        if (!hasPermission("importPayments") && !hasPermission("manualEntry")) {
+          showToast("Seu usuário não tem permissão para baixar honorários.");
+          return;
+        }
         const key = button.dataset.clientKey;
         const selectedEntryId = selectedClientEntryId(key);
         const pending = entries
@@ -7146,6 +9618,7 @@ Atenciosamente,
         if (!confirmPayment) return;
 
         closeEntryWithMethod(entry, method);
+        registerAuditLog(method === "Bonificação" ? "bonificar_honorario" : "baixar_honorario", "lancamento", { id: entry.id, client: entry.name, competence, amount: entry.amount, method });
         if (method === "Dinheiro") {
           entry.receiptProtocol = `DINHEIRO-${todayISO()}-${entry.id}`;
           entry.receiptDescription = "Recebimento em dinheiro baixado manualmente";
@@ -7157,8 +9630,7 @@ Atenciosamente,
       }
 
       if (button.dataset.action === "edit-client") {
-        const client = clients.find(item => item.key === button.dataset.clientKey);
-        if (client) openClientModal(client);
+        window.__alfaEditClientDirect?.(button.dataset.clientKey, button.dataset.clientId, button.dataset.clientDocument, button.dataset.clientName, event, button.dataset.clientIndex);
         return;
       }
 
@@ -7170,6 +9642,21 @@ Atenciosamente,
 
       const entry = entries.find(item => item.id === button.dataset.id);
       if (!entry) return;
+
+      if ((button.dataset.action === "toggle" || button.dataset.action === "edit") && !hasPermission("manualEntry") && !hasPermission("importPayments")) {
+        showToast("Seu usuário não tem permissão para alterar lançamentos.");
+        return;
+      }
+
+      if (button.dataset.action === "delete" && !hasPermission("deleteEntries")) {
+        showToast("Seu usuário não tem permissão para excluir lançamentos.");
+        return;
+      }
+
+      if (button.dataset.action === "link-unidentified-income") {
+        linkUnidentifiedIncomeToClient(entry);
+        return;
+      }
 
       if (button.dataset.action === "make-avulsa") {
         const category = prompt("Informe a categoria da receita avulsa. Exemplos: Abertura de empresa, Declaração de imposto de renda, Alteração contratual.", "Outras receitas do escritório");
@@ -7425,13 +9912,10 @@ Atenciosamente,
     }
 
     function createStatementIncome(receipt) {
-      const isCollection = isBankCollectionReceipt(receipt.rawType);
-      const category = isCollection ? "Recebimento de cobrança bancária" : "Recebimentos não identificados";
-      const status = isCollection ? "Cliente identificado pelo extrato" : "Recebimento a identificar";
       return {
-        id: crypto.randomUUID(),
-        source: isCollection ? "extrato-receita-identificada" : "extrato-nao-identificado",
-        sourceId: receipt.protocol || crypto.randomUUID(),
+        id: generateId(),
+        source: "recebimento-nao-identificado",
+        sourceId: receipt.protocol || generateId(),
         type: "receita",
         status: "pago",
         date: receipt.date,
@@ -7440,11 +9924,11 @@ Atenciosamente,
         amount: Math.abs(Number(receipt.amount || 0)),
         paidAmount: Math.abs(Number(receipt.amount || 0)),
         name: receipt.clientName || "Recebimento não identificado",
-        document: "",
-        category,
+        document: receipt.document || "",
+        category: "Recebimentos não identificados",
         method: isPixReceived(receipt.rawType) ? "Pix" : "Extrato",
-        description: `${isCollection ? "Recebimento de cobrança identificado no extrato" : "Recebimento do extrato sem vínculo automático"}${receipt.rawType ? ` - ${receipt.rawType}` : ""}`,
-        classificationStatus: status,
+        description: `Recebimento importado sem vínculo automático. Vincule manualmente a uma parcela existente${receipt.rawType ? ` - ${receipt.rawType}` : ""}`,
+        classificationStatus: "Não vinculado - escolher cliente/parcela manualmente",
         ...baseBankEntryFields(receipt)
       };
     }
@@ -7458,9 +9942,9 @@ Atenciosamente,
       const counterparty = receipt.clientName || "Saída do extrato";
       const isFee = category === "Taxas de cobrança bancária" || category === "Taxa Pix" || category === "Tarifa bancária";
       return {
-        id: crypto.randomUUID(),
+        id: generateId(),
         source: "extrato-despesa",
-        sourceId: receipt.protocol || crypto.randomUUID(),
+        sourceId: receipt.protocol || generateId(),
         type: "despesa",
         status: "pago",
         date: receipt.date,
@@ -7655,8 +10139,7 @@ Atenciosamente,
           const entry = createStatementIncome(receipt);
           const added = addEntryIfNotDuplicate(entry);
           if (added.inserted) {
-            if (entry.source === "extrato-receita-identificada") importedIdentifiedIncome++;
-            else importedUnidentified++;
+            importedUnidentified++;
           } else {
             skippedDuplicates++;
           }
@@ -7664,7 +10147,6 @@ Atenciosamente,
         }
       });
 
-      syncClientsFromEntries();
       saveEntries();
       render();
       showToast(`${appliedReceipts} recebimento${appliedReceipts === 1 ? "" : "s"} vinculado${appliedReceipts === 1 ? "" : "s"} a cobrança existente e ${appliedEntries} lançamento${appliedEntries === 1 ? "" : "s"} atualizado${appliedEntries === 1 ? "" : "s"}.${importedIdentifiedIncome ? ` ${importedIdentifiedIncome} recebimento${importedIdentifiedIncome === 1 ? "" : "s"} de cobrança identificado${importedIdentifiedIncome === 1 ? "" : "s"} pelo nome do cliente.` : ""}${importedUnidentified ? ` ${importedUnidentified} recebimento${importedUnidentified === 1 ? "" : "s"} para revisar.` : ""}${importedExpenses ? ` ${importedExpenses} saída${importedExpenses === 1 ? "" : "s"}/taxa${importedExpenses === 1 ? "" : "s"} importada${importedExpenses === 1 ? "" : "s"} com histórico.` : ""}${skippedDuplicates ? ` ${skippedDuplicates} movimento${skippedDuplicates === 1 ? "" : "s"} duplicado${skippedDuplicates === 1 ? "" : "s"} ignorado${skippedDuplicates === 1 ? "" : "s"}.` : ""}${bankBalanceRows.length ? ` ${bankBalanceRows.length} linha${bankBalanceRows.length === 1 ? "" : "s"} de Saldo Diário ignorada${bankBalanceRows.length === 1 ? "" : "s"} por não serem transações.` : ""}`);
@@ -7725,12 +10207,14 @@ Atenciosamente,
       localStorage.removeItem(storageKey);
       localStorage.removeItem(clientsStorageKey);
       localStorage.removeItem(whatsappLogsKey);
+      localStorage.removeItem(auditLogsKey);
       localStorage.removeItem(backupHistoryKey);
       localStorage.removeItem(lastBackupDateKey);
       render();
       localStorage.removeItem(storageKey);
       localStorage.removeItem(clientsStorageKey);
       localStorage.removeItem(whatsappLogsKey);
+      localStorage.removeItem(auditLogsKey);
       showToast("Todos os lançamentos e cadastros locais foram excluídos deste navegador.");
     }
 
@@ -7760,7 +10244,7 @@ Atenciosamente,
         return;
       }
 
-      clients = clients.filter(client => normalizeText(client.name) !== targetName);
+      // Mantém o cadastro mestre do cliente. Esta rotina exclui apenas lançamentos.
       saveEntries();
       saveClients();
       render();
@@ -7840,8 +10324,8 @@ Atenciosamente,
     }
 
     function syncClientsAfterEntryRemoval() {
-      const remainingClientKeys = new Set(entries.map(entry => clientKey(entry.name, entry.document)));
-      clients = clients.filter(client => remainingClientKeys.has(client.key || clientKey(client.name, client.document)));
+      // Remoção de lançamentos não pode apagar cadastro mestre de clientes.
+      clients = sanitizeClients(clients);
     }
 
 
@@ -7888,7 +10372,7 @@ Atenciosamente,
         getRecordValue(record, ["nome_extrato_2"]) ? `Nome no extrato 2: ${getRecordValue(record, ["nome_extrato_2"])}` : ""
       ].filter(Boolean).join(" | ");
       return {
-        id: crypto.randomUUID(),
+        id: generateId(),
         key: clientKey(name, documentValue),
         type: normalizeClientTypeFromDocument(documentValue, getRecordValue(record, ["tipo_documento", "tipo"])),
         status,
@@ -7961,6 +10445,8 @@ Atenciosamente,
     }
 
     function importClientsCsvText(text) {
+      showToast("Importação de clientes desativada. Cadastre novos clientes manualmente para preservar o banco de dados.");
+      return;
       const rows = parseCsvRows(text);
       if (rows.length < 2) {
         showToast("O CSV de clientes não tem linhas suficientes para importar.");
@@ -8022,7 +10508,7 @@ Atenciosamente,
       const paidAmount = status === "pago" ? Number(rawPaidAmount || originalAmount || 0) : 0;
       const billingMonth = String(dueDate || paidAt || selectedMonth || firstChargeMonth).slice(0, 7);
       return normalizeEntryForRuntime({
-        id: crypto.randomUUID(),
+        id: generateId(),
         source: "lancamento-mensal",
         sourceId,
         type: "receita",
@@ -8150,8 +10636,8 @@ Atenciosamente,
       }
       let baixados = 0;
       let jaBaixados = 0;
-      let criadosPagos = 0;
-      let criadosAbertos = 0;
+      let naoIdentificados = 0;
+      let abertosIgnorados = 0;
       let atualizados = 0;
       let cancelados = 0;
       let revisao = 0;
@@ -8176,26 +10662,28 @@ Atenciosamente,
           touchedClients.push(match);
           return;
         }
-        const added = addEntryIfNotDuplicate(incoming, { append: true });
-        if (added.inserted) {
-          if (incoming.status === "pago" || incoming.status === "bonificado") criadosPagos++;
-          else criadosAbertos++;
-          touchedClients.push(added.entry);
-        } else {
-          const action = mergeMonthlyBillingCharge(added.duplicate, incoming);
-          if (action === "baixado") baixados++;
-          else if (action === "ja_baixado") jaBaixados++;
+        if (incoming.status === "pago" || incoming.status === "bonificado") {
+          const unidentified = normalizeEntryForRuntime({
+            ...incoming,
+            id: generateId(),
+            source: "boleto-pago-nao-identificado",
+            type: "receita",
+            status: "pago",
+            category: "Recebimentos não identificados",
+            description: `${incoming.description || "Boleto pago importado"} - sem parcela existente vinculada; vincular manualmente`,
+            classificationStatus: "Não vinculado - escolher cliente/parcela manualmente"
+          });
+          const added = addEntryIfNotDuplicate(unidentified, { append: true });
+          if (added.inserted) naoIdentificados++;
           else duplicados++;
-          touchedClients.push(added.duplicate);
+        } else {
+          abertosIgnorados++;
         }
       });
-      touchedClients.forEach(upsertClientFromEntry);
-      clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
-      saveClients();
       saveEntries();
       ensureReportMonthHasData(true);
       render();
-      showToast(`${baixados} parcela${baixados === 1 ? "" : "s"} baixada${baixados === 1 ? "" : "s"}; ${jaBaixados} já constava${jaBaixados === 1 ? "" : "m"} paga${jaBaixados === 1 ? "" : "s"}; ${criadosPagos} pagamento${criadosPagos === 1 ? "" : "s"} lançado${criadosPagos === 1 ? "" : "s"} sem duplicar; ${criadosAbertos} cobrança${criadosAbertos === 1 ? "" : "s"} em aberto criada${criadosAbertos === 1 ? "" : "s"}.${atualizados ? ` ${atualizados} cobrança${atualizados === 1 ? "" : "s"} atualizada${atualizados === 1 ? "" : "s"}.` : ""}${cancelados ? ` ${cancelados} cancelada${cancelados === 1 ? "" : "s"}.` : ""}${duplicados ? ` ${duplicados} duplicidade${duplicados === 1 ? "" : "s"}/preservada${duplicados === 1 ? "" : "s"}.` : ""}${revisao ? ` ${revisao} linha${revisao === 1 ? "" : "s"} para revisão.` : ""}`);
+      showToast(`${baixados} parcela${baixados === 1 ? "" : "s"} baixada${baixados === 1 ? "" : "s"}; ${jaBaixados} já constava${jaBaixados === 1 ? "" : "m"} paga${jaBaixados === 1 ? "" : "s"}; ${naoIdentificados} pagamento${naoIdentificados === 1 ? "" : "s"} sem vínculo enviado${naoIdentificados === 1 ? "" : "s"} para Recebimentos a identificar; ${abertosIgnorados} cobrança${abertosIgnorados === 1 ? "" : "s"} em aberto ignorada${abertosIgnorados === 1 ? "" : "s"} por não existir parcela cadastrada.${atualizados ? ` ${atualizados} cobrança${atualizados === 1 ? "" : "s"} atualizada${atualizados === 1 ? "" : "s"}.` : ""}${cancelados ? ` ${cancelados} cancelada${cancelados === 1 ? "" : "s"}.` : ""}${duplicados ? ` ${duplicados} duplicidade${duplicados === 1 ? "" : "s"}/preservada${duplicados === 1 ? "" : "s"}.` : ""}${revisao ? ` ${revisao} linha${revisao === 1 ? "" : "s"} para revisão.` : ""}`);
     }
 
     function importStatementCsvText(text) {
@@ -8290,15 +10778,20 @@ Atenciosamente,
       if (code.includes("invalid-email")) return "E-mail inválido.";
       if (code.includes("missing-password")) return "Informe a senha.";
       if (code.includes("too-many-requests")) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
-      if (rawMessage) return `Erro no Firebase: ${rawMessage}`;
-      return `Erro no Firebase. Código: ${code || "sem código"}. Abra o console do navegador (F12) para ver o detalhe.`;
+      if (rawMessage) {
+        const looksFirebase = Boolean(code) || message.includes("firebase") || message.includes("firestore");
+        return looksFirebase ? `Erro no Firebase: ${rawMessage}` : `Erro técnico no sistema: ${rawMessage}`;
+      }
+      return `Erro técnico. Código: ${code || "sem código"}. Abra o console do navegador (F12) para ver o detalhe.`;
     }
 
     async function showProtectedApp(user) {
-      document.getElementById("userLabel").textContent = user.email || authorizedEmail;
+      document.getElementById("userLabel").textContent = currentAccessProfile?.name || user.email || authorizedEmail;
       loginScreen.style.display = "none";
       app.classList.add("visible");
       applyBalanceVisibility();
+      applyAccessPermissions();
+      if (hasPermission("manageUsers")) await loadManagedUsers().catch(error => console.warn("Não foi possível carregar usuários", error));
       setCloudStatus("Entrou. Carregando nuvem automaticamente...", "warn");
 
       renderOfficeProfile();
@@ -8350,7 +10843,8 @@ Atenciosamente,
           showLoginScreen();
           return;
         }
-        if (!isAuthorizedUser(user)) {
+        currentAccessProfile = await loadAccessProfileForUser(user);
+        if (!currentAccessProfile || !isAuthorizedUser(user)) {
           blockUnauthorizedUser();
           return;
         }
@@ -8367,12 +10861,29 @@ Atenciosamente,
       setLoginError();
       const email = normalizeEmail(document.getElementById("emailInput").value);
       const password = document.getElementById("passwordInput").value;
-      if (!authorizedEmails.has(email)) {
-        setLoginError("Usuário não autorizado.");
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        setLoginError(firebaseErrorMessage(error));
+      }
+    });
+
+
+    document.getElementById("firstAccessBtn")?.addEventListener("click", async () => {
+      setLoginError();
+      const email = normalizeEmail(document.getElementById("emailInput").value);
+      const password = document.getElementById("passwordInput").value;
+      if (!email || !password) {
+        setLoginError("Informe e-mail e senha para criar o primeiro acesso.");
+        return;
+      }
+      if (password.length < 6) {
+        setLoginError("A senha deve ter pelo menos 6 caracteres.");
         return;
       }
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth, email, password);
+        showToast("Usuário criado. Se o e-mail estiver autorizado pelo administrador, o acesso será liberado.");
       } catch (error) {
         setLoginError(firebaseErrorMessage(error));
       }
@@ -8447,20 +10958,52 @@ Atenciosamente,
       button.addEventListener("click", () => setView(button.dataset.view));
     });
 
+    document.querySelectorAll("[data-view-shortcut]").forEach(button => {
+      button.addEventListener("click", () => setView(button.dataset.viewShortcut));
+    });
+
     document.querySelectorAll("[data-kpi-filter]").forEach(button => {
       button.addEventListener("click", () => applyQuickFilter(button.dataset.kpiFilter));
     });
 
-    document.getElementById("newEntryBtn").addEventListener("click", () => openModal());
+    document.addEventListener("click", event => {
+      const clientButton = event.target.closest("[data-open-client-modal], #newClientBtn, #newClientInlineBtn, #newClientTopBtn");
+      if (clientButton) {
+        event.preventDefault();
+        openClientModal();
+        return;
+      }
+      const entryButton = event.target.closest("[data-open-entry-modal], #newEntryBtn, #newEntryListBtn, #newReceivableListBtn, #newExpenseListBtn, #newPayableBtn");
+      if (entryButton) {
+        event.preventDefault();
+        const mode = entryButton.dataset.openEntryModal || "receita";
+        openModal();
+        if (mode === "despesa") setExpenseDefaultsOnModal();
+      }
+    });
+
+    document.getElementById("newEntryBtn")?.addEventListener("click", () => openModal());
+    document.getElementById("newEntryListBtn")?.addEventListener("click", () => openModal());
+    document.getElementById("newReceivableListBtn")?.addEventListener("click", () => openModal());
+    document.getElementById("newExpenseListBtn")?.addEventListener("click", () => { openModal(); setExpenseDefaultsOnModal(); });
     document.getElementById("newPayableBtn")?.addEventListener("click", () => { openModal(); setExpenseDefaultsOnModal(); });
+    document.getElementById("toggleTopToolsBtn")?.addEventListener("click", event => {
+      document.body.classList.toggle("tools-collapsed");
+      event.currentTarget.textContent = document.body.classList.contains("tools-collapsed") ? "Ferramentas" : "Ocultar ferramentas";
+    });
     document.getElementById("openPayablesBtn")?.addEventListener("click", () => setView("pagar"));
     document.getElementById("openReceivablesBtn")?.addEventListener("click", () => setView("receber"));
     document.getElementById("generateDashboardChargesBtn")?.addEventListener("click", () => ensureMonthlyChargesForAllClients(true));
     document.getElementById("auditDashboardChargesBtn")?.addEventListener("click", () => showMonthlyChargeAudit(selectedMonth()));
+    document.getElementById("auditReceivableClientsBtn")?.addEventListener("click", showReceivableClientAudit);
+    document.getElementById("generateMissingReceivableBtn")?.addEventListener("click", generateMissingReceivableChargesFromAudit);
+    document.getElementById("auditReceivableClientsBtnModule")?.addEventListener("click", showReceivableClientAudit);
+    document.getElementById("generateMissingReceivableBtnModule")?.addEventListener("click", generateMissingReceivableChargesFromAudit);
     document.getElementById("importPayablesBtn")?.addEventListener("click", () => document.getElementById("payablesImportInput").click());
     document.getElementById("importPayablesDashboardBtn")?.addEventListener("click", () => document.getElementById("payablesImportInput").click());
     document.getElementById("downloadPayablesTemplateBtn")?.addEventListener("click", downloadPayablesTemplateCsv);
-    document.getElementById("newClientBtn").addEventListener("click", () => openClientModal());
+    document.getElementById("newClientBtn")?.addEventListener("click", () => openClientModal());
+    document.getElementById("newClientInlineBtn")?.addEventListener("click", () => openClientModal());
     document.getElementById("detailBackBtn").addEventListener("click", () => setView("dashboard"));
     document.getElementById("closeModalBtn").addEventListener("click", closeModal);
     document.getElementById("cancelBtn").addEventListener("click", closeModal);
@@ -8479,6 +11022,11 @@ Atenciosamente,
     });
     document.getElementById("saveWhatsappSettingsBtn").addEventListener("click", saveWhatsappSettingsFromForm);
     document.getElementById("officeForm")?.addEventListener("submit", saveOfficeProfileFromForm);
+    document.getElementById("userAccessForm")?.addEventListener("submit", saveUserAccessForm);
+    document.getElementById("refreshUsersBtn")?.addEventListener("click", async () => { await loadManagedUsers(); renderUsersPanel(); showToast("Lista de usuários atualizada."); });
+    document.getElementById("clearUserFormBtn")?.addEventListener("click", clearUserAccessForm);
+    document.getElementById("accessUserRole")?.addEventListener("change", event => fillPermissionBoxes(rolePermissionTemplates[event.target.value] || rolePermissionTemplates.financeiro));
+    fillPermissionBoxes(rolePermissionTemplates.financeiro);
     document.getElementById("batchWhatsappBtn").addEventListener("click", renderBatchWhatsappPanel);
     document.getElementById("receberWhatsappFilter").addEventListener("change", () => {
       document.getElementById("batchWhatsappPanel").hidden = true;
@@ -8532,14 +11080,27 @@ Atenciosamente,
     document.getElementById("importBtn").addEventListener("click", () => document.getElementById("csvImportInput").click());
     document.getElementById("importMonthlyPaymentsBtn")?.addEventListener("click", () => document.getElementById("monthlyPaymentsImportInput").click());
     document.getElementById("importMonthlyPaymentsReceberBtn")?.addEventListener("click", () => document.getElementById("monthlyPaymentsImportInput").click());
-    document.getElementById("importClientsBtn")?.addEventListener("click", () => document.getElementById("clientImportInput").click());
-    document.getElementById("importClientsTopBtn")?.addEventListener("click", () => document.getElementById("clientImportInput").click());
+    document.getElementById("importClientsBtn")?.addEventListener("click", () => showToast("Cadastro de clientes está manual. Use o botão Novo cliente."));
+    document.getElementById("newClientTopBtn")?.addEventListener("click", () => openClientModal());
     document.getElementById("csvImportInput").addEventListener("change", handleCsvImport);
     document.getElementById("monthlyPaymentsImportInput")?.addEventListener("change", handleMonthlyPaymentsImport);
     document.getElementById("clientImportInput")?.addEventListener("change", handleClientImport);
     document.getElementById("payablesImportInput")?.addEventListener("change", handlePayablesImport);
     form.addEventListener("submit", saveForm);
     clientForm.addEventListener("submit", saveClientForm);
+    document.getElementById("saveClientBtn")?.addEventListener("click", event => {
+      // Garante que o botão Salvar funcione mesmo quando o navegador não dispara submit por foco/rolagem/modal.
+      event.preventDefault();
+      saveClientForm(event);
+    });
+    ["clientFirstChargeMonth", "clientEndChargeMonth", "clientInstallments", "clientDueDay", "clientFirstDueDate", "clientMonthlyFee", "clientService"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.addEventListener("input", updateClientBillingPreview);
+        element.addEventListener("change", updateClientBillingPreview);
+      }
+    });
+    document.getElementById("clientFirstDueDate")?.addEventListener("change", syncFirstDueDateToBillingFields);
     setupQuickExpenseCategory();
     document.getElementById("entryType")?.addEventListener("change", () => {
       const quickCategory = document.getElementById("quickExpenseCategory");
@@ -8560,15 +11121,17 @@ Atenciosamente,
       if (modal.classList.contains("show")) closeModal();
     });
 
-    ["searchInput", "typeFilter", "statusFilter"].forEach(id => {
-      document.getElementById(id).addEventListener("input", render);
-      document.getElementById(id).addEventListener("change", render);
+    ["searchInput", "typeFilter", "statusFilter", "entryCompetenceFilter"].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", render);
+      el.addEventListener("change", render);
     });
     [
       "detailSearchInput", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter",
       "clientSearchInput", "clientSituationFilter", "clientMinFeeFilter", "clientMaxFeeFilter",
-      "receivableSearchInput", "receivableStatusFilter", "receivableMinValueFilter", "receivableMaxValueFilter",
-      "payableSearchInput", "payableStatusFilter", "payableMinValueFilter", "payableMaxValueFilter"
+      "receivableSearchInput", "receivableStatusFilter", "receivableCompetenceFilter", "receivableMinValueFilter", "receivableMaxValueFilter",
+      "payableSearchInput", "payableStatusFilter", "payableCompetenceFilter", "payableMinValueFilter", "payableMaxValueFilter"
     ].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -8577,9 +11140,10 @@ Atenciosamente,
     });
     const clearFilterGroups = {
       detailClearFiltersBtn: ["detailSearchInput", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter"],
+      entryClearFiltersBtn: ["searchInput", "typeFilter", "statusFilter", "entryCompetenceFilter"],
       clientClearFiltersBtn: ["clientSearchInput", "clientSituationFilter", "clientMinFeeFilter", "clientMaxFeeFilter"],
-      receivableClearFiltersBtn: ["receivableSearchInput", "receivableStatusFilter", "receivableMinValueFilter", "receivableMaxValueFilter"],
-      payableClearFiltersBtn: ["payableSearchInput", "payableStatusFilter", "payableMinValueFilter", "payableMaxValueFilter"]
+      receivableClearFiltersBtn: ["receivableSearchInput", "receivableStatusFilter", "receivableCompetenceFilter", "receivableMinValueFilter", "receivableMaxValueFilter"],
+      payableClearFiltersBtn: ["payableSearchInput", "payableStatusFilter", "payableCompetenceFilter", "payableMinValueFilter", "payableMaxValueFilter"]
     };
     Object.entries(clearFilterGroups).forEach(([buttonId, inputIds]) => {
       document.getElementById(buttonId)?.addEventListener("click", () => {
@@ -8600,6 +11164,180 @@ Atenciosamente,
     ensureReportMonthHasData(true);
     applyBalanceVisibility();
     render();
+
+
+    // V49 - abertura garantida dos modais após todas as funções do sistema carregarem.
+    (function installAlfaModalFallbackV49() {
+      function byId(id) { return document.getElementById(id); }
+      function setValue(id, value) {
+        const element = byId(id);
+        if (element) element.value = value == null ? "" : value;
+      }
+      function currentMonthV49() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      }
+      function todayIsoV49() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      }
+      function addMonthsV49(month, qty) {
+        const parts = String(month || currentMonthV49()).split("-");
+        const year = Number(parts[0]) || new Date().getFullYear();
+        const monthIndex = (Number(parts[1]) || 1) - 1;
+        const date = new Date(year, monthIndex + Number(qty || 0), 1);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      }
+      function isoDateFromMonthAndDayV49(month, day) {
+        const parts = String(month || currentMonthV49()).split("-");
+        const year = Number(parts[0]) || new Date().getFullYear();
+        const monthNumber = Number(parts[1]) || (new Date().getMonth() + 1);
+        const lastDay = new Date(year, monthNumber, 0).getDate();
+        const safeDay = Math.min(Math.max(Number(day) || 15, 1), lastDay);
+        return `${year}-${String(monthNumber).padStart(2, "0")}-${String(safeDay).padStart(2, "0")}`;
+      }
+      function showDirectModalV49(modal) {
+        if (!modal) return false;
+        modal.classList.add("show");
+        modal.style.display = "flex";
+        modal.setAttribute("aria-hidden", "false");
+        document.documentElement.classList.add("modal-open");
+        document.body.classList.add("modal-open");
+        if (typeof modal.scrollTo === "function") modal.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        const card = modal.querySelector(".modal-card");
+        if (card) {
+          card.style.maxHeight = "calc(100dvh - 24px)";
+          card.style.overflowY = "auto";
+          card.style.overflowX = "hidden";
+          if (typeof card.scrollTo === "function") card.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        }
+        return true;
+      }
+      function prepareNewClientFallbackV49() {
+        const form = byId("clientForm");
+        if (form && typeof form.reset === "function") form.reset();
+        const first = currentMonthV49();
+        const last = addMonthsV49(first, 10);
+        const title = byId("clientModalTitle");
+        if (title) title.textContent = "Novo cliente";
+        setValue("clientId", "");
+        setValue("clientOriginalKey", "");
+        setValue("clientType", "pj");
+        setValue("clientStatus", "ativo");
+        setValue("clientWhatsappAllowed", "sim");
+        setValue("clientService", "Honorários contábeis");
+        setValue("clientDueDay", 15);
+        setValue("clientPaymentMethod", "Folha de carnê");
+        setValue("clientFirstChargeMonth", first);
+        setValue("clientEndChargeMonth", last);
+        setValue("clientFirstDueDate", isoDateFromMonthAndDayV49(first, 15));
+        setValue("clientInstallments", 11);
+        setValue("clientGenerateChargesOnSave", "sim");
+        setValue("clientOpenSearchInput", "");
+        setTimeout(() => byId("clientName")?.focus(), 80);
+      }
+      function prepareNewEntryFallbackV49(type) {
+        const form = byId("entryForm");
+        if (form && typeof form.reset === "function") form.reset();
+        const isExpense = type === "despesa";
+        const title = byId("modalTitle");
+        if (title) title.textContent = isExpense ? "Nova despesa" : "Novo lançamento";
+        setValue("entryId", "");
+        setValue("entryType", isExpense ? "despesa" : "receita");
+        setValue("entryStatus", "aberto");
+        setValue("entryDate", todayIsoV49());
+        setValue("entryMethod", isExpense ? "Boleto" : "Pix");
+        setTimeout(() => byId("entryAmount")?.focus(), 80);
+      }
+      window.__alfaForceOpenClientModal = function alfaForceOpenClientModalV49(event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+        }
+        const modal = byId("clientModal");
+        try {
+          if (typeof window.openClientCadastroAlfa === "function") {
+            window.openClientCadastroAlfa();
+            if (modal?.classList.contains("show")) return false;
+          }
+        } catch (error) {
+          console.error("Falha no fluxo principal de Novo cliente. Usando abertura direta.", error);
+        }
+        prepareNewClientFallbackV49();
+        showDirectModalV49(modal);
+        return false;
+      };
+      window.__alfaForceOpenEntryModal = function alfaForceOpenEntryModalV49(event, type = "receita") {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+        }
+        const modal = byId("entryModal");
+        try {
+          if (typeof window.openLancamentoAlfa === "function") {
+            window.openLancamentoAlfa(type);
+            if (modal?.classList.contains("show")) return false;
+          }
+        } catch (error) {
+          console.error("Falha no fluxo principal de Novo lançamento. Usando abertura direta.", error);
+        }
+        prepareNewEntryFallbackV49(type);
+        showDirectModalV49(modal);
+        return false;
+      };
+      document.addEventListener("click", function alfaModalFallbackClickV49(event) {
+        const clientButton = event.target.closest?.("#newClientBtn, #newClientInlineBtn, #newClientTopBtn, [data-open-client-modal]");
+        if (clientButton) return window.__alfaForceOpenClientModal(event);
+        const entryButton = event.target.closest?.("#newEntryBtn, #newEntryListBtn, #newReceivableListBtn, #newExpenseListBtn, #newPayableBtn, [data-open-entry-modal]");
+        if (entryButton) return window.__alfaForceOpenEntryModal(event, entryButton.dataset.openEntryModal || "receita");
+      }, true);
+    })();
+
+    // V54 - diagnóstico local de botões e proteção contra botões dinâmicos sem permissão.
+    (function installAlfaRuntimeReviewV54() {
+      function visibleButtonLabel(button) {
+        return String(button?.innerText || button?.textContent || button?.id || button?.dataset?.action || "botão").trim().replace(/\s+/g, " ");
+      }
+      window.alfaDiagnosticoBotoes = function alfaDiagnosticoBotoes() {
+        const ids = [...document.querySelectorAll("[id]")].map(el => el.id);
+        const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
+        const buttons = [...document.querySelectorAll("button")];
+        const withoutHandler = buttons.filter(button => {
+          if (button.disabled) return false;
+          if (button.onclick) return false;
+          if (button.id) return false;
+          if (button.dataset.action || button.dataset.view || button.dataset.viewShortcut || button.dataset.kpiFilter || button.dataset.openClientModal || button.dataset.openEntryModal) return false;
+          if (button.type === "submit") return false;
+          return true;
+        }).map(visibleButtonLabel);
+        const result = {
+          version: "V54",
+          totalBotoes: buttons.length,
+          botoesSemVinculoAparente: withoutHandler,
+          idsDuplicados: [...new Set(duplicateIds)],
+          clientes: clients.length,
+          lancamentos: entries.length,
+          usuario: normalizeEmail(auth.currentUser?.email || "")
+        };
+        console.table(result);
+        return result;
+      };
+      document.addEventListener("click", event => {
+        const permissionButton = event.target.closest?.("button[data-permission]");
+        if (!permissionButton) return;
+        const permission = permissionButton.dataset.permission;
+        if (!permission || hasPermission(permission)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        showToast("Seu usuário não tem permissão para esta ação.");
+      }, true);
+    })();
+
+    window.alfaConferirClientesReceber = showReceivableClientAudit;
+
   </script>
 </body>
 </html>

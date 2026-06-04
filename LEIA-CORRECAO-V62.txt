@@ -1,0 +1,10 @@
+VERSÃO V62 - CONTAS A RECEBER SIMPLES
+
+Ajustes realizados:
+1. Removido o painel visual de cartões por competência da aba Contas a receber.
+2. Removido o painel de conferência da competência selecionada da operação diária.
+3. Mantidos os filtros profissionais: pesquisa, status, competência, valor mínimo e valor máximo.
+4. Mantidas as colunas e rotinas de baixa/WhatsApp.
+5. A conferência técnica continua no código, mas não aparece como painel poluindo a tela.
+
+Objetivo: voltar a tela para um formato mais limpo, como solicitado, preservando o filtro por competência.
