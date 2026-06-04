@@ -655,6 +655,14 @@
     .canceled { color: #cbd5e1; border-color: rgba(148,163,184,0.34); background: rgba(148,163,184,0.12); }
     .bonus { color: #bfdbfe; border-color: rgba(56,189,248,0.34); background: rgba(56,189,248,0.12); }
 
+    .muted-line {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      white-space: normal;
+    }
+
 
     .top-month-control {
       display: grid;
@@ -3254,11 +3262,11 @@
             <table>
               <thead>
                 <tr>
-                  <th>Vencimento</th>
+                  <th id="detailDateHeader">Vencimento</th>
                   <th>Nome</th>
                   <th>Documento</th>
-                  <th>Competência</th>
-                  <th>Categoria</th>
+                  <th id="detailMainMonthHeader">Competência</th>
+                  <th id="detailExtraHeader">Categoria</th>
                   <th>Forma</th>
                   <th>Valor</th>
                   <th>Status</th>
@@ -3762,8 +3770,13 @@
           </select>
         </div>
         <div class="field">
-          <label for="entryDate">Vencimento</label>
+          <label for="entryDate">Vencimento / competência do título</label>
           <input id="entryDate" type="date" required />
+        </div>
+        <div class="field">
+          <label for="entryPaidAt">Data do recebimento/pagamento</label>
+          <input id="entryPaidAt" type="date" />
+          <small class="field-hint">Usado no caixa: Recebidos no mês / Pagos no mês. Deixe vazio se estiver em aberto.</small>
         </div>
         <div class="field">
           <label for="entryAmount">Valor</label>
@@ -5654,8 +5667,24 @@ Atenciosamente,
 
     function entryPaymentMonth(entry) {
       if (entry.status !== "pago") return "";
-      return normalizeMonthInput(entry.paidAt) || entryDueMonth(entry);
+      return normalizeMonthInput(entry.paidAt) || normalizeMonthInput(entry.cashMonth) || entryDueMonth(entry);
     }
+
+    function alfaDiagnosticoRecebimentoMes(entryId = "") {
+      const candidates = entryId ? entries.filter(entry => entry.id === entryId) : entries.filter(entry => entry.type === "receita" && entry.status === "pago");
+      return candidates.map(entry => ({
+        id: entry.id,
+        cliente: entry.name,
+        vencimento: entry.date,
+        competenciaTitulo: entryCompetenceMonth(entry) || entryDueMonth(entry),
+        dataRecebimento: entry.paidAt || "",
+        mesCaixa: entryPaymentMonth(entry),
+        valor: Number(entry.paidAmount || entry.amount || 0),
+        status: entry.status,
+        forma: entry.method || ""
+      }));
+    }
+    window.alfaDiagnosticoRecebimentoMes = alfaDiagnosticoRecebimentoMes;
 
     function entryMatchesCompetence(entry, month) {
       if (!month) return true;
@@ -6462,13 +6491,20 @@ Atenciosamente,
     function detailRowTemplate(entry) {
       const amountClass = entry.type === "receita" ? "money-in" : "money-out";
       const signal = entry.type === "receita" ? "+" : "-";
+      const mode = detailMode || "vencidos";
+      const isReceivedDetail = mode === "recebidos";
+      const displayDate = isReceivedDetail ? (entry.paidAt || entry.date) : entry.date;
+      const mainMonth = isReceivedDetail ? entryPaymentMonth(entry) : (entryCompetenceMonth(entry) || entryDueMonth(entry));
+      const extraInfo = isReceivedDetail
+        ? `<span class="muted-line">Título: ${formatMonth(entryCompetenceMonth(entry) || entryDueMonth(entry))}</span>`
+        : escapeHTML(entry.category);
       return `
         <tr>
-          <td>${formatDate(entry.date)}</td>
+          <td>${formatDate(displayDate)}</td>
           <td>${escapeHTML(entry.name)}</td>
           <td>${escapeHTML(entry.document || "-")}</td>
-          <td>${formatMonth(entry.billingMonth || entry.date.slice(0, 7))}</td>
-          <td>${escapeHTML(entry.category)}</td>
+          <td>${formatMonth(mainMonth)}</td>
+          <td>${extraInfo}</td>
           <td>${escapeHTML(entry.method || "-")}</td>
           <td class="${amountClass}">${signal} ${moneySpan(entry.paidAmount || entry.amount || 0)}</td>
           <td>${statusLabel(entry)}</td>
@@ -8315,9 +8351,11 @@ Atenciosamente,
         },
         recebidos: {
           title: "Recebidos no mês",
-          subtitle: "Baixas registradas no mês selecionado.",
+          subtitle: "Baixas registradas pelo mês caixa/data real do recebimento.",
           monthLabel: "Mês caixa",
-          rows: () => baseRows.filter(entry => !month || entryPaymentMonth(entry) === month).sort(sortByNameThenDate),
+          rows: () => baseRows
+            .filter(entry => !month || entryPaymentMonth(entry) === month)
+            .sort((a, b) => String(a.paidAt || a.date || "").localeCompare(String(b.paidAt || b.date || "")) || normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR")),
           total: rows => rows.reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0)
         },
         pagar: {
@@ -8337,8 +8375,27 @@ Atenciosamente,
         && entryMatchesStatusSelect(entry, "detailStatusFilter")
         && entryMatchesValueRange(entry, "detailMinValueFilter", "detailMaxValueFilter"));
       const info = document.getElementById("detailFilterInfo");
-      if (info) info.textContent = `${filtered.length} registro(s) exibido(s) de ${rows.length}. Pesquise por nome, CNPJ/CPF, valor, vencimento, competência, forma ou categoria.`;
+      if (info) {
+        const isReceivedDetail = (detailMode || "") === "recebidos";
+        info.textContent = isReceivedDetail
+          ? `${filtered.length} registro(s) exibido(s) de ${rows.length}. Filtra pelo mês caixa/data do recebimento; a competência original do título continua visível na tabela.`
+          : `${filtered.length} registro(s) exibido(s) de ${rows.length}. Pesquise por nome, CNPJ/CPF, valor, vencimento, competência, forma ou categoria.`;
+      }
       return filtered;
+    }
+
+    function updateDetailTableHeaders(mode = detailMode) {
+      const isReceivedDetail = mode === "recebidos";
+      const dateHeader = document.getElementById("detailDateHeader");
+      const mainMonthHeader = document.getElementById("detailMainMonthHeader");
+      const extraHeader = document.getElementById("detailExtraHeader");
+      const filterLabel = document.querySelector("label[for='detailCompetenceFilter']");
+      const searchLabel = document.querySelector("label[for='detailSearchInput']");
+      if (dateHeader) dateHeader.textContent = isReceivedDetail ? "Recebimento" : "Vencimento";
+      if (mainMonthHeader) mainMonthHeader.textContent = isReceivedDetail ? "Mês caixa" : "Competência";
+      if (extraHeader) extraHeader.textContent = isReceivedDetail ? "Competência do título" : "Categoria";
+      if (filterLabel) filterLabel.textContent = isReceivedDetail ? "Mês caixa" : "Competência";
+      if (searchLabel) searchLabel.textContent = isReceivedDetail ? "Pesquisar recebimentos" : "Pesquisar vencidos / detalhes";
     }
 
     function renderDetails() {
@@ -8354,6 +8411,7 @@ Atenciosamente,
       const detailMonthLabel = document.getElementById("detailMonthLabel");
       if (detailMonthLabel) detailMonthLabel.textContent = config.monthLabel || "Competência";
       document.getElementById("detailMonth").textContent = detailMonthValue ? formatMonth(detailMonthValue) : "Todos";
+      updateDetailTableHeaders(detailMode || "vencidos");
       document.getElementById("detailRows").innerHTML = rows.length ? rows.map(detailRowTemplate).join("") : `<tr><td colspan="9"><div class="empty">Nenhum registro encontrado para os filtros informados.</div></td></tr>`;
       titles.detalhes = [config.title, config.subtitle];
     }
@@ -8703,6 +8761,7 @@ Atenciosamente,
       document.getElementById("entryType").value = entry?.type || "receita";
       document.getElementById("entryStatus").value = entry?.status || "aberto";
       document.getElementById("entryDate").value = entry?.date || todayISO();
+      document.getElementById("entryPaidAt").value = entry?.paidAt || "";
       document.getElementById("entryAmount").value = entry?.amount || "";
       document.getElementById("entryName").value = entry?.name || "";
       document.getElementById("entryDocument").value = entry?.document || "";
@@ -9529,35 +9588,52 @@ Atenciosamente,
       showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 3200);
     }
 
-    function selectedPaymentMethod(entryId, fallback = "Pix") {
-      const selector = `[data-payment-method="${String(entryId).replaceAll('"', '\\"')}"]`;
-      const control = document.querySelector(selector);
+    function scopedDataControl(context, attributeName, expectedValue) {
+      const value = String(expectedValue || "");
+      const scopes = [];
+      if (context) {
+        const rowActions = context.closest?.(".row-actions");
+        const clientCard = context.closest?.(".client-card-v51");
+        const tableRow = context.closest?.("tr");
+        const article = context.closest?.("article");
+        [rowActions, clientCard, tableRow, article].forEach(scope => {
+          if (scope && !scopes.includes(scope)) scopes.push(scope);
+        });
+      }
+      scopes.push(document);
+      for (const scope of scopes) {
+        const controls = [...scope.querySelectorAll?.(`[${attributeName}]`) || []];
+        const found = controls.find(control => String(control.getAttribute(attributeName) || "") === value);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function selectedPaymentMethod(entryId, fallback = "Pix", context = null) {
+      const control = scopedDataControl(context, "data-payment-method", entryId);
       return control?.value || fallback;
     }
 
-    function selectedPaymentDate(entryId, fallback = todayISO()) {
-      const selector = `[data-payment-date="${String(entryId).replaceAll('"', '\\"')}"]`;
-      const control = document.querySelector(selector);
+    function selectedPaymentDate(entryId, fallback = todayISO(), context = null) {
+      const control = scopedDataControl(context, "data-payment-date", entryId);
       const value = normalizeDateInput(control?.value || "", "");
       return value || fallback || todayISO();
     }
 
-    function selectedClientPaymentMethod(clientKeyValue, fallback = "Dinheiro") {
-      const selector = `[data-client-payment="${String(clientKeyValue).replaceAll('"', '\\"')}"]`;
-      const control = document.querySelector(selector);
+    function selectedClientPaymentMethod(clientKeyValue, fallback = "Dinheiro", context = null) {
+      const control = scopedDataControl(context, "data-client-payment", clientKeyValue);
       return control?.value || fallback;
     }
 
-    function selectedClientPaymentDate(clientKeyValue, fallback = todayISO()) {
-      const selector = `[data-client-payment-date="${String(clientKeyValue).replaceAll('"', '\\"')}"]`;
-      const control = document.querySelector(selector);
+    function selectedClientPaymentDate(clientKeyValue, fallback = todayISO(), context = null) {
+      const control = scopedDataControl(context, "data-client-payment-date", clientKeyValue);
       const value = normalizeDateInput(control?.value || "", "");
       return value || fallback || todayISO();
     }
 
-    function selectedClientEntryId(clientKeyValue) {
-      const selector = `[data-client-entry="${String(clientKeyValue).replaceAll('"', '\\"')}"]`;
-      return document.querySelector(selector)?.value || "";
+    function selectedClientEntryId(clientKeyValue, context = null) {
+      const control = scopedDataControl(context, "data-client-entry", clientKeyValue);
+      return control?.value || "";
     }
 
     function closeEntryWithMethod(entry, method, paymentDate = todayISO()) {
@@ -9565,6 +9641,7 @@ Atenciosamente,
       if (method === "Bonificação") {
         entry.status = "bonificado";
         entry.paidAt = normalizedPaymentDate;
+        entry.cashMonth = normalizeMonthInput(normalizedPaymentDate);
         entry.paidAmount = 0;
         entry.method = "Bonificação";
         entry.receiptProtocol = `BONIFICACAO-${normalizedPaymentDate}-${entry.id}`;
@@ -9574,6 +9651,7 @@ Atenciosamente,
 
       entry.status = "pago";
       entry.paidAt = normalizedPaymentDate;
+      entry.cashMonth = normalizeMonthInput(normalizedPaymentDate);
       entry.paidAmount = Number(entry.amount || 0);
       entry.method = method || "Pix";
     }
@@ -9581,6 +9659,7 @@ Atenciosamente,
     function reopenEntry(entry) {
       entry.status = "aberto";
       entry.paidAt = "";
+      entry.cashMonth = "";
       entry.paidAmount = 0;
       entry.receiptProtocol = "";
       entry.receiptDescription = "";
@@ -9604,7 +9683,8 @@ Atenciosamente,
         category: document.getElementById("entryCategory").value.trim(),
         serviceType: document.getElementById("entryType").value === "receita" ? "servico" : "despesa",
         method: document.getElementById("entryMethod").value,
-        description: document.getElementById("entryDescription").value.trim()
+        description: document.getElementById("entryDescription").value.trim(),
+        paidAt: normalizeDateInput(document.getElementById("entryPaidAt")?.value || "", "")
       };
 
       if (!payload.name || !payload.category || !payload.amount) {
@@ -9614,15 +9694,20 @@ Atenciosamente,
 
       if (payload.status === "bonificado") {
         payload.method = "Bonificação";
-        payload.paidAt = todayISO();
+        payload.paidAt = payload.paidAt || todayISO();
         payload.paidAmount = 0;
-        payload.receiptProtocol = `BONIFICACAO-${todayISO()}-${id}`;
+        payload.receiptProtocol = `BONIFICACAO-${payload.paidAt}-${id}`;
         payload.receiptDescription = "Cliente bonificado. Valor não somado aos recebimentos.";
       }
 
       if (payload.status === "pago") {
         payload.paidAt = payload.paidAt || payload.date || todayISO();
         payload.paidAmount = Number(payload.paidAmount || payload.amount || 0);
+      }
+
+      if (payload.status === "aberto" || payload.status === "cancelado") {
+        payload.paidAt = "";
+        payload.paidAmount = 0;
       }
 
       const normalizedPayload = normalizeEntryForRuntime(payload);
@@ -9733,7 +9818,7 @@ Atenciosamente,
           return;
         }
         const key = button.dataset.clientKey;
-        const selectedEntryId = selectedClientEntryId(key);
+        const selectedEntryId = selectedClientEntryId(key, button);
         const pending = entries
           .filter(entry => entry.type === "receita" && clientKey(entry.name, entry.document) === key && isOpenEntry(entry))
           .sort((a, b) => a.date.localeCompare(b.date));
@@ -9744,8 +9829,8 @@ Atenciosamente,
         }
 
         const entry = pending.find(item => item.id === selectedEntryId) || pending[0];
-        const method = selectedClientPaymentMethod(key, "Dinheiro");
-        const paymentDate = selectedClientPaymentDate(key, todayISO());
+        const method = selectedClientPaymentMethod(key, "Dinheiro", button);
+        const paymentDate = selectedClientPaymentDate(key, todayISO(), button);
         const competence = formatMonth(entry.billingMonth || entry.date.slice(0, 7));
         const confirmPayment = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name} na competência ${competence}, valor ${formatMoney(entry.amount)}, usando ${method}, com data de recebimento ${formatDate(paymentDate)}?`);
         if (!confirmPayment) return;
@@ -9834,8 +9919,8 @@ Atenciosamente,
         if (entry.status === "pago" || entry.status === "bonificado") {
           reopenEntry(entry);
         } else {
-          const method = selectedPaymentMethod(entry.id, entry.method || "Pix");
-          const paymentDate = selectedPaymentDate(entry.id, todayISO());
+          const method = selectedPaymentMethod(entry.id, entry.method || "Pix", button);
+          const paymentDate = selectedPaymentDate(entry.id, todayISO(), button);
           const confirmation = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name || "lançamento"} em ${formatDate(paymentDate)}, valor ${formatMoney(entry.amount || 0)}, usando ${method}?`);
           if (!confirmation) return;
           closeEntryWithMethod(entry, method, paymentDate);
