@@ -1,0 +1,12 @@
+V64 - Baixa com data e importação CSV de boletos pagos
+
+1. Substitua o index.html do site por este arquivo.
+2. Publique novamente.
+3. Pressione Ctrl+F5 no navegador.
+4. Em Contas a receber ou Clientes, ao baixar manualmente, informe a Data do recebimento.
+5. Para importar o arquivo CSV de boletos pagos, use o botão Baixar boletos pagos.
+
+O modelo testado reconhece as colunas:
+Número da Cobrança; Valor (R$); Status; Data de Emissão; Forma de cobrança; Nome; E-mail; Telefone; Documento; Data de Vencimento; Valor Pago (R$); Pago Em.
+
+Regra: a importação baixa apenas parcelas já existentes. Se não encontrar a parcela, envia para Recebimentos não identificados. Não cria cliente automaticamente.

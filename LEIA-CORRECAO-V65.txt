@@ -1,0 +1,14 @@
+V65 - Filtro de competência/mês nos detalhes financeiros
+
+Alterações:
+- Adicionado filtro Competência / mês na tela de Detalhes financeiros.
+- Em "Recebidos no mês", o filtro considera o mês de recebimento/caixa (paidAt).
+- Em "A receber", "A pagar" e "Clientes vencidos", o filtro considera a competência do título.
+- O card da tela de detalhes passa a exibir "Mês caixa" quando o modo for Recebidos no mês.
+- Ao clicar nos cards da visão geral, o detalhe já abre no mês selecionado da visão geral, mas permite trocar para outro mês ou visualizar todos.
+
+Teste recomendado:
+1. Abrir Visão geral > Recebido no mês.
+2. Alterar Competência / mês para 05/2026, 06/2026 e Todos.
+3. Conferir se a lista muda conforme a data de recebimento.
+4. Repetir em A receber e A pagar, conferindo pela competência.

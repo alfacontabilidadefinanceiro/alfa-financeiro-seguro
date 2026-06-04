@@ -5,7 +5,7 @@
   <meta name="alfa-financeiro-version" content="2026-06-04-v54-revisao-botoes-seguranca" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <title>Alfa Financeiro V57 | Cadastro de clientes corrigido</title>
+  <title>Alfa Financeiro V65 | Baixa com data e CSV de boletos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2562,6 +2562,32 @@
     @media (max-width: 700px) { .receivable-month-summary { grid-template-columns: 1fr; } }
     @media (max-width: 900px) { .receivable-audit-panel { flex-direction:column; align-items:stretch; } }
 
+
+    /* V64 - baixa manual com data de recebimento visível */
+    .payment-close-control {
+      display: grid;
+      grid-template-columns: minmax(130px, 1fr) minmax(126px, 150px);
+      gap: 8px;
+      width: min(100%, 390px);
+      align-items: center;
+    }
+    .payment-date-input {
+      min-height: 38px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: rgba(31,34,46,.95);
+      color: var(--text);
+      padding: 8px 10px;
+      font: inherit;
+      min-width: 0;
+    }
+    .client-card-paybox .payment-date-input {
+      width: 100%;
+    }
+    @media (max-width: 760px) {
+      .payment-close-control { grid-template-columns: 1fr; }
+    }
+
   </style>
 </head>
 <body class="tools-collapsed">
@@ -3185,7 +3211,7 @@
               <strong id="detailPeople">0</strong>
             </div>
             <div class="detail-card">
-              <span>Competência</span>
+              <span id="detailMonthLabel">Competência</span>
               <strong id="detailMonth">-</strong>
             </div>
           </div>
@@ -3193,6 +3219,12 @@
             <div class="field">
               <label for="detailSearchInput">Pesquisar vencidos / detalhes</label>
               <input id="detailSearchInput" type="search" placeholder="Nome, CNPJ/CPF, valor, vencimento, competência, forma, categoria..." autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="detailCompetenceFilter">Competência / mês</label>
+              <select id="detailCompetenceFilter" title="Filtrar detalhes por competência ou mês de recebimento">
+                <option value="todos">Todas as competências</option>
+              </select>
             </div>
             <div class="field">
               <label for="detailStatusFilter">Status</label>
@@ -5748,7 +5780,12 @@ Atenciosamente,
 
     function paymentControl(entry) {
       if (!isOpenEntry(entry)) return "";
-      return `<select class="payment-select" data-payment-method="${entry.id}" title="Forma de pagamento">${paymentOptions(entry)}</select>`;
+      const defaultPaymentDate = todayISO();
+      return `
+        <div class="payment-close-control">
+          <select class="payment-select" data-payment-method="${entry.id}" title="Forma de recebimento/pagamento">${paymentOptions(entry)}</select>
+          <input class="payment-date-input" data-payment-date="${entry.id}" type="date" value="${defaultPaymentDate}" title="Data do recebimento/pagamento" />
+        </div>`;
     }
 
     function clientPaymentControl(client, summary) {
@@ -6325,17 +6362,34 @@ Atenciosamente,
 
     function renderKpis() {
       const currentMonth = selectedMonth();
-      const monthEntries = financialEntries(entries).filter(entry => entryMatchesMonth(entry, currentMonth));
-      const incomeOpen = monthEntries.filter(entry => entry.type === "receita" && isOpenEntry(entry)).reduce((sum, entry) => sum + Number(entry.amount), 0);
-      const expenseOpen = monthEntries.filter(entry => entry.type === "despesa" && isOpenEntry(entry)).reduce((sum, entry) => sum + Number(entry.amount), 0);
-      const billedIncome = monthEntries.filter(entry => entry.type === "receita").reduce((sum, entry) => sum + Number(entry.amount), 0);
-      const monthExpense = monthEntries.filter(entry => entry.type === "despesa").reduce((sum, entry) => sum + Number(entry.amount), 0);
-      const receivedIncome = activeEntries(entries).filter(entry => entry.type === "receita" && isPaidInMonth(entry, currentMonth)).reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0);
+      const active = financialEntries(entries);
+
+      // V63: KPIs devem usar a mesma regra operacional das telas:
+      // - A receber/A pagar = títulos abertos da competência selecionada.
+      // - Recebido no mês = baixas pelo mês do pagamento/recebimento.
+      // Antes era usado entryMatchesMonth(), que misturava competência, vencimento e pagamento
+      // e podia deixar os cards inconsistentes após baixar boletos.
+      const competenceEntries = active.filter(entry => entryMatchesCompetence(entry, currentMonth));
+      const incomeOpen = competenceEntries
+        .filter(entry => entry.type === "receita" && isOpenEntry(entry))
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const expenseOpen = competenceEntries
+        .filter(entry => entry.type === "despesa" && isOpenEntry(entry))
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const billedIncome = competenceEntries
+        .filter(entry => entry.type === "receita" && entry.status !== "cancelado")
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const monthExpense = competenceEntries
+        .filter(entry => entry.type === "despesa" && entry.status !== "cancelado")
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const receivedIncome = active
+        .filter(entry => entry.type === "receita" && isPaidInMonth(entry, currentMonth))
+        .reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0);
       document.getElementById("kpiBalance").innerHTML = moneySpan(billedIncome - monthExpense);
       document.getElementById("kpiIncome").innerHTML = moneySpan(incomeOpen);
       document.getElementById("kpiReceived").innerHTML = moneySpan(receivedIncome);
       document.getElementById("kpiExpense").innerHTML = moneySpan(expenseOpen);
-      document.getElementById("kpiLate").textContent = entries.filter(isLate).length;
+      document.getElementById("kpiLate").textContent = active.filter(isLate).length;
       document.querySelectorAll("[data-kpi-filter]").forEach(button => {
         button.classList.toggle("active", button.dataset.kpiFilter === activeKpiFilter);
       });
@@ -6887,6 +6941,8 @@ Atenciosamente,
             <select data-client-payment="${escapeHTML(client.key)}" title="Forma de recebimento">
               ${paymentOptions}
             </select>
+            <label>Data do recebimento</label>
+            <input class="payment-date-input" data-client-payment-date="${escapeHTML(client.key)}" type="date" value="${todayISO()}" title="Data do recebimento" />
           </div>` : `<small class="client-row-note">Nenhum honorário em aberto para baixa.</small>`;
 
         return `
@@ -8192,35 +8248,87 @@ Atenciosamente,
       `;
     }
 
+    function detailBaseRows(mode = detailMode) {
+      if (mode === "pendentes") return entries.filter(entry => entry.type === "receita" && isOpenEntry(entry));
+      if (mode === "recebidos") return entries.filter(entry => entry.type === "receita" && entry.status === "pago");
+      if (mode === "pagar") return entries.filter(entry => entry.type === "despesa" && isOpenEntry(entry));
+      return entries.filter(entry => entry.type === "receita" && isLate(entry));
+    }
+
+    function detailMonthReference(entry, mode = detailMode) {
+      if (mode === "recebidos") return entryPaymentMonth(entry);
+      return entryCompetenceMonth(entry) || entryDueMonth(entry);
+    }
+
+    function selectedDetailMonth() {
+      const select = document.getElementById("detailCompetenceFilter");
+      if (!select) return selectedMonth();
+      const value = select.value || select.dataset.pendingValue || selectedMonth();
+      if (!value || value === "todos") return "";
+      return normalizeMonthInput(value) || "";
+    }
+
+    function populateDetailCompetenceFilter(list = [], mode = detailMode) {
+      const select = document.getElementById("detailCompetenceFilter");
+      if (!select) return "";
+      const pending = select.dataset.pendingValue;
+      const previous = pending || select.value || selectedMonth();
+      const counts = new Map();
+      list.forEach(entry => {
+        const month = detailMonthReference(entry, mode);
+        if (!month) return;
+        counts.set(month, (counts.get(month) || 0) + 1);
+      });
+      const months = [...counts.keys()].sort();
+      const allLabel = mode === "recebidos" ? "Todos os meses de recebimento" : "Todas as competências";
+      select.innerHTML = [`<option value="todos">${escapeHTML(allLabel)} (${list.length})</option>`]
+        .concat(months.map(month => `<option value="${month}">${formatMonth(month)} - ${counts.get(month)} registro(s)</option>`))
+        .join("");
+      const normalizedPrevious = normalizeMonthInput(previous);
+      if (previous === "todos") select.value = "todos";
+      else if (normalizedPrevious && months.includes(normalizedPrevious)) select.value = normalizedPrevious;
+      else if (months.includes(selectedMonth())) select.value = selectedMonth();
+      else select.value = "todos";
+      delete select.dataset.pendingValue;
+      return select.value;
+    }
+
     function detailConfig() {
-      const month = selectedMonth();
+      const mode = detailMode || "vencidos";
+      const baseRows = detailBaseRows(mode);
+      populateDetailCompetenceFilter(baseRows, mode);
+      const month = selectedDetailMonth();
       const configs = {
         vencidos: {
           title: "Clientes vencidos",
           subtitle: "Cobranças com prazo vencido, por cliente e competência.",
-          rows: () => entries.filter(entry => entry.type === "receita" && isLate(entry)).sort(sortByNameThenDate),
+          monthLabel: "Competência",
+          rows: () => baseRows.filter(entry => !month || detailMonthReference(entry, mode) === month).sort(sortByNameThenDate),
           total: rows => rows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
         },
         pendentes: {
           title: "A receber no mês",
           subtitle: "Cobranças abertas da competência selecionada.",
-          rows: () => entries.filter(entry => entry.type === "receita" && isOpenEntry(entry) && entryMatchesMonth(entry, month)).sort(sortByNameThenDate),
+          monthLabel: "Competência",
+          rows: () => baseRows.filter(entry => !month || entryMatchesCompetence(entry, month)).sort(sortByNameThenDate),
           total: rows => rows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
         },
         recebidos: {
           title: "Recebidos no mês",
           subtitle: "Baixas registradas no mês selecionado.",
-          rows: () => entries.filter(entry => entry.type === "receita" && isPaidInMonth(entry, month)).sort(sortByNameThenDate),
+          monthLabel: "Mês caixa",
+          rows: () => baseRows.filter(entry => !month || entryPaymentMonth(entry) === month).sort(sortByNameThenDate),
           total: rows => rows.reduce((sum, entry) => sum + Number(entry.paidAmount || entry.amount || 0), 0)
         },
         pagar: {
           title: "A pagar no mês",
           subtitle: "Despesas abertas da competência selecionada.",
-          rows: () => entries.filter(entry => entry.type === "despesa" && isOpenEntry(entry) && entryMatchesMonth(entry, month)).sort((a, b) => a.date.localeCompare(b.date)),
+          monthLabel: "Competência",
+          rows: () => baseRows.filter(entry => !month || entryMatchesCompetence(entry, month)).sort((a, b) => a.date.localeCompare(b.date)),
           total: rows => rows.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
         }
       };
-      return configs[detailMode] || configs.vencidos;
+      return configs[mode] || configs.vencidos;
     }
 
     function filteredDetailRows(rows) {
@@ -8242,7 +8350,10 @@ Atenciosamente,
       document.getElementById("detailCount").textContent = `${rows.length} registro${rows.length === 1 ? "" : "s"}${rows.length !== baseRows.length ? ` de ${baseRows.length}` : ""}`;
       document.getElementById("detailTotal").innerHTML = moneySpan(config.total(rows));
       document.getElementById("detailPeople").textContent = people;
-      document.getElementById("detailMonth").textContent = detailMode === "vencidos" ? "Todos" : formatMonth(selectedMonth());
+      const detailMonthValue = selectedDetailMonth();
+      const detailMonthLabel = document.getElementById("detailMonthLabel");
+      if (detailMonthLabel) detailMonthLabel.textContent = config.monthLabel || "Competência";
+      document.getElementById("detailMonth").textContent = detailMonthValue ? formatMonth(detailMonthValue) : "Todos";
       document.getElementById("detailRows").innerHTML = rows.length ? rows.map(detailRowTemplate).join("") : `<tr><td colspan="9"><div class="empty">Nenhum registro encontrado para os filtros informados.</div></td></tr>`;
       titles.detalhes = [config.title, config.subtitle];
     }
@@ -8448,8 +8559,10 @@ Atenciosamente,
       try {
         const view = currentViewId();
         lastRenderAt = Date.now();
+        // V63: os cards financeiros ficam sempre sincronizados após baixa, importação, edição ou exclusão,
+        // mesmo quando a alteração é feita dentro de A receber/A pagar/Clientes e a visão geral está oculta.
+        renderKpis();
         if (view === "dashboard") {
-          renderKpis();
           renderDashboard();
           renderReceivableAlerts();
           renderDueAlerts();
@@ -8536,12 +8649,16 @@ Atenciosamente,
 
       if (filter === "pendentes" || filter === "recebidos" || filter === "vencidos") {
         detailMode = filter;
+        const detailSelect = document.getElementById("detailCompetenceFilter");
+        if (detailSelect) detailSelect.dataset.pendingValue = selectedMonth();
         setView("detalhes", { keepDetailMode: true });
         return;
       }
 
       if (filter === "pagar") {
         detailMode = "pagar";
+        const detailSelect = document.getElementById("detailCompetenceFilter");
+        if (detailSelect) detailSelect.dataset.pendingValue = selectedMonth();
         setView("detalhes", { keepDetailMode: true });
       }
     }
@@ -9418,10 +9535,24 @@ Atenciosamente,
       return control?.value || fallback;
     }
 
+    function selectedPaymentDate(entryId, fallback = todayISO()) {
+      const selector = `[data-payment-date="${String(entryId).replaceAll('"', '\\"')}"]`;
+      const control = document.querySelector(selector);
+      const value = normalizeDateInput(control?.value || "", "");
+      return value || fallback || todayISO();
+    }
+
     function selectedClientPaymentMethod(clientKeyValue, fallback = "Dinheiro") {
       const selector = `[data-client-payment="${String(clientKeyValue).replaceAll('"', '\\"')}"]`;
       const control = document.querySelector(selector);
       return control?.value || fallback;
+    }
+
+    function selectedClientPaymentDate(clientKeyValue, fallback = todayISO()) {
+      const selector = `[data-client-payment-date="${String(clientKeyValue).replaceAll('"', '\\"')}"]`;
+      const control = document.querySelector(selector);
+      const value = normalizeDateInput(control?.value || "", "");
+      return value || fallback || todayISO();
     }
 
     function selectedClientEntryId(clientKeyValue) {
@@ -9429,19 +9560,20 @@ Atenciosamente,
       return document.querySelector(selector)?.value || "";
     }
 
-    function closeEntryWithMethod(entry, method) {
+    function closeEntryWithMethod(entry, method, paymentDate = todayISO()) {
+      const normalizedPaymentDate = normalizeDateInput(paymentDate, todayISO());
       if (method === "Bonificação") {
         entry.status = "bonificado";
-        entry.paidAt = todayISO();
+        entry.paidAt = normalizedPaymentDate;
         entry.paidAmount = 0;
         entry.method = "Bonificação";
-        entry.receiptProtocol = `BONIFICACAO-${todayISO()}-${entry.id}`;
+        entry.receiptProtocol = `BONIFICACAO-${normalizedPaymentDate}-${entry.id}`;
         entry.receiptDescription = "Cliente bonificado. Valor não somado aos recebimentos.";
         return;
       }
 
       entry.status = "pago";
-      entry.paidAt = todayISO();
+      entry.paidAt = normalizedPaymentDate;
       entry.paidAmount = Number(entry.amount || 0);
       entry.method = method || "Pix";
     }
@@ -9613,14 +9745,15 @@ Atenciosamente,
 
         const entry = pending.find(item => item.id === selectedEntryId) || pending[0];
         const method = selectedClientPaymentMethod(key, "Dinheiro");
+        const paymentDate = selectedClientPaymentDate(key, todayISO());
         const competence = formatMonth(entry.billingMonth || entry.date.slice(0, 7));
-        const confirmPayment = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name} na competência ${competence}, valor ${formatMoney(entry.amount)}, usando ${method}?`);
+        const confirmPayment = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name} na competência ${competence}, valor ${formatMoney(entry.amount)}, usando ${method}, com data de recebimento ${formatDate(paymentDate)}?`);
         if (!confirmPayment) return;
 
-        closeEntryWithMethod(entry, method);
-        registerAuditLog(method === "Bonificação" ? "bonificar_honorario" : "baixar_honorario", "lancamento", { id: entry.id, client: entry.name, competence, amount: entry.amount, method });
+        closeEntryWithMethod(entry, method, paymentDate);
+        registerAuditLog(method === "Bonificação" ? "bonificar_honorario" : "baixar_honorario", "lancamento", { id: entry.id, client: entry.name, competence, amount: entry.amount, method, paidAt: paymentDate });
         if (method === "Dinheiro") {
-          entry.receiptProtocol = `DINHEIRO-${todayISO()}-${entry.id}`;
+          entry.receiptProtocol = `DINHEIRO-${paymentDate}-${entry.id}`;
           entry.receiptDescription = "Recebimento em dinheiro baixado manualmente";
         }
         saveEntries();
@@ -9701,7 +9834,12 @@ Atenciosamente,
         if (entry.status === "pago" || entry.status === "bonificado") {
           reopenEntry(entry);
         } else {
-          closeEntryWithMethod(entry, selectedPaymentMethod(entry.id, entry.method || "Pix"));
+          const method = selectedPaymentMethod(entry.id, entry.method || "Pix");
+          const paymentDate = selectedPaymentDate(entry.id, todayISO());
+          const confirmation = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name || "lançamento"} em ${formatDate(paymentDate)}, valor ${formatMoney(entry.amount || 0)}, usando ${method}?`);
+          if (!confirmation) return;
+          closeEntryWithMethod(entry, method, paymentDate);
+          registerAuditLog(method === "Bonificação" ? "bonificar_lancamento" : "baixar_lancamento", "lancamento", { id: entry.id, name: entry.name, amount: entry.amount, method, paidAt: paymentDate });
         }
         saveEntries();
         render();
@@ -10490,9 +10628,12 @@ Atenciosamente,
 
     function monthlyBillingStatusFromRecord(record) {
       const statusText = normalizeText(getRecordValue(record, ["status", "situacao"]));
+      const paidDateText = getRecordValue(record, ["pago_em", "data_de_pagamento", "data_pagamento", "pagamento"]);
+      const paidValueText = getRecordValue(record, ["valor_pago_r", "valor_pago", "pago"]);
+      const paidValue = parseBrazilianMoney(paidValueText);
       if (statusText.includes("cancel")) return "cancelado";
       if (statusText.includes("bonific")) return "bonificado";
-      if (statusText.includes("pago") || getRecordValue(record, ["pago_em", "data_de_pagamento", "pagamento"])) return "pago";
+      if (statusText.includes("pago") || paidDateText || paidValue > 0) return "pago";
       return "aberto";
     }
 
@@ -10506,7 +10647,7 @@ Atenciosamente,
       const rawPaidAmount = parseBrazilianMoney(getRecordValue(record, ["valor_pago_r", "valor_pago", "pago"]));
       const status = monthlyBillingStatusFromRecord(record);
       const paidAmount = status === "pago" ? Number(rawPaidAmount || originalAmount || 0) : 0;
-      const billingMonth = String(dueDate || paidAt || selectedMonth || firstChargeMonth).slice(0, 7);
+      const billingMonth = String(dueDate || paidAt || selectedMonth() || firstChargeMonth).slice(0, 7);
       return normalizeEntryForRuntime({
         id: generateId(),
         source: "lancamento-mensal",
@@ -10642,11 +10783,16 @@ Atenciosamente,
       let cancelados = 0;
       let revisao = 0;
       let duplicados = 0;
+      let linhasPagasArquivo = 0;
+      let linhasAbertasArquivo = 0;
       const touchedClients = [];
+      const notLinkedDetails = [];
       rows.slice(1).forEach(cells => {
         const record = {};
         headers.forEach((header, index) => record[header] = cells[index] || "");
         const incoming = monthlyBillingEntryFromRecord(record);
+        if (incoming.status === "pago" || incoming.status === "bonificado") linhasPagasArquivo++;
+        if (incoming.status === "aberto") linhasAbertasArquivo++;
         if (!incoming.name || !incoming.date || !Number(incoming.amount || incoming.paidAmount || 0)) {
           revisao++;
           return;
@@ -10674,8 +10820,10 @@ Atenciosamente,
             classificationStatus: "Não vinculado - escolher cliente/parcela manualmente"
           });
           const added = addEntryIfNotDuplicate(unidentified, { append: true });
-          if (added.inserted) naoIdentificados++;
-          else duplicados++;
+          if (added.inserted) {
+            naoIdentificados++;
+            notLinkedDetails.push(`${incoming.name || "Sem nome"} | ${incoming.document || "sem documento"} | ${formatMonth(incoming.billingMonth || String(incoming.date || "").slice(0,7))} | ${formatMoney(incoming.paidAmount || incoming.amount || 0)}`);
+          } else duplicados++;
         } else {
           abertosIgnorados++;
         }
@@ -10683,7 +10831,17 @@ Atenciosamente,
       saveEntries();
       ensureReportMonthHasData(true);
       render();
-      showToast(`${baixados} parcela${baixados === 1 ? "" : "s"} baixada${baixados === 1 ? "" : "s"}; ${jaBaixados} já constava${jaBaixados === 1 ? "" : "m"} paga${jaBaixados === 1 ? "" : "s"}; ${naoIdentificados} pagamento${naoIdentificados === 1 ? "" : "s"} sem vínculo enviado${naoIdentificados === 1 ? "" : "s"} para Recebimentos a identificar; ${abertosIgnorados} cobrança${abertosIgnorados === 1 ? "" : "s"} em aberto ignorada${abertosIgnorados === 1 ? "" : "s"} por não existir parcela cadastrada.${atualizados ? ` ${atualizados} cobrança${atualizados === 1 ? "" : "s"} atualizada${atualizados === 1 ? "" : "s"}.` : ""}${cancelados ? ` ${cancelados} cancelada${cancelados === 1 ? "" : "s"}.` : ""}${duplicados ? ` ${duplicados} duplicidade${duplicados === 1 ? "" : "s"}/preservada${duplicados === 1 ? "" : "s"}.` : ""}${revisao ? ` ${revisao} linha${revisao === 1 ? "" : "s"} para revisão.` : ""}`);
+      const importSummary = `Arquivo lido: ${rows.length - 1} linha(s), ${linhasPagasArquivo} paga(s)/marcada(s) como paga(s), ${linhasAbertasArquivo} em aberto. ${baixados} parcela(s) baixada(s); ${jaBaixados} já constava(m) paga(s); ${naoIdentificados} pagamento(s) sem vínculo enviado(s) para Recebimentos a identificar; ${abertosIgnorados} cobrança(s) em aberto ignorada(s) por não existir parcela cadastrada.${atualizados ? ` ${atualizados} cobrança(s) atualizada(s).` : ""}${cancelados ? ` ${cancelados} cancelada(s).` : ""}${duplicados ? ` ${duplicados} duplicidade(s)/preservada(s).` : ""}${revisao ? ` ${revisao} linha(s) para revisão.` : ""}`;
+      console.info("Importação de boletos pagos Alfa", { linhasArquivo: rows.length - 1, linhasPagasArquivo, linhasAbertasArquivo, baixados, jaBaixados, naoIdentificados, abertosIgnorados, atualizados, cancelados, duplicados, revisao, naoVinculados: notLinkedDetails });
+      showToast(importSummary);
+      if (notLinkedDetails.length) {
+        alert(`Importação concluída com pagamentos sem vínculo.
+
+Eles foram enviados para Recebimentos a identificar porque não encontrei parcela em aberto compatível no cadastro.
+
+Primeiros itens:
+${notLinkedDetails.slice(0, 12).join("\n")}${notLinkedDetails.length > 12 ? "\n..." : ""}`);
+      }
     }
 
     function importStatementCsvText(text) {
@@ -10704,6 +10862,46 @@ Atenciosamente,
       if (isReceiptStatement(headers)) return importReceiptStatementRows(rows, headers);
       showToast("Modelo de extrato não reconhecido. Use o CSV do extrato mensal com colunas Tipo, Protocolo, Data e Valor.");
     }
+
+
+    function alfaDiagnosticoArquivoBoletos(text) {
+      const rows = parseCsvRows(String(text || ""));
+      const headers = rows[0]?.map(normalizeHeader) || [];
+      const registros = rows.slice(1).map(cells => {
+        const record = {};
+        headers.forEach((header, index) => record[header] = cells[index] || "");
+        const incoming = monthlyBillingEntryFromRecord(record);
+        const match = incoming.name && incoming.date ? findMonthlyBillingMatch(incoming) : null;
+        return {
+          cobranca: incoming.sourceId || "",
+          cliente: incoming.name || "",
+          documento: incoming.document || "",
+          competencia: incoming.billingMonth || "",
+          vencimento: incoming.date || "",
+          valor: incoming.amount || 0,
+          valorPago: incoming.paidAmount || 0,
+          pagoEm: incoming.paidAt || "",
+          status: incoming.status || "",
+          encontrouParcela: Boolean(match),
+          parcelaEncontrada: match ? { id: match.id, cliente: match.name, competencia: entryCompetence(match), vencimento: match.date, valor: match.amount, status: match.status } : null
+        };
+      });
+      const resumo = {
+        reconhecido: isMonthlyBillingImport(headers),
+        colunas: headers,
+        linhas: registros.length,
+        pagos: registros.filter(item => item.status === "pago" || item.status === "bonificado").length,
+        emAberto: registros.filter(item => item.status === "aberto").length,
+        comParcelaEncontrada: registros.filter(item => item.encontrouParcela).length,
+        semParcelaEncontrada: registros.filter(item => !item.encontrouParcela).length,
+        registros
+      };
+      console.table(registros);
+      console.info("Diagnóstico do arquivo de boletos", resumo);
+      return resumo;
+    }
+
+    window.alfaDiagnosticoArquivoBoletos = alfaDiagnosticoArquivoBoletos;
 
     function handleMonthlyPaymentsImport(event) {
       const file = event.target.files?.[0];
@@ -11128,7 +11326,7 @@ Atenciosamente,
       el.addEventListener("change", render);
     });
     [
-      "detailSearchInput", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter",
+      "detailSearchInput", "detailCompetenceFilter", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter",
       "clientSearchInput", "clientSituationFilter", "clientMinFeeFilter", "clientMaxFeeFilter",
       "receivableSearchInput", "receivableStatusFilter", "receivableCompetenceFilter", "receivableMinValueFilter", "receivableMaxValueFilter",
       "payableSearchInput", "payableStatusFilter", "payableCompetenceFilter", "payableMinValueFilter", "payableMaxValueFilter"
@@ -11139,7 +11337,7 @@ Atenciosamente,
       el.addEventListener("change", render);
     });
     const clearFilterGroups = {
-      detailClearFiltersBtn: ["detailSearchInput", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter"],
+      detailClearFiltersBtn: ["detailSearchInput", "detailCompetenceFilter", "detailStatusFilter", "detailMinValueFilter", "detailMaxValueFilter"],
       entryClearFiltersBtn: ["searchInput", "typeFilter", "statusFilter", "entryCompetenceFilter"],
       clientClearFiltersBtn: ["clientSearchInput", "clientSituationFilter", "clientMinFeeFilter", "clientMaxFeeFilter"],
       receivableClearFiltersBtn: ["receivableSearchInput", "receivableStatusFilter", "receivableCompetenceFilter", "receivableMinValueFilter", "receivableMaxValueFilter"],

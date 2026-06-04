@@ -1,0 +1,12 @@
+VERSAO V63 - CORRECAO DOS CARDS DA VISAO GERAL E BAIXAS
+
+Substitua o index.html publicado por este arquivo.
+
+Esta versão corrige:
+1. Card A receber atualizando após baixa.
+2. Card Recebido no mês atualizando após baixa.
+3. Clique nos cards abrindo detalhes com a mesma regra da competência.
+4. Importação de boletos pagos reconhecendo pagamento por status, data de pagamento ou valor pago.
+5. Atualização dos KPIs mesmo quando a baixa é feita em Clientes ou Contas a receber.
+
+Depois de publicar, pressione Ctrl + F5.
