@@ -5,7 +5,7 @@
   <meta name="alfa-financeiro-version" content="2026-06-04-v54-revisao-botoes-seguranca" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <title>Alfa Financeiro V65 | Baixa com data e CSV de boletos</title>
+  <title>Alfa Financeiro V68 | Segurança, auditoria e importação conferida</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2677,7 +2677,7 @@
           <button class="btn btn-secondary optional-top-action" id="manualBackupBtn" data-permission="exportData" type="button">Backup</button>
           <button class="btn btn-secondary optional-top-action" id="generateChargesBtn" data-permission="manageCharges" type="button">Gerar 05/2026 a 03/2027</button>
           <button class="btn btn-secondary optional-top-action" id="auditChargesBtn" type="button">Conferir mensalidades</button>
-          <button class="btn btn-ghost optional-top-action" id="clearEntriesBtn" data-permission="deleteEntries" type="button">Excluir lançamentos</button>
+          <button class="btn btn-ghost optional-top-action" id="clearEntriesBtn" data-permission="deleteEntries" type="button">Cancelar lançamentos</button>
           <button class="btn btn-primary" id="newEntryBtn" data-permission="manualEntry" data-open-entry-modal="true" onclick="window.__alfaForceOpenEntryModal && window.__alfaForceOpenEntryModal(event, 'receita'); return false;" type="button">Novo lançamento</button>
           <button class="btn btn-secondary" id="toggleTopToolsBtn" type="button">Ferramentas</button>
           <button class="btn btn-ghost" id="logoutBtn" type="button">Sair</button>
@@ -4116,6 +4116,7 @@
     const googleProvider = new GoogleAuthProvider();
     const authorizedEmail = "alfacontabilidade2014@gmail.com";
     const authorizedEmails = new Set([authorizedEmail]);
+    const APP_VERSION = "V68-Seguranca-Auditoria";
 
     const accessPermissionLabels = {
       viewDashboard: "Ver visão geral",
@@ -4129,7 +4130,7 @@
       viewReports: "Ver relatórios",
       exportData: "Exportar/backup",
       clearDatabase: "Limpar banco",
-      deleteEntries: "Excluir lançamentos",
+      deleteEntries: "Cancelar lançamentos",
       manageUsers: "Gerenciar usuários",
       manageCharges: "Gerar/conferir mensalidades"
     };
@@ -4928,6 +4929,65 @@ Atenciosamente,
       localStorage.setItem(auditLogsKey, JSON.stringify((auditLogs || []).slice(0, 500)));
     }
 
+    function persistAuditLogToCloud(item) {
+      try {
+        if (!item?.id || !isAuthorizedUser(auth.currentUser)) return;
+        const cloudLog = {
+          ...safeJsonCopy(item),
+          createdAt: serverTimestamp(),
+          immutable: true,
+          appVersion: APP_VERSION
+        };
+        setDoc(doc(db, ...cloudDocumentPath, "logs", item.id), cloudLog, { merge: false })
+          .catch(error => console.warn("Log de auditoria não enviado para a nuvem.", error));
+      } catch (error) {
+        console.warn("Falha ao preparar log de auditoria para a nuvem.", error);
+      }
+    }
+
+    function entryAuditSnapshot(entry) {
+      if (!entry) return null;
+      return safeJsonCopy({
+        id: entry.id || "",
+        type: entry.type || "",
+        status: entry.status || "",
+        date: entry.date || "",
+        billingMonth: entry.billingMonth || "",
+        cashMonth: entry.cashMonth || "",
+        paidAt: entry.paidAt || "",
+        amount: Number(entry.amount || 0),
+        paidAmount: Number(entry.paidAmount || 0),
+        name: entry.name || "",
+        document: entry.document || "",
+        category: entry.category || "",
+        method: entry.method || "",
+        source: entry.source || "",
+        sourceId: entry.sourceId || "",
+        receiptProtocol: entry.receiptProtocol || "",
+        classificationStatus: entry.classificationStatus || ""
+      });
+    }
+
+    function clientAuditSnapshot(client) {
+      if (!client) return null;
+      return safeJsonCopy({
+        id: client.id || "",
+        key: client.key || "",
+        name: client.name || "",
+        document: client.document || "",
+        status: client.status || "",
+        phone: client.phone || "",
+        email: client.email || "",
+        monthlyFee: Number(client.monthlyFee || 0),
+        dueDay: Number(client.dueDay || 0),
+        firstDueDate: client.firstDueDate || "",
+        firstChargeMonth: client.firstChargeMonth || "",
+        endChargeMonth: client.endChargeMonth || "",
+        installmentCount: Number(client.installmentCount || 0),
+        paymentMethod: client.paymentMethod || ""
+      });
+    }
+
     function registerAuditLog(action, entity, details = {}) {
       try {
         const item = {
@@ -4936,10 +4996,12 @@ Atenciosamente,
           user: normalizeEmail(auth.currentUser?.email || "sem-login"),
           action,
           entity,
-          details: safeJsonCopy(details)
+          details: safeJsonCopy(details),
+          appVersion: APP_VERSION
         };
         auditLogs = [item, ...(auditLogs || [])].slice(0, 500);
         saveAuditLogs();
+        persistAuditLogToCloud(item);
       } catch (error) {
         console.warn("Não foi possível registrar log de auditoria.", error);
       }
@@ -5237,7 +5299,7 @@ Atenciosamente,
         const compactPayload = compactCloudPayload(cleanClients, cleanEntries);
         const usingCompactPayload = Array.isArray(compactPayload.clients) || Array.isArray(compactPayload.entries);
         const statePayload = {
-          version: "V56-Salvar-Cliente-Corrigido",
+          version: APP_VERSION,
           storageMode: usingCompactPayload ? "hybrid_v27" : "collections_v27",
           updatedAt: serverTimestamp(),
           updatedBy: normalizeEmail(auth.currentUser.email),
@@ -5294,6 +5356,7 @@ Atenciosamente,
         cleanEntries.forEach(entry => {
           operations.push(batch => batch.set(doc(db, ...cloudDocumentPath, "entries", entry.cloudId), safeJsonCopy(entry), { merge: true }));
         });
+        // Logs são gravados de forma append-only em /logs por registerAuditLog().
         await commitBatchOperations(operations, 100);
         cloudLastSavedAt = nowTimeText();
         updateCloudSummaryStatus("Salvo completo");
@@ -6436,7 +6499,7 @@ Atenciosamente,
             ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
             <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
             <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
-            <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+            <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Cancelar lançamento">×</button>
           </div>
         </td>`;
       return `
@@ -6482,7 +6545,7 @@ Atenciosamente,
               ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
               <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
               <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
-              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Cancelar lançamento">×</button>
             </div>
           </td>
         </tr>`;
@@ -6747,7 +6810,7 @@ Atenciosamente,
               <button class="btn btn-secondary table-btn" data-action="link-unidentified-income" data-id="${entry.id}" type="button">Vincular cliente</button>
               <button class="btn btn-secondary table-btn" data-action="make-avulsa" data-id="${entry.id}" type="button">Receita avulsa</button>
               <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
-              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Cancelar lançamento">×</button>
             </div>
           </td>
         </tr>`;
@@ -6768,7 +6831,7 @@ Atenciosamente,
             <div class="row-actions">
               <button class="btn btn-secondary table-btn" data-action="classify-expense" data-id="${entry.id}" type="button">Reclassificar</button>
               <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
-              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Excluir">×</button>
+              <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Cancelar lançamento">×</button>
             </div>
           </td>
         </tr>`;
@@ -9562,7 +9625,7 @@ Atenciosamente,
       const shouldGenerateCharges = document.getElementById("clientGenerateChargesOnSave")?.value !== "nao";
       const adjustedCharges = shouldGenerateCharges ? ensureMonthlyChargesForClient(client) : 0;
       clients.sort((a, b) => normalizeText(a.name).localeCompare(normalizeText(b.name), "pt-BR"));
-      registerAuditLog(existing ? "editar_cliente" : "criar_cliente", "cliente", { id: client.id, name: client.name, document: client.document, monthlyFee: client.monthlyFee });
+      registerAuditLog(existing ? "editar_cliente" : "criar_cliente", "cliente", { before: existing ? clientAuditSnapshot(existing) : null, after: clientAuditSnapshot(client) });
       saveClients();
       saveEntries();
       try {
@@ -9665,6 +9728,25 @@ Atenciosamente,
       entry.receiptDescription = "";
     }
 
+    function cancelEntryWithAudit(entry, reason = "Cancelamento manual") {
+      if (!entry) return false;
+      const before = entryAuditSnapshot(entry);
+      const normalizedReason = String(reason || "").trim();
+      if (!normalizedReason) return false;
+      entry.status = "cancelado";
+      entry.cancelledAt = new Date().toISOString();
+      entry.cancelledBy = normalizeEmail(auth.currentUser?.email || "sem-login");
+      entry.cancelReason = normalizedReason;
+      entry.deletedAt = entry.cancelledAt;
+      entry.deletedBy = entry.cancelledBy;
+      entry.paidAt = "";
+      entry.cashMonth = "";
+      entry.paidAmount = 0;
+      entry.classificationStatus = `Cancelado manualmente: ${normalizedReason}`;
+      registerAuditLog("cancelar_lancamento", "lancamento", { before, after: entryAuditSnapshot(entry), reason: normalizedReason });
+      return true;
+    }
+
     function saveForm(event) {
       event.preventDefault();
       if (!hasPermission("manualEntry")) {
@@ -9717,9 +9799,10 @@ Atenciosamente,
         return;
       }
       const index = entries.findIndex(entry => entry.id === id);
+      const previousEntryForAudit = index >= 0 ? entryAuditSnapshot(entries[index]) : null;
       if (index >= 0) entries[index] = normalizedPayload;
       else entries.unshift(normalizedPayload);
-      registerAuditLog(index >= 0 ? "editar_lancamento" : "criar_lancamento", "lancamento", { id: normalizedPayload.id, type: normalizedPayload.type, name: normalizedPayload.name, amount: normalizedPayload.amount, status: normalizedPayload.status });
+      registerAuditLog(index >= 0 ? "editar_lancamento" : "criar_lancamento", "lancamento", { before: previousEntryForAudit, after: entryAuditSnapshot(normalizedPayload) });
       // Não cria cliente automaticamente a partir de lançamento manual.
       saveClients();
       saveEntries();
@@ -9885,6 +9968,7 @@ Atenciosamente,
         entry.status = "pago";
         entry.paidAt = entry.paidAt || entry.date || todayISO();
         entry.paidAmount = Number(entry.paidAmount || entry.amount || 0);
+        registerAuditLog("classificar_receita_avulsa", "lancamento", { after: entryAuditSnapshot(entry) });
         saveEntries();
         render();
         showToast("Recebimento classificado como receita avulsa.");
@@ -9900,6 +9984,7 @@ Atenciosamente,
         entry.category = selected;
         entry.source = "despesa-classificada";
         entry.classificationStatus = "Reclassificado manualmente";
+        registerAuditLog("reclassificar_despesa", "lancamento", { after: entryAuditSnapshot(entry) });
         saveEntries();
         render();
         showToast(`Despesa reclassificada para ${selected}.`);
@@ -9917,7 +10002,9 @@ Atenciosamente,
           return;
         }
         if (entry.status === "pago" || entry.status === "bonificado") {
+          const before = entryAuditSnapshot(entry);
           reopenEntry(entry);
+          registerAuditLog("reabrir_lancamento", "lancamento", { before, after: entryAuditSnapshot(entry) });
         } else {
           const method = selectedPaymentMethod(entry.id, entry.method || "Pix", button);
           const paymentDate = selectedPaymentDate(entry.id, todayISO(), button);
@@ -9932,11 +10019,20 @@ Atenciosamente,
         return;
       }
 
-      if (button.dataset.action === "delete" && confirm("Excluir este lançamento financeiro?")) {
-        entries = entries.filter(item => item.id !== entry.id);
-        saveEntries();
-        render();
-        showToast("Lançamento excluído.");
+      if (button.dataset.action === "delete") {
+        const reason = prompt("Cancelar lançamento financeiro sem excluir do histórico. Informe o motivo do cancelamento:", "Cancelamento manual");
+        if (!reason) {
+          showToast("Cancelamento não realizado. Informe um motivo para manter a auditoria.");
+          return;
+        }
+        if (!confirm(`Confirmar cancelamento de ${entry.name || "lançamento"}, valor ${formatMoney(entry.amount || entry.paidAmount || 0)}?
+
+O registro será mantido no histórico com status CANCELADO.`)) return;
+        if (cancelEntryWithAudit(entry, reason)) {
+          saveEntries();
+          render();
+          showToast("Lançamento cancelado e mantido no histórico.");
+        }
       }
     }
 
@@ -10251,6 +10347,7 @@ Atenciosamente,
         const entry = exact || close;
         entry.status = "pago";
         entry.paidAt = receipt.date;
+        entry.cashMonth = normalizeMonthInput(receipt.date);
         entry.paidAmount = receipt.amount;
         attachReceiptInfoToEntry(entry, receipt, "Vinculado e baixado automaticamente");
         return 1;
@@ -10261,6 +10358,7 @@ Atenciosamente,
         open.forEach(entry => {
           entry.status = "pago";
           entry.paidAt = receipt.date;
+          entry.cashMonth = normalizeMonthInput(receipt.date);
           entry.paidAmount = Number(((Number(entry.amount || 0) / totalOpen) * receipt.amount).toFixed(2));
           attachReceiptInfoToEntry(entry, receipt, "Vinculado e baixado automaticamente");
         });
@@ -10278,6 +10376,7 @@ Atenciosamente,
       entry.bankMovementType = receipt.rawType || entry.bankMovementType || "";
       entry.classificationStatus = status;
       if (!entry.paidAt) entry.paidAt = receipt.date;
+      entry.cashMonth = normalizeMonthInput(entry.paidAt || receipt.date);
       if (!entry.paidAmount) entry.paidAmount = receipt.amount;
       return entry;
     }
@@ -10403,12 +10502,12 @@ Atenciosamente,
 
     function clearAllFinancialData() {
       const option = prompt([
-        "O que deseja excluir?",
+        "O que deseja fazer?",
         "",
-        "1 - Excluir tudo",
-        "2 - Excluir lançamentos de um cliente",
-        "3 - Excluir lançamentos de uma competência",
-        "4 - Resetar sistema local",
+        "1 - Cancelar todos os lançamentos financeiros",
+        "2 - Cancelar lançamentos de um cliente",
+        "3 - Cancelar lançamentos de uma competência",
+        "4 - Resetar somente este navegador",
         "",
         "Digite o número da opção:"
       ].join("\n"));
@@ -10418,34 +10517,29 @@ Atenciosamente,
       if (choice === "2") return clearEntriesByClient();
       if (choice === "3") return clearEntriesByCompetence();
       if (choice === "4") return resetLocalSystem();
-      showToast("Opção de exclusão inválida.");
+      showToast("Opção inválida.");
     }
 
     function clearAllEntriesAndClients() {
-      const ok = confirm("Excluir todos os lançamentos, clientes, logs de WhatsApp e backups salvos neste navegador? Use isso quando uma importação ficar errada.");
+      const reason = prompt("Informe o motivo para cancelar todos os lançamentos financeiros. Os clientes serão mantidos e nada será excluído do histórico:", "Cancelamento em lote");
+      if (!reason) return;
+      const ok = confirm("Confirmar cancelamento de TODOS os lançamentos financeiros não cancelados?\n\nOs registros serão mantidos no histórico e os clientes não serão excluídos.");
       if (!ok) return;
-      entries = [];
-      clients = [];
-      whatsappLogs = [];
-      localStorage.removeItem(storageKey);
-      localStorage.removeItem(clientsStorageKey);
-      localStorage.removeItem(whatsappLogsKey);
-      localStorage.removeItem(auditLogsKey);
-      localStorage.removeItem(backupHistoryKey);
-      localStorage.removeItem(lastBackupDateKey);
+      let changed = 0;
+      entries.forEach(entry => {
+        if (entry.status !== "cancelado" && cancelEntryWithAudit(entry, reason)) changed++;
+      });
+      saveEntries();
+      saveClients();
       render();
-      localStorage.removeItem(storageKey);
-      localStorage.removeItem(clientsStorageKey);
-      localStorage.removeItem(whatsappLogsKey);
-      localStorage.removeItem(auditLogsKey);
-      showToast("Todos os lançamentos e cadastros locais foram excluídos deste navegador.");
+      showToast(`${changed} lançamento${changed === 1 ? "" : "s"} cancelado${changed === 1 ? "" : "s"}. Clientes preservados.`);
     }
 
     function clearEntriesByClient() {
       const clientNames = [...new Set(entries.map(entry => entry.name).filter(Boolean))]
         .sort((a, b) => a.localeCompare(b, "pt-BR"));
       if (!clientNames.length) {
-        showToast("Não existem lançamentos para excluir por cliente.");
+        showToast("Não existem lançamentos para cancelar por cliente.");
         return;
       }
 
@@ -10459,23 +10553,25 @@ Atenciosamente,
       if (!typedName) return;
 
       const targetName = normalizeText(typedName);
-      const before = entries.length;
-      entries = entries.filter(entry => normalizeText(entry.name) !== targetName);
-      const removed = before - entries.length;
-      if (!removed) {
-        showToast("Nenhum lançamento encontrado para esse cliente.");
+      const reason = prompt("Informe o motivo do cancelamento dos lançamentos deste cliente:", "Cancelamento por cliente");
+      if (!reason) return;
+      let changed = 0;
+      entries.forEach(entry => {
+        if (normalizeText(entry.name) === targetName && entry.status !== "cancelado" && cancelEntryWithAudit(entry, reason)) changed++;
+      });
+      if (!changed) {
+        showToast("Nenhum lançamento ativo encontrado para esse cliente.");
         return;
       }
 
-      // Mantém o cadastro mestre do cliente. Esta rotina exclui apenas lançamentos.
       saveEntries();
       saveClients();
       render();
-      showToast(`${removed} lançamento${removed === 1 ? "" : "s"} excluído${removed === 1 ? "" : "s"} do cliente informado.`);
+      showToast(`${changed} lançamento${changed === 1 ? "" : "s"} cancelado${changed === 1 ? "" : "s"} do cliente informado.`);
     }
 
     function clearEntriesByCompetence() {
-      const competence = prompt("Digite a competência que deseja excluir no formato MM/AAAA ou AAAA-MM. Exemplo: 05/2026");
+      const competence = prompt("Digite a competência que deseja cancelar no formato MM/AAAA ou AAAA-MM. Exemplo: 05/2026");
       if (!competence) return;
       const normalized = normalizeCompetenceInput(competence);
       if (!normalized) {
@@ -10483,11 +10579,14 @@ Atenciosamente,
         return;
       }
 
-      const before = entries.length;
-      entries = entries.filter(entry => entryCompetence(entry) !== normalized);
-      const removed = before - entries.length;
-      if (!removed) {
-        showToast("Nenhum lançamento encontrado nessa competência.");
+      const reason = prompt(`Informe o motivo do cancelamento dos lançamentos da competência ${formatMonth(normalized)}:`, "Cancelamento por competência");
+      if (!reason) return;
+      let changed = 0;
+      entries.forEach(entry => {
+        if (entryCompetence(entry) === normalized && entry.status !== "cancelado" && cancelEntryWithAudit(entry, reason)) changed++;
+      });
+      if (!changed) {
+        showToast("Nenhum lançamento ativo encontrado nessa competência.");
         return;
       }
 
@@ -10495,11 +10594,11 @@ Atenciosamente,
       saveEntries();
       saveClients();
       render();
-      showToast(`${removed} lançamento${removed === 1 ? "" : "s"} excluído${removed === 1 ? "" : "s"} da competência ${formatMonth(normalized)}.`);
+      showToast(`${changed} lançamento${changed === 1 ? "" : "s"} cancelado${changed === 1 ? "" : "s"} da competência ${formatMonth(normalized)}.`);
     }
 
     function resetLocalSystem() {
-      const ok = confirm("Resetar o sistema local? Isso apaga lançamentos, clientes, backups, modelos de WhatsApp, logs e preferências salvas neste computador.");
+      const ok = confirm("Resetar somente este navegador? Isso apaga a cópia local de lançamentos, clientes, backups, modelos de WhatsApp, logs e preferências. A nuvem não será apagada.");
       if (!ok) return;
       entries = [];
       clients = [];
@@ -10515,13 +10614,14 @@ Atenciosamente,
         storageKey,
         clientsStorageKey,
         whatsappLogsKey,
+        auditLogsKey,
         backupHistoryKey,
         lastBackupDateKey,
         whatsappSettingsKey,
         balanceVisibilityKey
       ].forEach(key => localStorage.removeItem(key));
       render();
-      showToast("Sistema local resetado. Nenhum dado financeiro ficou salvo neste navegador.");
+      showToast("Sistema local resetado neste navegador. A nuvem não foi apagada.");
     }
 
     function normalizeCompetenceInput(value) {
@@ -10779,20 +10879,35 @@ Atenciosamente,
         if (bySource) return bySource;
       }
       const month = entryCompetence(incoming);
+      const incomingAmount = Number(incoming.amount || incoming.paidAmount || 0);
+      const incomingDoc = normalizeDocument(incoming?.document || "");
+      const incomingName = normalizeMatchText(incoming?.name || "");
       const candidates = entries.filter(entry =>
         entry.type === "receita" &&
         entry.status !== "cancelado" &&
-        entryCompetence(entry) === month &&
-        samePersonForMonthlyImport(incoming, entry)
+        entryCompetence(entry) === month
       );
       if (!candidates.length) return null;
-      const amount = Number(incoming.amount || incoming.paidAmount || 0);
-      const exactOpen = candidates.find(entry => isOpenEntry(entry) && Math.abs(Number(entry.amount || 0) - amount) <= 0.01);
+
+      const safeCandidates = candidates.filter(entry => {
+        const entryDoc = normalizeDocument(entry?.document || "");
+        const entryAmount = Number(entry.amount || entry.paidAmount || 0);
+        const amountClose = Math.abs(entryAmount - incomingAmount) <= Math.max(3, incomingAmount * 0.03);
+        if (incomingDoc && entryDoc && incomingDoc === entryDoc) return true;
+        const entryName = normalizeMatchText(entry?.name || "");
+        const nameScore = tokenScore(incomingName, entryName);
+        const strongName = Boolean(incomingName && entryName && (incomingName === entryName || incomingName.includes(entryName) || entryName.includes(incomingName) || nameScore >= 0.92));
+        return amountClose && strongName;
+      });
+      if (!safeCandidates.length) return null;
+
+      const amount = incomingAmount;
+      const exactOpen = safeCandidates.find(entry => isOpenEntry(entry) && Math.abs(Number(entry.amount || 0) - amount) <= 0.01);
       if (exactOpen) return exactOpen;
-      const closeOpen = candidates.find(entry => isOpenEntry(entry) && Math.abs(Number(entry.amount || 0) - amount) <= Math.max(3, amount * 0.03));
+      const closeOpen = safeCandidates.find(entry => isOpenEntry(entry) && Math.abs(Number(entry.amount || 0) - amount) <= Math.max(3, amount * 0.03));
       if (closeOpen) return closeOpen;
-      const exactClosed = candidates.find(entry => Math.abs(Number(entry.amount || entry.paidAmount || 0) - amount) <= Math.max(3, amount * 0.03));
-      return exactClosed || candidates[0];
+      const exactClosed = safeCandidates.find(entry => Math.abs(Number(entry.amount || entry.paidAmount || 0) - amount) <= Math.max(3, amount * 0.03));
+      return exactClosed || safeCandidates[0];
     }
 
     function mergeMonthlyBillingCharge(target, incoming) {
@@ -10817,6 +10932,7 @@ Atenciosamente,
         if (!wasPaid) {
           target.status = incoming.status;
           target.paidAt = incoming.paidAt || incoming.date || target.paidAt || "";
+          target.cashMonth = normalizeMonthInput(target.paidAt || incoming.paidAt || incoming.date);
           target.paidAmount = Number(incoming.paidAmount || incoming.amount || target.amount || 0);
           target.receiptProtocol = target.receiptProtocol || incoming.sourceId || target.receiptProtocol || "";
           target.classificationStatus = "Baixado pelo lançamento mensal";
@@ -10824,6 +10940,7 @@ Atenciosamente,
         }
         if (!target.receiptProtocol && incoming.sourceId) target.receiptProtocol = incoming.sourceId;
         if (!target.paidAt && incoming.paidAt) target.paidAt = incoming.paidAt;
+        if (target.paidAt) target.cashMonth = normalizeMonthInput(target.paidAt);
         if (!target.paidAmount && incoming.paidAmount) target.paidAmount = incoming.paidAmount;
         target.classificationStatus = target.classificationStatus || "Pagamento já constava baixado";
         return "ja_baixado";
@@ -10841,23 +10958,81 @@ Atenciosamente,
       return "preservado";
     }
 
-    function importMonthlyPaymentsCsvText(text) {
+    function monthlyBillingPreviewAction(incoming, match) {
+      const amount = Number(incoming?.amount || incoming?.paidAmount || 0);
+      if (!incoming?.name || !incoming?.date || !amount) return "revisao";
+      const incomingPaid = incoming.status === "pago" || incoming.status === "bonificado";
+      if (match) {
+        const matchPaid = match.status === "pago" || match.status === "bonificado";
+        if (incomingPaid && !matchPaid) return "baixar";
+        if (incomingPaid && matchPaid) return "ja_baixado";
+        if (incoming.status === "aberto" && isOpenEntry(match)) return "atualizar";
+        if (incoming.status === "cancelado" && !matchPaid) return "cancelar";
+        return "preservar";
+      }
+      if (incomingPaid) return "nao_identificado";
+      if (incoming.status === "aberto") return "ignorar_aberto";
+      return "revisao";
+    }
+
+    function buildMonthlyPaymentsImportPlan(text) {
       const rows = parseCsvRows(text);
-      if (rows.length < 2) {
-        showToast("O CSV de lançamento mensal não tem linhas suficientes para importar.");
-        return;
-      }
+      if (rows.length < 2) return { ok: false, message: "O CSV de lançamento mensal não tem linhas suficientes para importar." };
       const headers = rows[0].map(normalizeHeader);
-      if (isClientImport(headers)) {
-        showToast("Este é um CSV de clientes. Use o botão ‘Importar clientes CSV’. Nenhum dado foi alterado.");
+      if (isClientImport(headers)) return { ok: false, message: "Este é um CSV de clientes. Use o botão ‘Importar clientes CSV’. Nenhum dado foi alterado." };
+      if (isReceiptStatement(headers)) return { ok: false, message: "Este parece ser extrato bancário. Use o botão ‘Importar extrato/saídas’. Nenhum dado foi alterado." };
+      if (!isMonthlyBillingImport(headers)) return { ok: false, message: "Modelo não reconhecido para baixa de boletos. Use CSV com Número da Cobrança, Nome, Documento, Data de Vencimento, Valor e Pago Em." };
+      const items = rows.slice(1).map((cells, index) => {
+        const record = {};
+        headers.forEach((header, headerIndex) => record[header] = cells[headerIndex] || "");
+        const incoming = monthlyBillingEntryFromRecord(record);
+        const match = incoming.name && incoming.date ? findMonthlyBillingMatch(incoming) : null;
+        const action = monthlyBillingPreviewAction(incoming, match);
+        return { rowNumber: index + 2, record, incoming, matchId: match?.id || "", match, action };
+      });
+      const counts = items.reduce((acc, item) => {
+        acc[item.action] = (acc[item.action] || 0) + 1;
+        if (item.incoming.status === "pago" || item.incoming.status === "bonificado") acc.pagosArquivo++;
+        if (item.incoming.status === "aberto") acc.abertosArquivo++;
+        return acc;
+      }, { baixar: 0, ja_baixado: 0, atualizar: 0, cancelar: 0, nao_identificado: 0, ignorar_aberto: 0, revisao: 0, preservar: 0, pagosArquivo: 0, abertosArquivo: 0 });
+      return { ok: true, rows, headers, items, counts };
+    }
+
+    function monthlyPaymentsPreviewTable(plan) {
+      return plan.items.map(item => ({
+        linha: item.rowNumber,
+        acao: item.action,
+        cliente: item.incoming.name || "",
+        documento: item.incoming.document || "",
+        competencia: formatMonth(item.incoming.billingMonth || String(item.incoming.date || "").slice(0, 7)),
+        vencimento: formatDate(item.incoming.date),
+        pagoEm: item.incoming.paidAt ? formatDate(item.incoming.paidAt) : "",
+        valor: formatMoney(item.incoming.amount || item.incoming.paidAmount || 0),
+        parcelaEncontrada: item.match ? `${item.match.name} | ${formatMonth(entryCompetence(item.match))} | ${formatMoney(item.match.amount || item.match.paidAmount || 0)} | ${visibleStatus(item.match)}` : ""
+      }));
+    }
+
+    function confirmMonthlyPaymentsImportPlan(plan) {
+      const c = plan.counts;
+      const previewRows = monthlyPaymentsPreviewTable(plan);
+      console.table(previewRows);
+      console.info("Prévia da importação de boletos pagos", { resumo: c, detalhes: previewRows });
+      const examples = previewRows.slice(0, 12).map(row =>
+        `${row.linha}. ${row.acao.toUpperCase()} | ${row.cliente || "Sem nome"} | ${row.competencia} | ${row.valor}${row.pagoEm ? ` | pago em ${row.pagoEm}` : ""}`
+      ).join("\n");
+      const message = `Prévia da importação de boletos pagos\n\nLinhas do arquivo: ${plan.items.length}\nPagos/marcados como pagos no arquivo: ${c.pagosArquivo}\nEm aberto no arquivo: ${c.abertosArquivo}\n\nAções previstas:\n- Baixar parcelas encontradas: ${c.baixar}\n- Já estavam baixadas: ${c.ja_baixado}\n- Atualizar cobranças em aberto: ${c.atualizar}\n- Cancelar cobranças: ${c.cancelar}\n- Enviar para Recebimentos a identificar: ${c.nao_identificado}\n- Ignorar cobranças abertas sem parcela: ${c.ignorar_aberto}\n- Revisar linhas inválidas: ${c.revisao}\n\nPrimeiros itens:\n${examples || "Nenhum item."}\n\nConfirmar a importação e gravar as baixas agora?`;
+      return confirm(message);
+    }
+
+    function importMonthlyPaymentsCsvText(text) {
+      const plan = buildMonthlyPaymentsImportPlan(text);
+      if (!plan.ok) {
+        showToast(plan.message);
         return;
       }
-      if (isReceiptStatement(headers)) {
-        showToast("Este parece ser extrato bancário. Use o botão ‘Importar extrato/saídas’. Nenhum dado foi alterado.");
-        return;
-      }
-      if (!isMonthlyBillingImport(headers)) {
-        showToast("Modelo não reconhecido para baixa de boletos. Use CSV com Número da Cobrança, Nome, Documento, Data de Vencimento, Valor e Pago Em.");
+      if (!confirmMonthlyPaymentsImportPlan(plan)) {
+        showToast("Importação cancelada. Nenhuma baixa foi gravada.");
         return;
       }
       let baixados = 0;
@@ -10870,12 +11045,11 @@ Atenciosamente,
       let duplicados = 0;
       let linhasPagasArquivo = 0;
       let linhasAbertasArquivo = 0;
-      const touchedClients = [];
       const notLinkedDetails = [];
-      rows.slice(1).forEach(cells => {
-        const record = {};
-        headers.forEach((header, index) => record[header] = cells[index] || "");
-        const incoming = monthlyBillingEntryFromRecord(record);
+      const changedEntries = [];
+
+      plan.items.forEach(item => {
+        const incoming = item.incoming;
         if (incoming.status === "pago" || incoming.status === "bonificado") linhasPagasArquivo++;
         if (incoming.status === "aberto") linhasAbertasArquivo++;
         if (!incoming.name || !incoming.date || !Number(incoming.amount || incoming.paidAmount || 0)) {
@@ -10884,13 +11058,20 @@ Atenciosamente,
         }
         const match = findMonthlyBillingMatch(incoming);
         if (match) {
+          const before = entryAuditSnapshot(match);
           const action = mergeMonthlyBillingCharge(match, incoming);
-          if (action === "baixado") baixados++;
+          if (action === "baixado") {
+            baixados++;
+            changedEntries.push(match.id);
+            registerAuditLog("baixar_boleto_importado", "lancamento", { before, after: entryAuditSnapshot(match), linhaArquivo: item.rowNumber, sourceId: incoming.sourceId || "" });
+          }
           else if (action === "ja_baixado") jaBaixados++;
           else if (action === "atualizado") atualizados++;
-          else if (action === "cancelado") cancelados++;
+          else if (action === "cancelado") {
+            cancelados++;
+            registerAuditLog("cancelar_boleto_importado", "lancamento", { before, after: entryAuditSnapshot(match), linhaArquivo: item.rowNumber, sourceId: incoming.sourceId || "" });
+          }
           else duplicados++;
-          touchedClients.push(match);
           return;
         }
         if (incoming.status === "pago" || incoming.status === "bonificado") {
@@ -10900,6 +11081,8 @@ Atenciosamente,
             source: "boleto-pago-nao-identificado",
             type: "receita",
             status: "pago",
+            paidAt: incoming.paidAt || incoming.date || todayISO(),
+            cashMonth: normalizeMonthInput(incoming.paidAt || incoming.date || todayISO()),
             category: "Recebimentos não identificados",
             description: `${incoming.description || "Boleto pago importado"} - sem parcela existente vinculada; vincular manualmente`,
             classificationStatus: "Não vinculado - escolher cliente/parcela manualmente"
@@ -10907,25 +11090,22 @@ Atenciosamente,
           const added = addEntryIfNotDuplicate(unidentified, { append: true });
           if (added.inserted) {
             naoIdentificados++;
+            registerAuditLog("criar_recebimento_nao_identificado", "lancamento", { after: entryAuditSnapshot(unidentified), linhaArquivo: item.rowNumber, sourceId: incoming.sourceId || "" });
             notLinkedDetails.push(`${incoming.name || "Sem nome"} | ${incoming.document || "sem documento"} | ${formatMonth(incoming.billingMonth || String(incoming.date || "").slice(0,7))} | ${formatMoney(incoming.paidAmount || incoming.amount || 0)}`);
           } else duplicados++;
         } else {
           abertosIgnorados++;
         }
       });
+      registerAuditLog("importar_boletos_pagos", "importacao", { linhasArquivo: plan.items.length, linhasPagasArquivo, linhasAbertasArquivo, baixados, jaBaixados, naoIdentificados, abertosIgnorados, atualizados, cancelados, duplicados, revisao, entradasAlteradas: changedEntries });
       saveEntries();
       ensureReportMonthHasData(true);
       render();
-      const importSummary = `Arquivo lido: ${rows.length - 1} linha(s), ${linhasPagasArquivo} paga(s)/marcada(s) como paga(s), ${linhasAbertasArquivo} em aberto. ${baixados} parcela(s) baixada(s); ${jaBaixados} já constava(m) paga(s); ${naoIdentificados} pagamento(s) sem vínculo enviado(s) para Recebimentos a identificar; ${abertosIgnorados} cobrança(s) em aberto ignorada(s) por não existir parcela cadastrada.${atualizados ? ` ${atualizados} cobrança(s) atualizada(s).` : ""}${cancelados ? ` ${cancelados} cancelada(s).` : ""}${duplicados ? ` ${duplicados} duplicidade(s)/preservada(s).` : ""}${revisao ? ` ${revisao} linha(s) para revisão.` : ""}`;
-      console.info("Importação de boletos pagos Alfa", { linhasArquivo: rows.length - 1, linhasPagasArquivo, linhasAbertasArquivo, baixados, jaBaixados, naoIdentificados, abertosIgnorados, atualizados, cancelados, duplicados, revisao, naoVinculados: notLinkedDetails });
+      const importSummary = `Arquivo lido: ${plan.items.length} linha(s), ${linhasPagasArquivo} paga(s)/marcada(s) como paga(s), ${linhasAbertasArquivo} em aberto. ${baixados} parcela(s) baixada(s); ${jaBaixados} já constava(m) paga(s); ${naoIdentificados} pagamento(s) sem vínculo enviado(s) para Recebimentos a identificar; ${abertosIgnorados} cobrança(s) em aberto ignorada(s) por não existir parcela cadastrada.${atualizados ? ` ${atualizados} cobrança(s) atualizada(s).` : ""}${cancelados ? ` ${cancelados} cancelada(s).` : ""}${duplicados ? ` ${duplicados} duplicidade(s)/preservada(s).` : ""}${revisao ? ` ${revisao} linha(s) para revisão.` : ""}`;
+      console.info("Importação de boletos pagos Alfa", { linhasArquivo: plan.items.length, linhasPagasArquivo, linhasAbertasArquivo, baixados, jaBaixados, naoIdentificados, abertosIgnorados, atualizados, cancelados, duplicados, revisao, naoVinculados: notLinkedDetails });
       showToast(importSummary);
       if (notLinkedDetails.length) {
-        alert(`Importação concluída com pagamentos sem vínculo.
-
-Eles foram enviados para Recebimentos a identificar porque não encontrei parcela em aberto compatível no cadastro.
-
-Primeiros itens:
-${notLinkedDetails.slice(0, 12).join("\n")}${notLinkedDetails.length > 12 ? "\n..." : ""}`);
+        alert(`Importação concluída com pagamentos sem vínculo.\n\nEles foram enviados para Recebimentos a identificar porque não encontrei parcela em aberto compatível no cadastro.\n\nPrimeiros itens:\n${notLinkedDetails.slice(0, 12).join("\n")}${notLinkedDetails.length > 12 ? "\n..." : ""}`);
       }
     }
 
@@ -11177,6 +11357,14 @@ ${notLinkedDetails.slice(0, 12).join("\n")}${notLinkedDetails.length > 12 ? "\n.
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
+      const cleanLocal = confirm("Deseja sair e limpar os dados financeiros salvos neste computador?\n\nRecomendado em computador compartilhado. Os dados da nuvem não serão apagados.");
+      if (cleanLocal) {
+        localStorage.removeItem(storageKey);
+        localStorage.removeItem(clientsStorageKey);
+        localStorage.removeItem(whatsappLogsKey);
+        localStorage.removeItem(auditLogsKey);
+        localStorage.removeItem(backupHistoryKey);
+      }
       await signOut(auth);
     });
 
