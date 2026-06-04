@@ -2617,6 +2617,34 @@
       .payment-close-control { grid-template-columns: 1fr; }
     }
 
+
+    /* V72 - ações financeiras sempre visíveis */
+    th:last-child,
+    td:last-child {
+      min-width: 320px;
+    }
+
+    .row-actions {
+      align-items: stretch;
+    }
+
+    .row-actions .payment-close-control {
+      flex: 1 1 100%;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .row-actions .btn-primary.table-btn {
+      min-width: 92px;
+      justify-content: center;
+    }
+
+    @media (min-width: 1200px) {
+      .row-actions .payment-close-control {
+        grid-template-columns: minmax(120px, 1fr) minmax(132px, 145px);
+      }
+    }
+
   </style>
 </head>
 <body class="tools-collapsed">
@@ -4135,7 +4163,7 @@
     const googleProvider = new GoogleAuthProvider();
     const authorizedEmail = "alfacontabilidade2014@gmail.com";
     const authorizedEmails = new Set([authorizedEmail]);
-    const APP_VERSION = "V71";
+    const APP_VERSION = "V72";
 
     const accessPermissionLabels = {
       viewDashboard: "Ver visão geral",
@@ -6505,7 +6533,7 @@ Atenciosamente,
             ${paymentControl(entry)}
             ${entry.type === "despesa" ? `<button class="btn btn-secondary table-btn" data-action="classify-expense" data-id="${entry.id}" type="button">Reclassificar</button>` : ""}
             ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
-            <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
+            ${isOpenEntry(entry) ? `<button class="btn btn-primary table-btn" data-action="toggle" data-id="${entry.id}" type="button">Baixar</button>` : `<button class="btn btn-secondary table-btn" data-action="toggle" data-id="${entry.id}" type="button">Reabrir</button>`}
             <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
             <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Cancelar lançamento">×</button>
           </div>
@@ -6551,7 +6579,7 @@ Atenciosamente,
               ${paymentControl(entry)}
               ${entry.type === "despesa" ? `<button class="btn btn-secondary table-btn" data-action="classify-expense" data-id="${entry.id}" type="button">Reclassificar</button>` : ""}
               ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
-              <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
+              ${isOpenEntry(entry) ? `<button class="btn btn-primary table-btn" data-action="toggle" data-id="${entry.id}" type="button">Baixar</button>` : `<button class="btn btn-secondary table-btn" data-action="toggle" data-id="${entry.id}" type="button">Reabrir</button>`}
               <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
               <button class="icon-btn danger" data-action="delete" data-id="${entry.id}" title="Cancelar lançamento">×</button>
             </div>
@@ -6584,7 +6612,7 @@ Atenciosamente,
               ${paymentControl(entry)}
               ${entry.type === "despesa" ? `<button class="btn btn-secondary table-btn" data-action="classify-expense" data-id="${entry.id}" type="button">Reclassificar</button>` : ""}
               ${entry.type === "receita" && isOpenEntry(entry) ? `<button class="btn btn-secondary table-btn" data-action="whatsapp-entry" data-id="${entry.id}" type="button">Enviar WhatsApp</button>` : ""}
-              <button class="icon-btn" data-action="toggle" data-id="${entry.id}" title="Alterar status">✓</button>
+              ${isOpenEntry(entry) ? `<button class="btn btn-primary table-btn" data-action="toggle" data-id="${entry.id}" type="button">Baixar</button>` : `<button class="btn btn-secondary table-btn" data-action="toggle" data-id="${entry.id}" type="button">Reabrir</button>`}
               <button class="icon-btn" data-action="edit" data-id="${entry.id}" title="Editar">✎</button>
             </div>
           </td>
@@ -9718,10 +9746,34 @@ Atenciosamente,
       if (!isMonthlyReceivableEntry(a) || !isMonthlyReceivableEntry(b)) return false;
       const keyA = monthlyChargeKeyForEntry(a);
       const keyB = monthlyChargeKeyForEntry(b);
-      if (!keyA || !keyB || keyA !== keyB) return false;
       const amountA = amountToCents(a.amount || a.paidAmount || 0);
       const amountB = amountToCents(b.amount || b.paidAmount || 0);
-      return !amountA || !amountB || amountA === amountB;
+      if (keyA && keyB && keyA === keyB) return !amountA || !amountB || amountA === amountB;
+
+      // V72: fallback profissional para títulos antigos/gerados em versões anteriores.
+      // Alguns lançamentos não possuem monthlyKey/clientId igual, mas representam a mesma
+      // mensalidade: mesmo cliente, competência, serviço e valor. Esses também devem sair de "Vencidos".
+      const monthA = entryCompetenceMonth(a) || entryDueMonth(a);
+      const monthB = entryCompetenceMonth(b) || entryDueMonth(b);
+      if (!monthA || !monthB || monthA !== monthB) return false;
+      const serviceA = serviceKey(a.category || a.service || a.description || "Honorários contábeis");
+      const serviceB = serviceKey(b.category || b.service || b.description || "Honorários contábeis");
+      if (serviceA !== serviceB) return false;
+      if (amountA && amountB && amountA !== amountB) return false;
+
+      const docA = normalizeDocument(a.document || "");
+      const docB = normalizeDocument(b.document || "");
+      if (docA && docB) return docA === docB;
+
+      const keyNameA = clientKey(a.name || a.bankCounterparty || "", a.document || "");
+      const keyNameB = clientKey(b.name || b.bankCounterparty || "", b.document || "");
+      if (keyNameA && keyNameB && keyNameA === keyNameB) return true;
+
+      const nameA = normalizeMatchText(a.name || a.bankCounterparty || "");
+      const nameB = normalizeMatchText(b.name || b.bankCounterparty || "");
+      if (!nameA || !nameB) return false;
+      if (nameA === nameB || nameA.includes(nameB) || nameB.includes(nameA)) return true;
+      return tokenScore(nameA, nameB) >= 0.92;
     }
 
     function closeDuplicateOpenMonthlyEntries(paidEntry, method = "Pix", paymentDate = todayISO()) {
@@ -9737,6 +9789,7 @@ Atenciosamente,
         entry.cancelReason = `Duplicidade cancelada automaticamente: a parcela equivalente foi baixada em ${formatDate(paymentDate)} via ${method || "forma não informada"}.`;
         entry.receiptDescription = entry.receiptDescription || "Duplicidade cancelada automaticamente após baixa da parcela equivalente.";
         entry.cashMonth = entry.cashMonth || paymentMonth || "";
+        entry.updatedAt = new Date().toISOString();
         closed += 1;
       });
       if (closed) {
@@ -9748,6 +9801,18 @@ Atenciosamente,
         });
       }
       return closed;
+    }
+
+    function forceCloseOpenReceivableById(entryId, method = "Pix", paymentDate = todayISO()) {
+      // V72: baixa por ID real da linha clicada. Não depende de nome, cliente, filtro ou posição na tabela.
+      const entry = entries.find(item => String(item.id) === String(entryId));
+      if (!entry) return { ok: false, reason: "Título não encontrado pelo ID da linha.", closedDuplicates: 0 };
+      if (entry.type !== "receita") return { ok: false, reason: "Este lançamento não é uma receita.", closedDuplicates: 0 };
+      if (isCanceledStatus(entry)) return { ok: false, reason: "Título cancelado não pode ser baixado.", closedDuplicates: 0 };
+      if (!isOpenEntry(entry)) return { ok: true, reason: "Título já estava baixado ou encerrado.", entry, closedDuplicates: 0 };
+
+      const closedDuplicates = closeEntryWithMethod(entry, method, paymentDate);
+      return { ok: true, reason: "Baixa registrada.", entry, closedDuplicates };
     }
 
     function closeEntryWithMethod(entry, method, paymentDate = todayISO()) {
@@ -9771,6 +9836,8 @@ Atenciosamente,
       entry.cashMonth = normalizeMonthInput(normalizedPaymentDate);
       entry.paidAmount = Number(entry.amount || 0);
       entry.method = normalizedMethod;
+      entry.receiptProtocol = entry.receiptProtocol || `BAIXA-MANUAL-${normalizedPaymentDate}-${entry.id}`;
+      entry.receiptDescription = entry.receiptDescription || "Baixa manual registrada pelo sistema.";
       entry.updatedAt = new Date().toISOString();
       return closeDuplicateOpenMonthlyEntries(entry, normalizedMethod, normalizedPaymentDate);
     }
@@ -10061,17 +10128,42 @@ Atenciosamente,
           const before = entryAuditSnapshot(entry);
           reopenEntry(entry);
           registerAuditLog("reabrir_lancamento", "lancamento", { before, after: entryAuditSnapshot(entry) });
-        } else {
-          const method = selectedPaymentMethod(entry.id, entry.method || "Pix", button);
-          const paymentDate = selectedPaymentDate(entry.id, todayISO(), button);
-          const confirmation = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name || "lançamento"} em ${formatDate(paymentDate)}, valor ${formatMoney(entry.amount || 0)}, usando ${method}?`);
-          if (!confirmation) return;
-          closeEntryWithMethod(entry, method, paymentDate);
-          registerAuditLog(method === "Bonificação" ? "bonificar_lancamento" : "baixar_lancamento", "lancamento", { id: entry.id, name: entry.name, amount: entry.amount, method, paidAt: paymentDate });
+          saveEntries();
+          render();
+          showToast("Lançamento reaberto.");
+          return;
         }
+
+        const method = selectedPaymentMethod(entry.id, entry.method || "Pix", button);
+        const paymentDate = selectedPaymentDate(entry.id, todayISO(), button);
+        const confirmation = confirm(`${method === "Bonificação" ? "Bonificar" : "Baixar"} ${entry.name || "lançamento"} em ${formatDate(paymentDate)}, valor ${formatMoney(entry.amount || 0)}, usando ${method}?`);
+        if (!confirmation) return;
+
+        const before = entryAuditSnapshot(entry);
+        const result = entry.type === "receita"
+          ? forceCloseOpenReceivableById(entry.id, method, paymentDate)
+          : { ok: true, entry, closedDuplicates: closeEntryWithMethod(entry, method, paymentDate) };
+
+        if (!result.ok) {
+          showToast(result.reason || "Não foi possível baixar este lançamento.");
+          return;
+        }
+
+        registerAuditLog(method === "Bonificação" ? "bonificar_lancamento" : "baixar_lancamento", "lancamento", {
+          id: entry.id,
+          name: entry.name,
+          amount: entry.amount,
+          method,
+          paidAt: paymentDate,
+          before,
+          after: entryAuditSnapshot(entry),
+          duplicidadesCanceladas: result.closedDuplicates || 0
+        });
         saveEntries();
         render();
-        showToast(entry.status === "bonificado" ? "Cobrança marcada como bonificação sem somar recebimento." : entry.status === "pago" ? "Recebimento baixado com forma de pagamento." : "Lançamento reaberto.");
+        showToast(entry.status === "bonificado"
+          ? "Cobrança marcada como bonificação sem somar recebimento."
+          : `Recebimento baixado. ${result.closedDuplicates ? result.closedDuplicates + " duplicidade(s) cancelada(s)." : "Saiu de Vencidas/Em aberto."}`);
         return;
       }
 
