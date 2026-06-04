@@ -237,11 +237,32 @@
       position: sticky;
       top: 18px;
       height: calc(100vh - 36px);
+      max-height: calc(100vh - 36px);
       border-radius: var(--radius-lg);
       padding: 20px;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(229, 9, 20, 0.95) rgba(255,255,255,0.08);
+      scrollbar-gutter: stable;
+      overscroll-behavior: contain;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.06);
+      border-radius: 999px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(255, 59, 72, 0.98), rgba(178, 0, 17, 0.96));
+      border-radius: 999px;
+      border: 2px solid rgba(9, 14, 28, 0.75);
     }
 
     .brand {
@@ -2630,7 +2651,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V49 pronto</span>
+          <span>Controle interno • V69 pronto</span>
         </div>
       </div>
 
@@ -2648,7 +2669,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p><span class="status-dot"></span>VERSÃO V52. Layout profissional: clientes separados por cartão, rolagem lateral removida e barra vertical visível.</p>
+        <p><span class="status-dot"></span>VERSÃO V69. Barra lateral com rolagem visível e módulos totalmente acessíveis.</p>
         <p id="userLabel">financeiro@alfa.local</p>
       </div>
     </aside>
