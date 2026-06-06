@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="alfa-financeiro-version" content="2026-06-04-v54-revisao-botoes-seguranca" />
+  <meta name="alfa-financeiro-version" content="2026-06-06-v74-revisao-final" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <title>Alfa Financeiro V68 | Segurança, auditoria e importação conferida</title>
+  <title>Alfa Financeiro V74 | Revisão final operacional</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -2669,7 +2669,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V53 - clientes com edição direta, cartões compactos, identificação por status e rolagem reforçada.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V74 - revisão final: permissões exatas, baixa auditada e acesso por módulos.</div>
     </form>
   </section>
 
@@ -3651,7 +3651,7 @@
             </div>
             <span class="pill">Somente administrador</span>
           </div>
-          <div class="hint"><strong>Regra segura:</strong> o administrador cadastra aqui o e-mail autorizado e o perfil. Para o funcionário acessar, crie o usuário no Firebase Authentication ou peça para ele usar "Criar senha / primeiro acesso" com o mesmo e-mail autorizado. As regras do Firestore precisam estar atualizadas pelo arquivo FIRESTORE-RULES-ALFA-FINANCEIRO.txt.</div>
+          <div class="hint"><strong>Regra segura:</strong> primeiro autorize o e-mail e marque exatamente as permissões desejadas. Depois envie o convite: o funcionário acessa o link do sistema, informa o mesmo e-mail autorizado, cria a própria senha em <strong>Criar senha / primeiro acesso</strong> e só verá os módulos permitidos. Este site estático não envia e-mail automático por SMTP; o botão Convite abre seu programa de e-mail com a mensagem pronta.</div>
           <form id="userAccessForm" class="settings-grid">
             <div class="field">
               <label for="accessUserName">Nome do funcionário</label>
@@ -3709,6 +3709,7 @@
                   <th>Perfil</th>
                   <th>Situação</th>
                   <th>Permissões principais</th>
+                  <th>Convite / senha</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -4163,7 +4164,7 @@
     const googleProvider = new GoogleAuthProvider();
     const authorizedEmail = "alfacontabilidade2014@gmail.com";
     const authorizedEmails = new Set([authorizedEmail]);
-    const APP_VERSION = "V72";
+    const APP_VERSION = "V74";
 
     const accessPermissionLabels = {
       viewDashboard: "Ver visão geral",
@@ -5099,7 +5100,7 @@ Atenciosamente,
           name: data.name || email,
           role,
           active: data.active !== false,
-          permissions: { ...(rolePermissionTemplates[role] || rolePermissionTemplates.financeiro), ...(data.permissions || {}) },
+          permissions: data.permissions && typeof data.permissions === "object" ? normalizePermissionMap(data.permissions) : normalizePermissionMap(rolePermissionTemplates[role] || rolePermissionTemplates.financeiro),
           admin: false,
           source: "firestore-users"
         };
@@ -5256,14 +5257,20 @@ Atenciosamente,
       if (!isAuthorizedUser(auth.currentUser)) return "sem-usuario";
       setCloudStatus("Carregando dados da nuvem...", "warn");
       try {
-        const snap = await withTimeout(getDoc(cloudStateRef()), cloudTimeoutMs, "Tempo esgotado ao carregar documento principal da nuvem.");
-        const data = snap.exists() ? (snap.data() || {}) : {};
+        let data = {};
+        const canReadPrincipalData = hasPermission("viewDashboard") || hasPermission("viewReceivables") || hasPermission("viewPayables") || hasPermission("viewReports") || hasPermission("manualEntry") || hasPermission("importPayments") || hasPermission("importStatement") || hasPermission("manageCharges") || hasPermission("manageUsers");
+        if (canReadPrincipalData) {
+          const snap = await withTimeout(getDoc(cloudStateRef()), cloudTimeoutMs, "Tempo esgotado ao carregar documento principal da nuvem.");
+          data = snap.exists() ? (snap.data() || {}) : {};
+        }
 
         let entryDocs = new Map();
         let clientDocs = new Map();
+        const canReadEntriesData = canReadPrincipalData;
+        const canReadClientsData = hasPermission("viewClients") || hasPermission("manageClients");
         const collectionResults = await Promise.allSettled([
-          getCollectionDocsMap("entries"),
-          getCollectionDocsMap("clients")
+          canReadEntriesData ? getCollectionDocsMap("entries") : Promise.resolve(new Map()),
+          canReadClientsData ? getCollectionDocsMap("clients") : Promise.resolve(new Map())
         ]);
         if (collectionResults[0].status === "fulfilled") entryDocs = collectionResults[0].value;
         if (collectionResults[1].status === "fulfilled") clientDocs = collectionResults[1].value;
@@ -8555,6 +8562,94 @@ Atenciosamente,
     }
 
 
+
+    function normalizePermissionMap(permissions = {}) {
+      const normalized = {};
+      Object.keys(accessPermissionLabels).forEach(key => {
+        normalized[key] = Boolean(permissions && permissions[key]);
+      });
+      return normalized;
+    }
+
+    function effectiveUserPermissions(user = {}) {
+      if (user.permissions && typeof user.permissions === "object") {
+        return normalizePermissionMap(user.permissions);
+      }
+      return normalizePermissionMap(rolePermissionTemplates[user.role || "financeiro"] || rolePermissionTemplates.financeiro);
+    }
+
+    function firstAllowedView() {
+      const order = ["dashboard", "clientes", "receber", "pagar", "lancamentos", "relatorios", "previsao", "escritorio", "usuarios"];
+      return order.find(view => titles[view] && canAccessView(view)) || "dashboard";
+    }
+
+    function systemAccessUrl() {
+      try {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.hash = "";
+        return url.toString();
+      } catch (error) {
+        return window.location.href.split("?")[0].split("#")[0];
+      }
+    }
+
+    function userInviteMessage(user = {}) {
+      const name = user.name || user.email || "";
+      const url = systemAccessUrl();
+      return `Olá${name ? `, ${name}` : ""}.\n\nSeu acesso ao Alfa Financeiro foi autorizado.\n\nAcesse: ${url}\n\nUse este e-mail: ${user.email || ""}\n\nNo primeiro acesso, informe uma senha com no mínimo 6 caracteres e clique em "Criar senha / primeiro acesso". Depois entre normalmente com o e-mail e a senha criada.\n\nObservação: o acesso fica limitado às permissões definidas pelo administrador.`;
+    }
+
+    async function copyUserInvite(email) {
+      const user = managedUsers.find(item => normalizeEmail(item.email) === normalizeEmail(email)) || { email };
+      const message = userInviteMessage(user);
+      try {
+        await navigator.clipboard.writeText(message);
+        showToast("Convite copiado. Cole no WhatsApp ou e-mail do funcionário.");
+      } catch (error) {
+        window.prompt("Copie o convite abaixo:", message);
+      }
+    }
+
+    function openUserInviteEmail(email) {
+      const user = managedUsers.find(item => normalizeEmail(item.email) === normalizeEmail(email)) || { email };
+      const subject = encodeURIComponent("Convite de acesso - Alfa Financeiro");
+      const body = encodeURIComponent(userInviteMessage(user));
+      window.location.href = `mailto:${encodeURIComponent(user.email || email)}?subject=${subject}&body=${body}`;
+    }
+
+    async function toggleManagedUserActive(email) {
+      if (!hasPermission("manageUsers")) {
+        showToast("Apenas administrador pode alterar usuários.");
+        return;
+      }
+      const normalized = normalizeEmail(email);
+      if (isAdminEmail(normalized)) {
+        showToast("O administrador principal não pode ser bloqueado por aqui.");
+        return;
+      }
+      const user = managedUsers.find(item => normalizeEmail(item.email) === normalized);
+      if (!user) {
+        showToast("Usuário não encontrado na lista.");
+        return;
+      }
+      const active = user.active === false;
+      const before = { ...user, permissions: effectiveUserPermissions(user) };
+      const payload = {
+        ...user,
+        email: normalized,
+        active,
+        permissions: effectiveUserPermissions(user),
+        updatedAt: serverTimestamp(),
+        updatedBy: normalizeEmail(auth.currentUser?.email || "")
+      };
+      await withTimeout(setDoc(userAccessDocRef(normalized), payload, { merge: true }), cloudTimeoutMs, "Tempo esgotado ao alterar situação do usuário.");
+      registerAuditLog(active ? "ativar_usuario" : "bloquear_usuario", "usuario", { before, after: { ...payload, updatedAt: new Date().toISOString() } });
+      await loadManagedUsers();
+      renderUsersPanel();
+      showToast(active ? "Usuário ativado." : "Usuário bloqueado.");
+    }
+
     function clearUserAccessForm() {
       const form = document.getElementById("userAccessForm");
       if (form) form.reset();
@@ -8568,17 +8663,23 @@ Atenciosamente,
     function fillPermissionBoxes(selected = {}) {
       const box = document.getElementById("accessPermissionBox");
       if (!box) return;
+      const normalized = normalizePermissionMap(selected);
       box.innerHTML = Object.entries(accessPermissionLabels).map(([key, label]) => `
-        <label class="pill" style="cursor:pointer;">
-          <input type="checkbox" data-user-permission="${key}" ${selected[key] ? "checked" : ""} /> ${label}
+        <label class="pill ${normalized[key] ? "paid" : ""}" style="cursor:pointer;">
+          <input type="checkbox" data-user-permission="${key}" ${normalized[key] ? "checked" : ""} /> ${label}
         </label>
       `).join("");
+      box.querySelectorAll("[data-user-permission]").forEach(input => {
+        input.addEventListener("change", () => input.closest("label")?.classList.toggle("paid", input.checked));
+      });
     }
 
     function selectedUserPermissionsFromForm() {
-      const permissions = {};
+      const permissions = normalizePermissionMap({});
       document.querySelectorAll("[data-user-permission]").forEach(input => {
-        permissions[input.dataset.userPermission] = Boolean(input.checked);
+        if (input.dataset.userPermission in accessPermissionLabels) {
+          permissions[input.dataset.userPermission] = Boolean(input.checked);
+        }
       });
       return permissions;
     }
@@ -8596,34 +8697,51 @@ Atenciosamente,
       if (!rows) return;
       const count = document.getElementById("usersCount");
       if (!hasPermission("manageUsers")) {
-        rows.innerHTML = `<tr><td colspan="6" class="empty">Acesso restrito ao administrador.</td></tr>`;
+        rows.innerHTML = `<tr><td colspan="7" class="empty">Acesso restrito ao administrador.</td></tr>`;
         if (count) count.textContent = "Acesso restrito";
         return;
       }
       if (!managedUsers.length) {
-        rows.innerHTML = `<tr><td colspan="6" class="empty">Nenhum funcionário autorizado cadastrado. O administrador principal já acessa pelo e-mail ${authorizedEmail}.</td></tr>`;
+        rows.innerHTML = `<tr><td colspan="7" class="empty">Nenhum funcionário autorizado cadastrado. O administrador principal já acessa pelo e-mail ${authorizedEmail}.</td></tr>`;
       } else {
         rows.innerHTML = managedUsers.map(user => {
           const role = user.role || "financeiro";
           const active = user.active === false ? "Bloqueado" : "Ativo";
-          const mainPerms = Object.entries({ ...(rolePermissionTemplates[role] || {}), ...(user.permissions || {}) })
+          const exactPermissions = effectiveUserPermissions(user);
+          const mainPerms = Object.entries(exactPermissions)
             .filter(([, value]) => value)
             .map(([key]) => accessPermissionLabels[key] || key)
-            .slice(0, 5)
             .join(", ");
+          const safeEmail = escapeHtml(user.email || "");
           return `<tr>
             <td>${escapeHtml(user.name || "")}</td>
-            <td>${escapeHtml(user.email || "")}</td>
+            <td>${safeEmail}</td>
             <td>${escapeHtml(role)}</td>
             <td><span class="pill ${user.active === false ? "late" : "paid"}">${active}</span></td>
             <td>${escapeHtml(mainPerms || "Sem permissões")}</td>
-            <td><button class="btn btn-ghost" type="button" data-edit-user="${escapeHtml(user.email || "")}">Editar</button></td>
+            <td>
+              <button class="btn btn-secondary table-btn" type="button" data-invite-user="${safeEmail}">E-mail convite</button>
+              <button class="btn btn-ghost table-btn" type="button" data-copy-invite-user="${safeEmail}">Copiar convite</button>
+            </td>
+            <td>
+              <button class="btn btn-primary table-btn" type="button" data-edit-user="${safeEmail}">Editar</button>
+              <button class="btn btn-ghost table-btn" type="button" data-toggle-user-active="${safeEmail}">${user.active === false ? "Ativar" : "Bloquear"}</button>
+            </td>
           </tr>`;
         }).join("");
       }
       if (count) count.textContent = `${managedUsers.length} usuário(s) autorizados`;
       rows.querySelectorAll("[data-edit-user]").forEach(button => {
         button.addEventListener("click", () => fillUserForm(managedUsers.find(user => normalizeEmail(user.email) === normalizeEmail(button.dataset.editUser))));
+      });
+      rows.querySelectorAll("[data-invite-user]").forEach(button => {
+        button.addEventListener("click", () => openUserInviteEmail(button.dataset.inviteUser));
+      });
+      rows.querySelectorAll("[data-copy-invite-user]").forEach(button => {
+        button.addEventListener("click", () => copyUserInvite(button.dataset.copyInviteUser));
+      });
+      rows.querySelectorAll("[data-toggle-user-active]").forEach(button => {
+        button.addEventListener("click", () => toggleManagedUserActive(button.dataset.toggleUserActive).catch(error => showToast(firebaseErrorMessage(error))));
       });
     }
 
@@ -8634,8 +8752,7 @@ Atenciosamente,
       document.getElementById("accessUserRole").value = user.role || "financeiro";
       document.getElementById("accessUserActive").value = user.active === false ? "nao" : "sim";
       document.getElementById("accessUserNotes").value = user.notes || "";
-      const roleTemplate = rolePermissionTemplates[user.role || "financeiro"] || rolePermissionTemplates.financeiro;
-      fillPermissionBoxes({ ...roleTemplate, ...(user.permissions || {}) });
+      fillPermissionBoxes(effectiveUserPermissions(user));
       setView("usuarios");
     }
 
@@ -8656,23 +8773,29 @@ Atenciosamente,
         showToast("O usuário administrador principal deve permanecer como administrador.");
         return;
       }
+      const existingUser = managedUsers.find(item => normalizeEmail(item.email) === email);
+      const permissions = selectedUserPermissionsFromForm();
       const payload = {
         email,
         name: name || email,
         role,
         active: document.getElementById("accessUserActive").value !== "nao",
-        permissions: selectedUserPermissionsFromForm(),
+        permissions,
         notes: document.getElementById("accessUserNotes").value.trim(),
         updatedAt: serverTimestamp(),
         updatedBy: normalizeEmail(auth.currentUser?.email || "")
       };
-      if (!payload.createdAt) payload.createdAt = serverTimestamp();
+      if (!existingUser?.createdAt) payload.createdAt = serverTimestamp();
       try {
         await withTimeout(setDoc(userAccessDocRef(email), payload, { merge: true }), cloudTimeoutMs, "Tempo esgotado ao salvar usuário autorizado.");
+        registerAuditLog(existingUser ? "editar_usuario" : "criar_usuario", "usuario", {
+          before: existingUser ? { ...existingUser, permissions: effectiveUserPermissions(existingUser) } : null,
+          after: { ...payload, permissions, updatedAt: new Date().toISOString() }
+        });
         await loadManagedUsers();
         renderUsersPanel();
         clearUserAccessForm();
-        showToast(`Usuário autorizado salvo: ${email}. Crie/valide o login no Firebase Authentication ou oriente o primeiro acesso.`);
+        showToast(`Usuário autorizado salvo: ${email}. Use Convite para enviar as instruções de primeiro acesso.`);
       } catch (error) {
         showToast(firebaseErrorMessage(error));
       }
@@ -8698,6 +8821,11 @@ Atenciosamente,
       const profile = currentAccessProfile || defaultAccessProfileForEmail(auth.currentUser?.email) || { permissions: {} };
       document.querySelectorAll("[data-admin-only]").forEach(el => {
         el.hidden = !hasPermission("manageUsers");
+      });
+      document.querySelectorAll(".nav button[data-view]").forEach(button => {
+        const allowed = canAccessView(button.dataset.view);
+        button.hidden = !allowed;
+        button.disabled = !allowed;
       });
       document.querySelectorAll("[data-permission]").forEach(el => {
         const allowed = hasPermission(el.dataset.permission);
@@ -8773,7 +8901,7 @@ Atenciosamente,
       if (!titles[view]) view = "dashboard";
       if (!canAccessView(view)) {
         showToast("Seu usuário não tem permissão para acessar este módulo.");
-        view = "dashboard";
+        view = firstAllowedView();
       }
       if (view === "clientes" && !options.keepClientFilter) {
         clientQuickFilter = "";
@@ -11400,7 +11528,7 @@ O registro será mantido no histórico com status CANCELADO.`)) return;
       renderOfficeProfile();
       renderWhatsappSettings();
       const initialView = new URLSearchParams(window.location.search).get("view");
-      if (titles[initialView]) setView(initialView);
+      setView(titles[initialView] && canAccessView(initialView) ? initialView : firstAllowedView());
       render();
 
       const cloudStatus = await loadCloudState();
