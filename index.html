@@ -2666,10 +2666,11 @@
       <div class="login-actions">
         <button class="btn btn-primary" id="emailLoginBtn" type="submit">Entrar</button>
         <button class="btn btn-ghost" id="firstAccessBtn" type="button">Criar senha / primeiro acesso</button>
+        <button class="btn btn-ghost" id="resetPasswordBtn" type="button">Redefinir senha por e-mail</button>
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V74 - revisão final: permissões exatas, baixa auditada e acesso por módulos.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V76 - acesso revisado: redefinição de senha validada, permissões e convite corrigidos.</div>
     </form>
   </section>
 
@@ -2679,7 +2680,7 @@
         <div class="mark" aria-hidden="true"><img src="alfa-logo.png" alt="" /></div>
         <div>
           <h2>Alfa Financeiro</h2>
-          <span>Controle interno • V70 seguro</span>
+          <span>Controle interno • V76 acesso seguro</span>
         </div>
       </div>
 
@@ -4128,6 +4129,7 @@
       onAuthStateChanged,
       setPersistence,
       inMemoryPersistence,
+      sendPasswordResetEmail,
       signOut
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import {
@@ -4154,6 +4156,7 @@
 
     const firebaseApp = initializeApp(firebaseConfig);
     const auth = getAuth(firebaseApp);
+    auth.languageCode = "pt-BR";
     // V70: Firestore em memória. Não usa cache persistente/IndexedDB do navegador.
     // Os dados financeiros devem permanecer somente em memória durante a sessão e no Firestore.
     const db = initializeFirestore(firebaseApp, {
@@ -8597,7 +8600,7 @@ Atenciosamente,
     function userInviteMessage(user = {}) {
       const name = user.name || user.email || "";
       const url = systemAccessUrl();
-      return `Olá${name ? `, ${name}` : ""}.\n\nSeu acesso ao Alfa Financeiro foi autorizado.\n\nAcesse: ${url}\n\nUse este e-mail: ${user.email || ""}\n\nNo primeiro acesso, informe uma senha com no mínimo 6 caracteres e clique em "Criar senha / primeiro acesso". Depois entre normalmente com o e-mail e a senha criada.\n\nObservação: o acesso fica limitado às permissões definidas pelo administrador.`;
+      return `Olá${name ? `, ${name}` : ""}.\n\nSeu acesso ao Alfa Financeiro foi autorizado.\n\nAcesse: ${url}\n\nUse este e-mail: ${user.email || ""}\n\nNo primeiro acesso, informe uma senha com no mínimo 6 caracteres e clique em "Criar senha / primeiro acesso". Se o Firebase informar que o e-mail já existe, clique em "Redefinir senha por e-mail" e siga o link recebido para criar uma nova senha.\n\nObservação: o acesso fica limitado às permissões definidas pelo administrador.`;
     }
 
     async function copyUserInvite(email) {
@@ -8616,6 +8619,26 @@ Atenciosamente,
       const subject = encodeURIComponent("Convite de acesso - Alfa Financeiro");
       const body = encodeURIComponent(userInviteMessage(user));
       window.location.href = `mailto:${encodeURIComponent(user.email || email)}?subject=${subject}&body=${body}`;
+    }
+
+
+    async function sendUserPasswordReset(email) {
+      if (!hasPermission("manageUsers")) {
+        showToast("Apenas administrador pode enviar redefinição de senha.");
+        return;
+      }
+      const normalized = normalizeEmail(email);
+      if (!normalized) {
+        showToast("E-mail do usuário não informado.");
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, normalized);
+        registerAuditLog("enviar_redefinicao_senha", "usuario", { email: normalized });
+        showToast(`Link de redefinição enviado para ${normalized}. Confira também spam/lixo eletrônico.`);
+      } catch (error) {
+        showToast(firebaseErrorMessage(error));
+      }
     }
 
     async function toggleManagedUserActive(email) {
@@ -8720,8 +8743,9 @@ Atenciosamente,
             <td><span class="pill ${user.active === false ? "late" : "paid"}">${active}</span></td>
             <td>${escapeHtml(mainPerms || "Sem permissões")}</td>
             <td>
-              <button class="btn btn-secondary table-btn" type="button" data-invite-user="${safeEmail}">E-mail convite</button>
+              <button class="btn btn-secondary table-btn" type="button" data-invite-user="${safeEmail}">Abrir e-mail convite</button>
               <button class="btn btn-ghost table-btn" type="button" data-copy-invite-user="${safeEmail}">Copiar convite</button>
+              <button class="btn btn-ghost table-btn" type="button" data-reset-user-password="${safeEmail}">Enviar redefinição</button>
             </td>
             <td>
               <button class="btn btn-primary table-btn" type="button" data-edit-user="${safeEmail}">Editar</button>
@@ -8739,6 +8763,9 @@ Atenciosamente,
       });
       rows.querySelectorAll("[data-copy-invite-user]").forEach(button => {
         button.addEventListener("click", () => copyUserInvite(button.dataset.copyInviteUser));
+      });
+      rows.querySelectorAll("[data-reset-user-password]").forEach(button => {
+        button.addEventListener("click", () => sendUserPasswordReset(button.dataset.resetUserPassword));
       });
       rows.querySelectorAll("[data-toggle-user-active]").forEach(button => {
         button.addEventListener("click", () => toggleManagedUserActive(button.dataset.toggleUserActive).catch(error => showToast(firebaseErrorMessage(error))));
@@ -11502,8 +11529,14 @@ O registro será mantido no histórico com status CANCELADO.`)) return;
       if (code.includes("api-key-not-valid") || code.includes("invalid-api-key")) {
         return "Chave do Firebase inválida. Copie novamente o firebaseConfig do projeto alfa-financeiro no Firebase Console.";
       }
-      if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found") || code.includes("invalid-login-credentials")) {
-        return "E-mail ou senha não cadastrados no Firebase Authentication.";
+      if (code.includes("email-already-in-use")) {
+        return "Este e-mail já existe no Firebase Authentication. Use Entrar com a senha cadastrada ou clique em Redefinir senha por e-mail.";
+      }
+      if (code.includes("user-not-found")) {
+        return "Este e-mail ainda não existe no Firebase Authentication. Use Criar senha / primeiro acesso, desde que o e-mail já tenha sido autorizado pelo administrador.";
+      }
+      if (code.includes("wrong-password") || code.includes("invalid-credential") || code.includes("invalid-login-credentials")) {
+        return "Senha incorreta ou credencial inválida. Se este e-mail aparece no Firebase Authentication, clique em Redefinir senha por e-mail e crie uma nova senha.";
       }
       if (code.includes("invalid-email")) return "E-mail inválido.";
       if (code.includes("missing-password")) return "Informe a senha.";
@@ -11615,6 +11648,21 @@ O registro será mantido no histórico com status CANCELADO.`)) return;
       try {
         await createUserWithEmailAndPassword(auth, email, password);
         showToast("Usuário criado. Se o e-mail estiver autorizado pelo administrador, o acesso será liberado.");
+      } catch (error) {
+        setLoginError(firebaseErrorMessage(error));
+      }
+    });
+
+    document.getElementById("resetPasswordBtn")?.addEventListener("click", async () => {
+      setLoginError();
+      const email = normalizeEmail(document.getElementById("emailInput").value);
+      if (!email) {
+        setLoginError("Informe o e-mail para receber o link de redefinição de senha.");
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        setLoginError("Link enviado. Abra o e-mail, crie uma nova senha e depois entre normalmente.");
       } catch (error) {
         setLoginError(firebaseErrorMessage(error));
       }
