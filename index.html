@@ -2670,7 +2670,7 @@
         <button class="btn btn-ghost" id="googleLoginBtn" type="button" style="display:none;">Entrar com Google</button>
       </div>
       <div class="login-error" id="loginError" role="alert" aria-live="polite"></div>
-      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V76 - acesso revisado: redefinição de senha validada, permissões e convite corrigidos.</div>
+      <div class="hint">Acesso restrito por Firebase Authentication. VERSÃO V77 - acesso revisado: autorização por e-mail/UID, permissões e regras corrigidas.</div>
     </form>
   </section>
 
@@ -3663,6 +3663,10 @@
               <input id="accessUserEmail" type="email" placeholder="funcionario@email.com" required />
             </div>
             <div class="field">
+              <label for="accessUserUid">UID do Firebase Authentication <span style="color:var(--muted);font-weight:700;">(opcional, recomendado)</span></label>
+              <input id="accessUserUid" type="text" placeholder="Cole aqui o UID do usuário no Firebase Auth" />
+            </div>
+            <div class="field">
               <label for="accessUserRole">Perfil</label>
               <select id="accessUserRole">
                 <option value="financeiro">Financeiro operacional</option>
@@ -3707,6 +3711,7 @@
                 <tr>
                   <th>Nome</th>
                   <th>E-mail</th>
+                  <th>UID</th>
                   <th>Perfil</th>
                   <th>Situação</th>
                   <th>Permissões principais</th>
@@ -4214,6 +4219,7 @@
     };
     let currentAccessProfile = null;
     let managedUsers = [];
+    let lastAccessValidationError = "";
     const cloudDocumentPath = ["alfaFinanceiro", "principal"];
     let cloudLoaded = false;
     let cloudSyncTimer = null;
@@ -5087,32 +5093,100 @@ Atenciosamente,
       return doc(db, ...cloudDocumentPath, "users", normalizeEmail(email));
     }
 
+    function normalizeUid(value) {
+      return String(value || "").trim();
+    }
+
+    function userUidAccessDocRef(uid) {
+      return doc(db, ...cloudDocumentPath, "userUids", normalizeUid(uid));
+    }
+
+    function profileFromAccessData(data = {}, fallbackEmail = "", source = "firestore-users") {
+      const email = normalizeEmail(data.email || fallbackEmail || "");
+      const role = data.role || "financeiro";
+      return {
+        email,
+        uid: normalizeUid(data.uid || ""),
+        name: data.name || email,
+        role,
+        active: data.active !== false,
+        permissions: data.permissions && typeof data.permissions === "object" ? normalizePermissionMap(data.permissions) : normalizePermissionMap(rolePermissionTemplates[role] || rolePermissionTemplates.financeiro),
+        admin: false,
+        source
+      };
+    }
+
     async function loadAccessProfileForUser(user) {
       const email = normalizeEmail(user?.email || "");
-      if (!email) return null;
-      const adminProfile = defaultAccessProfileForEmail(email);
-      if (adminProfile) return adminProfile;
-      try {
-        const snap = await withTimeout(getDoc(userAccessDocRef(email)), cloudTimeoutMs, "Tempo esgotado ao validar usuário autorizado.");
-        if (!snap.exists()) return null;
-        const data = snap.data() || {};
-        if (data.active === false) return null;
-        const role = data.role || "financeiro";
-        return {
-          email,
-          name: data.name || email,
-          role,
-          active: data.active !== false,
-          permissions: data.permissions && typeof data.permissions === "object" ? normalizePermissionMap(data.permissions) : normalizePermissionMap(rolePermissionTemplates[role] || rolePermissionTemplates.financeiro),
-          admin: false,
-          source: "firestore-users"
-        };
-      } catch (error) {
-        console.error("Erro ao validar usuário autorizado", error);
-        setLoginError(firebaseErrorMessage(error));
+      const uid = normalizeUid(user?.uid || "");
+      lastAccessValidationError = "";
+      if (!email) {
+        lastAccessValidationError = "Login aceito no Firebase, mas o e-mail do usuário não foi informado pelo Authentication.";
         return null;
       }
+      const adminProfile = defaultAccessProfileForEmail(email);
+      if (adminProfile) return adminProfile;
+
+      const attempts = [
+        { label: "e-mail", ref: userAccessDocRef(email), source: "firestore-users-email" }
+      ];
+      if (uid) attempts.push({ label: "UID", ref: userUidAccessDocRef(uid), source: "firestore-users-uid" });
+
+      const errors = [];
+      for (const attempt of attempts) {
+        try {
+          const snap = await withTimeout(getDoc(attempt.ref), cloudTimeoutMs, `Tempo esgotado ao validar usuário autorizado por ${attempt.label}.`);
+          if (!snap.exists()) continue;
+          const data = snap.data() || {};
+          if (data.active === false) {
+            lastAccessValidationError = `Login aceito no Firebase, mas o usuário ${email} está bloqueado no Alfa Financeiro.`;
+            return null;
+          }
+          const profile = profileFromAccessData({ ...data, email: data.email || email, uid: data.uid || uid }, email, attempt.source);
+          return profile;
+        } catch (error) {
+          console.error(`Erro ao validar usuário autorizado por ${attempt.label}`, error);
+          errors.push(error);
+        }
+      }
+
+      if (errors.length) {
+        const msg = firebaseErrorMessage(errors[0]);
+        lastAccessValidationError = `Login aceito no Firebase Authentication, mas o sistema não conseguiu ler a autorização no Firestore. ${msg} Publique o arquivo FIRESTORE-RULES-ALFA-FINANCEIRO.txt da versão atual e confirme se existe o documento users/${email}${uid ? ` ou userUids/${uid}` : ""}.`;
+      } else {
+        lastAccessValidationError = `Login aceito no Firebase Authentication, mas este usuário ainda não está autorizado no Alfa Financeiro. Como administrador, cadastre o e-mail ${email}${uid ? ` e, se possível, o UID ${uid}` : ""} na aba Usuários.`;
+      }
+      return null;
     }
+
+
+
+    window.alfaDiagnosticoUsuarioAtual = async function alfaDiagnosticoUsuarioAtual() {
+      const user = auth.currentUser;
+      if (!user) {
+        console.warn("Nenhum usuário autenticado no Firebase Authentication.");
+        return { autenticado: false };
+      }
+      const email = normalizeEmail(user.email || "");
+      const uid = normalizeUid(user.uid || "");
+      const result = { autenticado: true, email, uid, emailDoc: null, uidDoc: null, erros: [] };
+      try {
+        const emailSnap = await getDoc(userAccessDocRef(email));
+        result.emailDoc = emailSnap.exists() ? emailSnap.data() : null;
+      } catch (error) {
+        result.erros.push({ tipo: "emailDoc", mensagem: firebaseErrorMessage(error), detalhe: String(error?.message || error) });
+      }
+      try {
+        if (uid) {
+          const uidSnap = await getDoc(userUidAccessDocRef(uid));
+          result.uidDoc = uidSnap.exists() ? uidSnap.data() : null;
+        }
+      } catch (error) {
+        result.erros.push({ tipo: "uidDoc", mensagem: firebaseErrorMessage(error), detalhe: String(error?.message || error) });
+      }
+      console.info("Diagnóstico do usuário atual", result);
+      return result;
+    };
 
     function isAuthorizedUser(user) {
       const email = normalizeEmail(user?.email || "");
@@ -8678,6 +8752,8 @@ Atenciosamente,
       if (form) form.reset();
       const role = document.getElementById("accessUserRole");
       if (role) role.value = "financeiro";
+      const uid = document.getElementById("accessUserUid");
+      if (uid) uid.value = "";
       const active = document.getElementById("accessUserActive");
       if (active) active.value = "sim";
       fillPermissionBoxes(rolePermissionTemplates.financeiro);
@@ -8720,12 +8796,12 @@ Atenciosamente,
       if (!rows) return;
       const count = document.getElementById("usersCount");
       if (!hasPermission("manageUsers")) {
-        rows.innerHTML = `<tr><td colspan="7" class="empty">Acesso restrito ao administrador.</td></tr>`;
+        rows.innerHTML = `<tr><td colspan="8" class="empty">Acesso restrito ao administrador.</td></tr>`;
         if (count) count.textContent = "Acesso restrito";
         return;
       }
       if (!managedUsers.length) {
-        rows.innerHTML = `<tr><td colspan="7" class="empty">Nenhum funcionário autorizado cadastrado. O administrador principal já acessa pelo e-mail ${authorizedEmail}.</td></tr>`;
+        rows.innerHTML = `<tr><td colspan="8" class="empty">Nenhum funcionário autorizado cadastrado. O administrador principal já acessa pelo e-mail ${authorizedEmail}.</td></tr>`;
       } else {
         rows.innerHTML = managedUsers.map(user => {
           const role = user.role || "financeiro";
@@ -8739,6 +8815,7 @@ Atenciosamente,
           return `<tr>
             <td>${escapeHtml(user.name || "")}</td>
             <td>${safeEmail}</td>
+            <td>${escapeHtml(user.uid || "-")}</td>
             <td>${escapeHtml(role)}</td>
             <td><span class="pill ${user.active === false ? "late" : "paid"}">${active}</span></td>
             <td>${escapeHtml(mainPerms || "Sem permissões")}</td>
@@ -8776,6 +8853,8 @@ Atenciosamente,
       if (!user) return;
       document.getElementById("accessUserName").value = user.name || "";
       document.getElementById("accessUserEmail").value = user.email || "";
+      const uidInput = document.getElementById("accessUserUid");
+      if (uidInput) uidInput.value = user.uid || "";
       document.getElementById("accessUserRole").value = user.role || "financeiro";
       document.getElementById("accessUserActive").value = user.active === false ? "nao" : "sim";
       document.getElementById("accessUserNotes").value = user.notes || "";
@@ -8791,6 +8870,7 @@ Atenciosamente,
       }
       const email = normalizeEmail(document.getElementById("accessUserEmail").value);
       const name = document.getElementById("accessUserName").value.trim();
+      const uid = normalizeUid(document.getElementById("accessUserUid")?.value || "");
       const role = document.getElementById("accessUserRole").value || "financeiro";
       if (!email) {
         showToast("Informe o e-mail do usuário.");
@@ -8804,6 +8884,7 @@ Atenciosamente,
       const permissions = selectedUserPermissionsFromForm();
       const payload = {
         email,
+        uid,
         name: name || email,
         role,
         active: document.getElementById("accessUserActive").value !== "nao",
@@ -8815,6 +8896,9 @@ Atenciosamente,
       if (!existingUser?.createdAt) payload.createdAt = serverTimestamp();
       try {
         await withTimeout(setDoc(userAccessDocRef(email), payload, { merge: true }), cloudTimeoutMs, "Tempo esgotado ao salvar usuário autorizado.");
+        if (uid) {
+          await withTimeout(setDoc(userUidAccessDocRef(uid), payload, { merge: true }), cloudTimeoutMs, "Tempo esgotado ao salvar autorização por UID.");
+        }
         registerAuditLog(existingUser ? "editar_usuario" : "criar_usuario", "usuario", {
           before: existingUser ? { ...existingUser, permissions: effectiveUserPermissions(existingUser) } : null,
           after: { ...payload, permissions, updatedAt: new Date().toISOString() }
@@ -11589,9 +11673,10 @@ O registro será mantido no histórico com status CANCELADO.`)) return;
       setLoginError(message);
     }
 
-    async function blockUnauthorizedUser() {
+    async function blockUnauthorizedUser(message = "") {
+      const detail = message || lastAccessValidationError || "Usuário não autorizado no Alfa Financeiro.";
       await signOut(auth);
-      showLoginScreen("Usuário não autorizado.");
+      showLoginScreen(detail);
     }
 
     async function startAuthenticationFlow() {
