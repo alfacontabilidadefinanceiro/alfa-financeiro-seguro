@@ -8,55 +8,89 @@ service cloud.firestore {
     function email() {
       return request.auth.token.email;
     }
+    function uid() {
+      return request.auth.uid;
+    }
     function isAdmin() {
       return signedIn() && email() == "alfacontabilidade2014@gmail.com";
     }
     function userDoc() {
       return /databases/$(database)/documents/alfaFinanceiro/principal/users/$(email());
     }
+    function userUidDoc() {
+      return /databases/$(database)/documents/alfaFinanceiro/principal/userUids/$(uid());
+    }
+    function hasEmailAuthorization() {
+      return signedIn() && exists(userDoc()) && get(userDoc()).data.active == true;
+    }
+    function hasUidAuthorization() {
+      return signedIn() && exists(userUidDoc()) && get(userUidDoc()).data.active == true;
+    }
     function isAuthorized() {
-      return isAdmin() || (signedIn() && exists(userDoc()) && get(userDoc()).data.active == true);
+      return isAdmin() || hasEmailAuthorization() || hasUidAuthorization();
     }
     function userData() {
-      return isAdmin() ? { active: true, permissions: { admin: true } } : get(userDoc()).data;
+      return isAdmin()
+        ? { active: true, permissions: { admin: true } }
+        : (hasEmailAuthorization() ? get(userDoc()).data : get(userUidDoc()).data);
     }
     function hasPerm(permission) {
       return isAdmin() || (isAuthorized() && userData().permissions[permission] == true);
     }
     function canReadFinancial() {
-      return hasPerm("viewDashboard") || hasPerm("viewClients") || hasPerm("viewReceivables") || hasPerm("viewPayables") || hasPerm("viewReports");
+      return hasPerm("viewDashboard") || hasPerm("viewReceivables") || hasPerm("viewPayables") || hasPerm("viewReports") || hasPerm("manualEntry") || hasPerm("importPayments") || hasPerm("importStatement") || hasPerm("manageCharges");
+    }
+    function canReadClients() {
+      return hasPerm("viewClients") || hasPerm("manageClients");
     }
     function canWriteFinancial() {
       return hasPerm("manualEntry") || hasPerm("manageClients") || hasPerm("importPayments") || hasPerm("importStatement") || hasPerm("manageCharges");
     }
+    function isSafeLogCreate() {
+      return request.resource.data.id is string
+        && request.resource.data.action is string
+        && request.resource.data.entity is string
+        && request.resource.data.user is string;
+    }
 
     match /alfaFinanceiro/principal {
       allow read: if isAuthorized() && canReadFinancial();
-      // Limitação da arquitetura atual: o sistema ainda sincroniza um documento principal compacto.
-      // Por isso, usuários operacionais autorizados precisam gravar esse documento quando salvam dados.
       allow create, update: if isAuthorized() && canWriteFinancial();
       allow delete: if isAdmin();
 
       match /users/{userEmail} {
-        allow read: if isAdmin() || (signedIn() && userEmail == email()) || hasPerm("manageUsers");
+        // Permite que qualquer usuário autenticado faça GET do documento de autorização.
+        // Isso evita bloqueio de primeiro acesso quando o login já passou no Firebase Auth,
+        // mas a regra antiga ainda não conseguia comparar o e-mail ou validar o perfil.
+        // LIST continua restrito ao administrador/gerente de usuários.
+        allow get: if signedIn();
+        allow list: if isAdmin() || hasPerm("manageUsers");
+        allow create, update, delete: if isAdmin() || hasPerm("manageUsers");
+      }
+
+      match /userUids/{userUid} {
+        // O próprio usuário pode ler a autorização vinculada ao seu UID.
+        // LIST continua restrito.
+        allow get: if isAdmin() || (signedIn() && userUid == uid()) || hasPerm("manageUsers");
+        allow list: if isAdmin() || hasPerm("manageUsers");
         allow create, update, delete: if isAdmin() || hasPerm("manageUsers");
       }
 
       match /clients/{clientId} {
-        allow read: if isAuthorized() && hasPerm("viewClients");
+        allow read: if isAuthorized() && canReadClients();
         allow create, update: if isAuthorized() && hasPerm("manageClients");
-        allow delete: if false;
+        allow delete: if isAdmin() && hasPerm("clearDatabase");
       }
 
       match /entries/{entryId} {
         allow read: if isAuthorized() && canReadFinancial();
         allow create, update: if isAuthorized() && (hasPerm("manualEntry") || hasPerm("importPayments") || hasPerm("importStatement") || hasPerm("manageCharges"));
-        allow delete: if isAuthorized() && hasPerm("deleteEntries");
+        allow delete: if isAdmin() && hasPerm("clearDatabase");
       }
 
       match /logs/{logId} {
         allow read: if isAdmin() || hasPerm("manageUsers") || hasPerm("viewReports");
-        allow create: if isAuthorized();
+        allow create: if isAuthorized() && isSafeLogCreate();
         allow update, delete: if false;
       }
     }

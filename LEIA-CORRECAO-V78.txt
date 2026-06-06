@@ -1,0 +1,20 @@
+ALFA FINANCEIRO V78 - CORREÇÃO DO ERRO "LOGIN ACEITO, MAS SEM AUTORIZAÇÃO"
+
+O login no Firebase Authentication estava funcionando, mas o Firestore bloqueava a leitura do documento de autorização do usuário.
+
+Ajuste principal:
+- FIRESTORE-RULES-ALFA-FINANCEIRO.txt foi corrigido para permitir GET do documento users/{email} a usuários autenticados.
+- LIST de usuários continua restrito ao administrador/gerente de usuários.
+- userUids/{uid} continua permitindo leitura apenas do próprio UID ou administrador.
+
+PUBLICAÇÃO OBRIGATÓRIA:
+1. Substituir o index.html no site.
+2. Copiar TODO o conteúdo de FIRESTORE-RULES-ALFA-FINANCEIRO.txt.
+3. Colar em Firebase Console > Firestore Database > Rules.
+4. Clicar em Publicar.
+5. Testar em aba InPrivate/Anônima.
+
+Para o usuário do print, deve existir pelo menos um destes documentos:
+/alfaFinanceiro/principal/users/jhempreendimentos93@gmail.com
+ou
+/alfaFinanceiro/principal/userUids/245eb0Kzl8NffCS6uFW0rnwgKs23
